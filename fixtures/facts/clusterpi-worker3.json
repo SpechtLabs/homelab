@@ -44,7 +44,8 @@
   "script": {
     "rpi": {
       "hat_product": "Raspberry Pi PoE+ HAT",
-      "hat_vendor": "Raspberry Pi Ltd"
+      "hat_vendor": "Raspberry Pi Ltd",
+      "nvme": false
     }
   },
   "cloud": null

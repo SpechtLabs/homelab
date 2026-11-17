@@ -36,9 +36,19 @@ tasks:
         dtparam=fan_temp1: '{{ vars.rpi_fan_temps[1] }}'
         dtparam=fan_temp2: '{{ vars.rpi_fan_temps[2] }}'
         dtparam=fan_temp3: '{{ vars.rpi_fan_temps[3] }}'
-        dtparam=pciex1_gen: '{{ vars.rpi_pciex1_gen }}'
-    id: rpi5-cooling-pcie
+    id: rpi5-cooling
     when: 'host.facts.hardware.raspberry_pi.version == 5'
+    notify: [reboot]
+
+  # PCIe Gen 3 is uncertified on the Pi 5 and only helps NVMe, so only where
+  # pi-facts saw an NVMe controller.
+  - file.ini:
+      path: /boot/firmware/config.txt
+      section: all
+      settings:
+        dtparam=pciex1_gen: '{{ vars.rpi_pciex1_gen }}'
+    id: rpi5-pcie-gen3
+    when: 'host.facts.hardware.raspberry_pi.version == 5 && host.facts.script.rpi.nvme == true'
     notify: [reboot]
 
   - file.ini:
