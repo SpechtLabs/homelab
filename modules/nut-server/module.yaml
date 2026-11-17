@@ -37,7 +37,9 @@ handlers:
 health:
   - name: upsd
     tcp: { address: '127.0.0.1:3493' }
+  # Informational: depends on the Synology's NUT server, not on this host.
   - name: proxied-ups
     command:
       run: ['upsc', '{{ vars.nut_ups_name }}@localhost', 'ups.status']
       expect: { exit: 0 }
+    required: false
