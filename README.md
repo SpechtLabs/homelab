@@ -56,3 +56,22 @@ mise exec -- buckle validate --config . $(printf -- '--facts %s ' fixtures/facts
 - **Reboot or patch a host**: the host page's actions (`base: upgrade`, `base: reboot`,
   `k3s-agent: reboot`).
 - **Reset k3s**: by hand. It is deliberately not a Buckle removal hook.
+
+## Known issues
+
+Found during the migration (2026-11-17/18); none of them caused by it.
+
+- **NUC on an end-of-life release.** Ubuntu 24.10 is EOL and `archive.ubuntu.com` dropped it, which
+  broke every `apt-get update`. `/etc/apt/sources.list.d/ubuntu.sources` points at
+  `old-releases.ubuntu.com` by hand (original: `ubuntu.sources.bak-20261118`). apt works, but there
+  are no security updates: move the NUC to 26.04 LTS.
+- **UPS chain down.** The NUC's NUT proxy reaches no upstream (`192.168.0.64` refuses NUT; the old
+  config pointed at `.156`). Enable DSM's network UPS server and permit the NUC. Until then the Pis
+  have no UPS-triggered shutdown; the `ups-reachable` checks are informational.
+- **timepi's GPS isn't disciplining the clock.** gpsd feeds ntpsec nothing (SHM reach 0) and PPS is
+  a falseticker, so ntpsec syncs from the public pool.
+- **PTP broken on timepi.** `ptp4l`: "driver rejected most general HWTSTAMP filter"; `phc2sys`
+  exits on its arguments. Off in config (`ptp_enabled: false`) until fixed.
+- **GitHub API rate limit.** `github.release` spends one anonymous API call (60/h per IP, shared
+  by every host at home) per plan while a host isn't on the pinned version. Fine in steady state;
+  a fleet-wide upgrade of many hosts at once can exhaust it, so roll those in phases.
