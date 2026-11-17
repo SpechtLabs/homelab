@@ -1,1 +1,2 @@
-admin_user: root
+# You log in as cedi; root keeps its old Ansible-era checkout, unmanaged.
+admin_user: cedi

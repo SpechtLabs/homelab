@@ -26,7 +26,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | Module | Hosts | Does |
 |---|---|---|
 | `base` | all | hostname, locale, bootstrap packages; *actions*: upgrade packages, reboot |
-| `dotfiles` | all | cedi/dotfiles for the admin user; login shell only if `login_shell` is set |
+| `dotfiles` | all | cedi/dotfiles and fish as login shell for each host's login account (`admin_user`) |
 | `tailscale` | all | keeps tailscaled current; `--ssh`, exit node on `hole` |
 | `alloy` | all | logs and metrics to Loki/Mimir (homelab or spechtlabs); OTLP receiver on the collector |
 | `pi-facts` | Pis | custom fact `host.facts.script.rpi` from the HAT EEPROM |

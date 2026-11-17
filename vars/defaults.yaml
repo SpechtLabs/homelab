@@ -2,9 +2,11 @@
 # several modules share.
 tailnet: sphinx-map.ts.net
 
-# The account people log in as. Pis use `pi`; VPS hosts and the NUC use root.
+# The account people log in as: it gets cedi/dotfiles and fish as login shell.
+# Pis use `pi`; overlays set the rest (cedi on the NUC and timepi, root on VPS hosts).
 admin_user: pi
 admin_home: '{{ "/root" if vars.admin_user == "root" else "/home/" ~ vars.admin_user }}'
+login_shell: /usr/bin/fish
 
 # o11y: homelab stack by default; spechtlabs hosts override the endpoints.
 o11y_loki_url: http://homelab-loki.k8s.specht-labs.de/loki/api/v1/push

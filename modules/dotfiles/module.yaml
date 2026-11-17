@@ -7,11 +7,10 @@ vars:
   dotfiles_repo: https://github.com/cedi/dotfiles.git
   dotfiles_ref: main
   dotfiles_preset: server          # server, core or full
-  # Unmanaged unless set: the NUC's root and cedi use zsh, whatever Ansible intended.
-  # Set e.g. `login_shell: /usr/bin/fish` in a vars overlay to manage it.
+  # The fleet sets /usr/bin/fish (vars/defaults.yaml); "" leaves the shell alone.
   login_shell: ""
 tasks:
-  # Only for a managed login shell; hosts on zsh (nuc, meet) don't need fish.
+  # The shell's package, for a managed login shell.
   - apt.package: { name: '{{ vars.login_shell | basename }}' }
     id: login-shell-package
     when: 'vars.login_shell != ""'
