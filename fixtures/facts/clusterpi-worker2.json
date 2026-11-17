@@ -1,52 +1,43 @@
 {
   "os": {
+    "codename": "bookworm",
     "family": "debian",
     "id": "debian",
-    "codename": "bookworm",
-    "version": "12",
+    "kernel": "6.12.34+rpt-rpi-v8",
     "pretty_name": "Debian GNU/Linux 12 (bookworm)",
-    "kernel": "6.6.51+rpt-rpi-2712"
+    "version": "12"
   },
   "hardware": {
     "arch": "aarch64",
-    "model": "Raspberry Pi 4 Model B Rev 1.0",
-    "vendor": "Raspberry Pi",
-    "raspberry_pi": {
-      "version": 4,
-      "model": "Model B",
-      "compute_module": false,
-      "revision": "1.0"
-    },
     "cpus": 4,
     "mem": {
-      "total_mb": 8192
+      "total_mb": 7820
+    },
+    "model": "Raspberry Pi 4 Model B Rev 1.4",
+    "raspberry_pi": {
+      "compute_module": false,
+      "model": "Model B",
+      "revision": "1.4",
+      "version": 4
     },
     "swap": {
-      "total_mb": 0
-    }
+      "total_mb": 199
+    },
+    "vendor": "Raspberry Pi"
   },
   "net": {
     "hostname": "clusterpi-worker2",
-    "fqdn": "clusterpi-worker2.sphinx-map.ts.net"
+    "fqdn": "clusterpi-worker2"
   },
   "tailscale": {
     "hostname": "clusterpi-worker2.sphinx-map.ts.net",
-    "ips": [
-      "100.64.0.1"
-    ],
     "tags": [
       "tag:homelab"
     ],
     "online": true,
     "backend_state": "Running",
-    "tailnet": "sphinx-map.ts.net"
+    "tailnet": "cedi.github"
   },
-  "script": {
-    "rpi": {
-      "hat_product": "Raspberry Pi PoE+ HAT",
-      "hat_vendor": "Raspberry Pi Ltd",
-      "nvme": false
-    }
-  },
+  "script": {},
   "cloud": null
 }

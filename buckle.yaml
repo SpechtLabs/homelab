@@ -17,7 +17,7 @@ fleet:
     k3s-agent:  'host.id like "clusterpi-worker*"'
     ceph:       'host.id like "storagepi-ceph*"'
     blades:     'host.id like "blade-pi*"'
-    ptp-grandmaster: 'host.id == "timepi-gps"'
+    ptp-grandmaster: 'host.id == "timepi"'
     o11y-collector:  'host.facts.tailscale.tags contains "tag:o11y-collector"'
     spechtlabs:      'host.id in ["hole", "meet"]'
     tsidp:           'host.id == "nuc"'

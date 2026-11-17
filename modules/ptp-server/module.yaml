@@ -1,64 +1,75 @@
 name: ptp-server
-description: GPS-disciplined time server. gpsd + PPS feed chrony (NTP); ptp4l and phc2sys serve PTP on the NIC.
+description: GPS-disciplined time server. gpsd + PPS feed ntpsec (NTP); ptp4l and phc2sys serve PTP once ptp_enabled.
 when: 'host.groups contains "ptp-grandmaster"'
 needs: [pi-firmware]       # the PPS overlay and UART come from config.txt
 tags: [time]
 vars:
   ptp_gps_device: /dev/ttyAMA0
   ptp_pps_device: /dev/pps0
-  ptp_gpsd_options: "-n"
+  ptp_gpsd_options: "-n -s 115200"
   ptp_gpsd_usbauto: "false"
+  ntp_gps_offset: "0.000"       # fudge time1 for the GPS SHM refclock, in seconds
+  # PTP is broken on timepi as of 2026-11-17: ptp4l faults with "driver rejected
+  # most general HWTSTAMP filter" and phc2sys exits on its arguments. Off until
+  # fixed, so Buckle neither manages nor health-checks it.
+  ptp_enabled: false
   ptp_interface: eth0
 tasks:
-  # One NTP daemon. The Ansible role installed both chrony and ntpsec, which
-  # both want UDP/123 and the system clock; chrony is the one wired to gpsd.
-  - apt.package: { names: [ntp, ntpsec], state: absent }
-    id: no-ntpsec
-    removal: leave
+  # ntpsec is what runs (chrony conflicts with it and was never installed).
   - apt.package:
-      names: [pps-tools, gpsd, gpsd-clients, chrony, linuxptp]
+      names: [ntpsec, pps-tools, gpsd, gpsd-clients]
 
   - file.template: { src: gpsd.j2, dest: /etc/default/gpsd, mode: "0644" }
     notify: [restart-gpsd]
-  - file.copy: { src: chrony.conf, dest: /etc/chrony/chrony.conf, mode: "0644" }
-    notify: [restart-chrony]
+  - file.template: { src: ntp.conf.j2, dest: /etc/ntpsec/ntp.conf, mode: "0644" }
+    notify: [restart-ntpsec]
+
+  - systemd.unit: { name: gpsd, enabled: true, active: true }
+  - systemd.unit: { name: ntpsec, enabled: true, active: true }
+
+  # ── PTP (opt-in) ──
+  - apt.package: { name: linuxptp }
+    when: 'vars.ptp_enabled == true'
   - file.copy: { src: ptp4l.conf, dest: /etc/linuxptp/ptp4l.conf, mode: "0644" }
+    when: 'vars.ptp_enabled == true'
     notify: [restart-ptp4l]
   - file.template:
       src: phc2sys.service.j2
       dest: '/etc/systemd/system/phc2sys-{{ vars.ptp_interface }}.service'
       mode: "0644"
     id: phc2sys-unit
+    when: 'vars.ptp_enabled == true'
     notify: [restart-phc2sys]
-  # The role wrote the unit under /lib, where package files belong.
+  # The Ansible role wrote this unit under /lib, where package files belong.
   - file.absent: { path: '/lib/systemd/system/phc2sys-{{ vars.ptp_interface }}.service' }
     id: phc2sys-legacy-unit
+    when: 'vars.ptp_enabled == true'
     removal: leave
-
-  - systemd.unit: { name: gpsd, enabled: true, active: true }
-  - systemd.unit: { name: chrony, enabled: true, active: true }
   - systemd.unit: { name: 'ptp4l@{{ vars.ptp_interface }}', enabled: true, active: true }
     id: ptp4l-service
+    when: 'vars.ptp_enabled == true'
   - systemd.unit: { name: 'phc2sys-{{ vars.ptp_interface }}', enabled: true, active: true, daemon_reload: true }
     id: phc2sys-service
+    when: 'vars.ptp_enabled == true'
 
 handlers:
   restart-gpsd:    { systemd.restart: { name: gpsd } }
-  restart-chrony:  { systemd.restart: { name: chrony } }
+  restart-ntpsec:  { systemd.restart: { name: ntpsec } }
   restart-ptp4l:   { systemd.restart: { name: 'ptp4l@{{ vars.ptp_interface }}' } }
   restart-phc2sys: { systemd.restart: { name: 'phc2sys-{{ vars.ptp_interface }}' } }
 
 health:
   - name: gpsd
     systemd: { unit: gpsd, state: active }
-  - name: chrony
-    systemd: { unit: chrony, state: active, min_uptime: 30s }
-  - name: ptp4l
-    systemd: { unit: 'ptp4l@{{ vars.ptp_interface }}', state: active }
-  - name: phc2sys
-    systemd: { unit: 'phc2sys-{{ vars.ptp_interface }}', state: active }
-  - name: pps-locked
+  - name: ntpsec
+    systemd: { unit: ntpsec, state: active, min_uptime: 30s }
+  - name: ntp-synced
     command:
-      run: [chronyc, -n, sources]
-      expect: { stdout_matches: '#\*\s+PPS' }
-    required: false       # takes a few minutes after a restart to select PPS
+      run: [ntpq, -pn]
+      expect: { stdout_matches: '(?m)^\*' }      # some source is selected
+  # Informational until the GPS feed works again (SHM reach 0, PPS a falseticker).
+  - name: pps-selected
+    command:
+      run: [ntpq, -pn]
+      expect: { stdout_matches: '(?m)^[*o]PPS' }
+    required: false

@@ -9,3 +9,9 @@ alloy_version: 1.22.0
 rpi_exporter_version: 1.0.11
 # renovate: datasource=github-releases depName=tailscale/tsidp extractVersion=^v(?<version>.*)$
 tsidp_version: 0.0.20
+
+# A commit, not a branch: following main would make every dotfiles push look
+# like drift, auto-corrected on every host within 15 minutes, outside any
+# rollout. Renovate proposes newer commits as PRs instead.
+# renovate: datasource=git-refs depName=https://github.com/cedi/dotfiles branch=main
+dotfiles_ref: 574cf647c587564114fe518eb119d6130dbbdd97

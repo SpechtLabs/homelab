@@ -80,10 +80,10 @@ enrol() {  # enrol HOST SSH_USER
 }
 for h in nuc hole meet; do enrol "$h" root; done
 enrol timepi cedi
-for h in jumphost timepi-gps clusterpi-leader \
+for h in jumphost clusterpi-leader \
          clusterpi-worker1 clusterpi-worker2 clusterpi-worker3 clusterpi-worker4 \
          storagepi-ceph1 storagepi-ceph2 storagepi-ceph3 \
-         blade-pi1 blade-pi2 blade-pi3 blade-pi4 lora lyv; do
+         blade-pi1 blade-pi2 blade-pi3 blade-pi4; do
   enrol "$h" pi
 done
 ```

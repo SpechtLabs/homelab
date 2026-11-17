@@ -16,6 +16,16 @@
     },
     {
       "customType": "regex",
+      "description": "Git commits pinned in Buckle vars (follows a branch, updates the digest)",
+      "managerFilePatterns": [
+        "/^vars/.+\\.yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>git-refs) depName=(?<depName>\\S+) branch=(?<currentValue>\\S+)\\n\\w+: (?<currentDigest>[0-9a-f]{40})"
+      ]
+    },
+    {
+      "customType": "regex",
       "description": "Buckle agent version the server rolls out",
       "managerFilePatterns": [
         "/^bootstrap/server\\.yaml$/"

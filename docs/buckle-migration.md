@@ -38,10 +38,15 @@ Checked against the real CLI (`buckle validate` with one facts file per host, pl
   standalone node_exporter) with `removal: leave`, so they never come back.
 - **`only_if` isn't an idempotency guard** for `command.run`; `unless` is. The node_exporter
   retirement uses `unless`.
-- **Defaults taken for the open questions**: `timepi` and `timepi-gps` are two devices (firmware
-  wiring on the first, PTP on the second); Alloy runs on every host; the NAS stays out of Buckle
-  (`nas/`); dotfiles keep installing their own packages; chrony replaces ntpsec on `timepi-gps`;
-  `hole` no longer scrapes a `jitsi_exporter` on :8080 (copy-paste from `meet`).
+- **Defaults taken for the open questions**: Alloy runs on every host; the NAS stays out of
+  Buckle (`nas/`); dotfiles keep installing their own packages; `hole` no longer scrapes a
+  `jitsi_exporter` on :8080 (copy-paste from `meet`).
+- **Answered once hosts enrolled (2026-11-17)**: `timepi-gps`, `lora` and `lyv` are dead, and
+  `timepi` (a Pi 5) is the time server. It runs **ntpsec**, not chrony, with a hand-edited
+  `ntp.conf` and gpsd options that `ptp-server` now reproduces. PTP is broken there (`ptp4l`:
+  "driver rejected most general HWTSTAMP filter"; `phc2sys` exits on its arguments), so it sits
+  behind `ptp_enabled: false`. Login shells are unmanaged by default (the Pis use fish, the NUC
+  zsh), and PCIe Gen 3 on a Pi 5 depends on an NVMe fact from `pi-facts`.
 
 ---
 
@@ -385,7 +390,7 @@ health:
 - **`k3s-reset.yml` is not ported.** You could attach `remove: [k3s-uninstall.sh]` to a `command.run`, but Buckle runs `remove` whenever the *rendered command changes*, so a refactor could wipe the cluster. Keep reset as a manual runbook.
 - **k3s v1.31.1 is past end of life.** Migrate on the *same* version first, then upgrade one minor at a time through the phases. Don't combine the two.
 
-### ptp-server (timepi-gps)
+### ptp-server (timepi; see the top of this doc for what changed)
 - **Existing bug:** the role installs and starts **both chrony and ntpsec**, and both bind UDP/123 and try to discipline the clock. Pick chrony (its `refclock SOCK` setup already consumes gpsd and PPS) and drop ntpsec and its 2 KB `ntp.conf`.
 - Today every run *restarts* chrony, gpsd and ntp unconditionally. Handlers restart them only when config changes.
 - `phc2sys-eth0.service` moves from `/lib/systemd/system` to `/etc/systemd/system`. Add health checks: `systemd` for `gpsd`, `chrony`, `ptp4l@eth0`, `phc2sys-eth0`, plus `command: chronyc tracking`.
@@ -502,7 +507,5 @@ Each phase can be undone without touching the next.
 | Buckle is a young project (2.x) | Keep the Ansible repo archived until it has been stable for a while |
 
 Still open (defaults taken, see the top of this doc):
-1. `lyn`, `lyv`, `lora`: groups are derived from facts now, so any of them that enrols gets the
-   Pi modules, including NUT and `pi-firmware`. Under Ansible, `lora` and `lyv` were in the
-   Pi 4/5 groups but not in `raspberry_pis`, so they never got those roles.
-2. Everything else from the original list has a default; override any of them in the repo.
+1. Nothing blocking. `lyn`, `lyv`, `lora` and `timepi-gps` are gone; `storagepi-ceph3` was
+   offline at enrolment and still needs `enrol storagepi-ceph3 pi`.

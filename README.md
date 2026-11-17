@@ -37,7 +37,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `nut-client` | Pis | upsmon + upssched; early or late shutdown |
 | `k3s-server` | clusterpi-leader | k3s control plane |
 | `k3s-agent` | clusterpi-worker* | k3s workers; *action*: reboot |
-| `ptp-server` | timepi-gps | gpsd + chrony + ptp4l/phc2sys |
+| `ptp-server` | timepi | gpsd + PPS into ntpsec; ptp4l/phc2sys behind `ptp_enabled` |
 | `tsidp` | nuc | tailnet OIDC provider |
 
 ## Day to day

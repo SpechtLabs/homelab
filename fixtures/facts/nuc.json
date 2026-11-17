@@ -27,6 +27,7 @@
   "tailscale": {
     "hostname": "nuc.sphinx-map.ts.net",
     "tags": [
+      "tag:buckle-server",
       "tag:core-infra",
       "tag:o11y-collector",
       "tag:o11y-endpoint"
