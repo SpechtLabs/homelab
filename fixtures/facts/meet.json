@@ -1,41 +1,38 @@
 {
   "os": {
+    "codename": "noble",
     "family": "debian",
     "id": "ubuntu",
-    "codename": "noble",
-    "version": "24.04",
-    "pretty_name": "",
-    "kernel": "6.1.0-27-amd64"
+    "kernel": "6.8.0-51-generic",
+    "pretty_name": "Ubuntu 24.04.2 LTS",
+    "version": "24.04"
   },
   "hardware": {
     "arch": "x86_64",
-    "model": null,
-    "vendor": null,
-    "raspberry_pi": null,
-    "cpus": 4,
+    "cpus": 3,
     "mem": {
-      "total_mb": 16384
+      "total_mb": 3819
     },
+    "model": "vServer",
+    "raspberry_pi": null,
     "swap": {
       "total_mb": 0
-    }
+    },
+    "vendor": "Hetzner"
   },
   "net": {
     "hostname": "meet",
-    "fqdn": "meet.sphinx-map.ts.net"
+    "fqdn": "meet.realschule-rottweil.de"
   },
   "tailscale": {
     "hostname": "meet.sphinx-map.ts.net",
-    "ips": [
-      "100.64.0.2"
-    ],
     "tags": [
       "tag:core-services",
       "tag:o11y-agent"
     ],
     "online": true,
     "backend_state": "Running",
-    "tailnet": "sphinx-map.ts.net"
+    "tailnet": "cedi.github"
   },
   "script": {},
   "cloud": null

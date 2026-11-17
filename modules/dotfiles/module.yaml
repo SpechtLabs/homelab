@@ -11,7 +11,10 @@ vars:
   # Set e.g. `login_shell: /usr/bin/fish` in a vars overlay to manage it.
   login_shell: ""
 tasks:
-  - apt.package: { name: fish }
+  # Only for a managed login shell; hosts on zsh (nuc, meet) don't need fish.
+  - apt.package: { name: '{{ vars.login_shell | basename }}' }
+    id: login-shell-package
+    when: 'vars.login_shell != ""'
 
   - git.repository:
       repo: '{{ vars.dotfiles_repo }}'
