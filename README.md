@@ -19,13 +19,14 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `fixtures/facts/` | One facts file per host; CI dry-plans every host against them |
 | `bootstrap/` | The server's own config, installed by hand on the NUC |
 | `nas/` | Compose projects for the Synology, deployed through DSM (not Buckle) |
+| `tailscale/policy.hujson` | The tailnet policy; tested on PRs and applied on `main` by `.github/workflows/tailscale.yaml` |
 
 ## Modules
 
 | Module | Hosts | Does |
 |---|---|---|
 | `base` | all | hostname, locale, bootstrap packages; *actions*: upgrade packages, reboot |
-| `dotfiles` | all | cedi/dotfiles for the admin user, fish as login shell |
+| `dotfiles` | all | cedi/dotfiles for the admin user; login shell only if `login_shell` is set |
 | `tailscale` | all | keeps tailscaled current; `--ssh`, exit node on `hole` |
 | `alloy` | all | logs and metrics to Loki/Mimir (homelab or spechtlabs); OTLP receiver on the collector |
 | `pi-facts` | Pis | custom fact `host.facts.script.rpi` from the HAT EEPROM |

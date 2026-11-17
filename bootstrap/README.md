@@ -4,23 +4,14 @@ Everything here happens once, by hand. After that, a merged commit is a rollout.
 
 ## 1. Tailnet policy
 
-Add a tag for the server and let the existing tags reach it:
+The policy lives in `tailscale/policy.hujson` and already has the Buckle grant (agents with
+`tag:homelab`, `tag:core-infra` or `tag:core-services` may reach `tag:buckle-server:7700`).
+`.github/workflows/tailscale.yaml` tests it on PRs and applies it on `main`, using the repo
+secrets `TS_OAUTH_ID`, `TS_OAUTH_SECRET` and `TS_TAILNET`.
 
-```jsonc
-"tagOwners": {
-  "tag:buckle-server": ["autogroup:admin"]
-},
-"grants": [
-  // agents dial out to the server's gRPC port
-  { "src": ["tag:homelab", "tag:core-infra", "tag:core-services"],
-    "dst": ["tag:buckle-server"], "ip": ["tcp:7700"] },
-  // you, for the UI and API
-  { "src": ["autogroup:admin"], "dst": ["tag:buckle-server"], "ip": ["tcp:7701"] }
-]
-```
-
-Then give the NUC `tag:buckle-server` in the admin console (Machines → nuc → Edit ACL tags),
-next to the tags it already has.
+The grant only matches once the NUC carries the tag: admin console → Machines → nuc → Edit ACL
+tags → add `tag:buckle-server` next to its existing tags. Without it, the NUC's tailscaled logs
+`Drop: TCP{… > 100.122.149.90:7700} no rules matched` for every agent.
 
 Create an OAuth client (Settings → OAuth clients) with **Auth Keys: write**, limited to
 `tag:homelab`, `tag:core-infra` and `tag:core-services`. The server uses it to mint single-use
@@ -102,20 +93,20 @@ the right tags and the agent in one paste.
 
 ## 5. Replace the placeholder facts
 
-`fixtures/facts/*.json` were written by hand from the old inventory. Swap each for the real thing
-so CI plans against what the hosts actually report:
+`fixtures/facts/*.json` started as hand-written placeholders. Once a host is enrolled, the
+server has its facts; pull them from the API (no SSH needed) so CI plans against reality:
 
 ```sh
 # Keep only what selectors and templates read: the repo is public, and raw
 # facts include MAC addresses, public IPv6, local users and every systemd unit.
 trim='{os, hardware: (.hardware | del(.disks, .disk)), net: {hostname: .net.hostname, fqdn: .net.fqdn}, tailscale: (.tailscale | if . then {hostname, tags, online, backend_state, tailnet} else null end), script, cloud}'
-for h in $(ls fixtures/facts | sed 's/\.json$//'); do
-  tailscale ssh "$h" -- sudo buckle facts | jq "$trim" > "fixtures/facts/$h.json"   # user@ as above
+for h in $(curl -s http://nuc.sphinx-map.ts.net:7701/api/v1/fleet | jq -r '.hosts[].id'); do
+  curl -s "http://nuc.sphinx-map.ts.net:7701/api/v1/hosts/$h/facts" | jq "$trim" > "fixtures/facts/$h.json"
 done
 ```
 
-Check one Pi before anything else: `jq .os fixtures/facts/jumphost.json` must say
-`"family": "debian"`. Every apt task depends on it.
+`host.facts.script.rpi` (HAT, NVMe) only appears after `pi-facts` has applied once; re-capture
+after the first rollout.
 
 ## 6. First rollouts
 
