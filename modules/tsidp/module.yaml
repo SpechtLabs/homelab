@@ -9,19 +9,30 @@ vars:
   tsidp_log: info
   tsidp_use_funnel: true
   tsidp_enable_sts: true
+  tsidp_arch: '{{ "arm64" if host.facts.hardware.arch == "aarch64" else "amd64" }}'
   tsidp_advertise_tags: "tag:core-infra,tag:core-services,tag:tsidp"
 tasks:
-  - github.release:
-      repo: tailscale/tsidp
-      version: '{{ vars.tsidp_version }}'
-      asset: 'tsidp_{version}_linux_{arch}.tar.gz'
-      checksum_asset: 'tsidp_{version}_checksums.txt'
-      extract: tsidp
-      dest: /usr/local/bin/tsidp
-      mode: "0755"
-      probe: [/usr/local/bin/tsidp, -version]
-      probe_regex: '(\d+\.\d+\.\d+)'
+  # Release assets, not the GitHub API: the API allows 60 calls an hour per IP,
+  # shared by every host at home, and github.release spends one per plan until
+  # the pinned version is installed. Each version unpacks into its own
+  # directory; a bump downloads, links and restarts, and removes the old one.
+  - file.directory: { path: /var/cache/buckle-releases, mode: "0755" }
+  - file.download:
+      url: 'https://github.com/tailscale/tsidp/releases/download/v{{ vars.tsidp_version }}/tsidp_{{ vars.tsidp_version }}_linux_{{ vars.tsidp_arch }}.tar.gz'
+      dest: '/var/cache/buckle-releases/tsidp_{{ vars.tsidp_version }}.tar.gz'
+      checksum: 'https://github.com/tailscale/tsidp/releases/download/v{{ vars.tsidp_version }}/tsidp_{{ vars.tsidp_version }}_checksums.txt'
+      mode: "0644"
     tags: [network]
+  - archive.extract:
+      src: '/var/cache/buckle-releases/tsidp_{{ vars.tsidp_version }}.tar.gz'
+      dest: '/opt/tsidp/{{ vars.tsidp_version }}'
+      include: [tsidp]
+      creates: tsidp
+  - file.symlink:
+      path: /usr/local/bin/tsidp
+      target: '/opt/tsidp/{{ vars.tsidp_version }}/tsidp'
+      force: true
+    id: tsidp-binary
     notify: [restart]
 
   # Already holds the node key from the Ansible days; never removed.
