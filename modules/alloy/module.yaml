@@ -1,0 +1,65 @@
+name: alloy
+description: Grafana Alloy on every host; scrapes its own exporters and ships to Loki, Mimir and Tempo.
+when: 'host.groups contains "debian"'
+tags: [o11y]
+tasks:
+  # grafana.grafana.alloy wrote a .list for the same URI with a different key path.
+  - file.absent: { path: /etc/apt/sources.list.d/grafana.list }
+    removal: leave
+  - file.absent: { path: /etc/apt/sources.list.d/apt_grafana_com.list }
+    removal: leave
+
+  - apt.repository:
+      name: grafana
+      uri: https://apt.grafana.com
+      suites: [stable]
+      components: [main]
+      signed_by: { url: https://apt.grafana.com/gpg.key }
+    tags: [network]
+  - apt.package: { name: alloy, version: '{{ vars.alloy_version }}*' }
+    notify: [restart]
+
+  # Root, for the journal and every log under /var/log.
+  - systemd.dropin:
+      unit: alloy.service
+      content: |
+        [Service]
+        User=root
+    notify: [restart]
+
+  - file.template:
+      src: alloy.env.j2
+      dest: /etc/default/alloy
+      mode: "0644"
+    notify: [restart]
+
+  - file.template:
+      src: config.alloy.j2
+      dest: /etc/alloy/config.alloy
+      mode: "0640"
+      validate: [alloy, fmt, '{path}']
+    notify: [reload]
+
+  - systemd.unit: { name: alloy, enabled: true, active: true }
+
+  # Alloy embeds node_exporter (prometheus.exporter.unix), so the standalone
+  # one geerlingguy.node_exporter installed goes. Series keep job="node_exporter"
+  # and instance="<host>:9100" (see config.alloy.j2), so dashboards don't notice.
+  - command.run:
+      run: >-
+        systemctl disable --now node_exporter.service &&
+        rm -f /etc/systemd/system/node_exporter.service /usr/local/bin/node_exporter &&
+        systemctl daemon-reload
+      unless: test ! -e /etc/systemd/system/node_exporter.service
+    id: retire-node-exporter
+    removal: leave
+
+handlers:
+  restart: { systemd.restart: { name: alloy } }
+  reload:  { systemd.reload: { name: alloy } }
+
+health:
+  - name: ready
+    http: { url: 'http://127.0.0.1:12345/-/ready' }
+  - name: unit
+    systemd: { unit: alloy, state: active, min_uptime: 30s }

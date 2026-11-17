@@ -1,0 +1,38 @@
+name: dotfiles
+description: cedi/dotfiles for the admin account, and fish as its login shell.
+when: 'host.groups contains "debian"'
+needs: [base]
+tags: [base, user]
+vars:
+  dotfiles_repo: https://github.com/cedi/dotfiles.git
+  dotfiles_ref: main
+  dotfiles_preset: server          # server, core or full
+  login_shell: /usr/bin/fish
+tasks:
+  - apt.package: { name: fish }
+
+  - git.repository:
+      repo: '{{ vars.dotfiles_repo }}'
+      ref: '{{ vars.dotfiles_ref }}'
+      path: '{{ vars.admin_home }}/.dotfiles'
+      owner: '{{ vars.admin_user }}'
+    id: dotfiles-checkout
+    tags: [network]
+    notify: [install]
+    removal: leave                  # never delete someone's home-directory checkout
+
+  - user.account:
+      name: '{{ vars.admin_user }}'
+      shell: '{{ vars.login_shell }}'
+    id: admin-login-shell
+    removal: leave                  # removing this task must not userdel the admin
+
+handlers:
+  # Runs only when the checkout moved, so drift passes never re-run it.
+  install:
+    command.run:
+      run: ['bash', 'install_linux.sh', '--yes', '--preset', '{{ vars.dotfiles_preset }}']
+      cwd: '{{ vars.admin_home }}/.dotfiles'
+      user: '{{ vars.admin_user }}'
+      env: { HOME: '{{ vars.admin_home }}' }
+      timeout: 15m

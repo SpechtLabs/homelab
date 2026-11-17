@@ -1,0 +1,12 @@
+name: pi-tools
+description: rpi-clone, for cloning the boot disk of a Pi 5 to NVMe.
+when: 'host.groups contains "pi5"'
+tags: [hardware]
+tasks:
+  - git.repository:
+      repo: https://github.com/geerlingguy/rpi-clone.git
+      path: /opt/rpi-clone
+      ref: master
+    tags: [network]
+  - file.symlink: { path: /usr/local/sbin/rpi-clone, target: /opt/rpi-clone/rpi-clone, force: true }
+  - file.symlink: { path: /usr/local/sbin/rpi-clone-setup, target: /opt/rpi-clone/rpi-clone-setup, force: true }

@@ -1,0 +1,59 @@
+name: k3s-server
+description: The k3s control plane (single server, SQLite/kine datastore).
+when: 'host.groups contains "k3s-server"'
+needs: [base]
+tags: [k3s]
+bake: 10m
+vars:
+  k3s_disable: [traefik]
+  k3s_disable_network_policy: true
+tasks:
+  - sysctl.param: { name: net.ipv4.ip_forward, value: 1 }
+  - sysctl.param: { name: net.ipv6.conf.all.forwarding, value: 1 }
+
+  # The same binary get.k3s.io installed; the probe sees the current version,
+  # so adopting an existing node is a no-op and a version bump is an upgrade.
+  - github.release:
+      repo: k3s-io/k3s
+      version: '{{ vars.k3s_version }}'
+      asset: 'k3s-{arch}'                 # aarch64 -> k3s-arm64; every k3s node is a Pi
+      checksum_asset: 'sha256sum-{arch}.txt'
+      dest: /usr/local/bin/k3s
+      mode: "0755"
+      probe: [/usr/local/bin/k3s, --version]
+      probe_regex: 'k3s version (v\S+)'
+    tags: [network]
+    notify: [restart]
+
+  # Flags live in k3s's own config file instead of ExecStart.
+  - file.directory: { path: /etc/rancher/k3s, mode: "0755" }
+  - file.template:
+      src: config.yaml.j2
+      dest: /etc/rancher/k3s/config.yaml
+      mode: "0600"
+    notify: [restart]
+  - file.copy: { src: k3s.service, dest: /etc/systemd/system/k3s.service, mode: "0644" }
+    notify: [restart]
+  - systemd.unit: { name: k3s, enabled: true, active: true, daemon_reload: true }
+
+  # Leftovers from k3s-ansible: the token moved into config.yaml, upgrades no
+  # longer go through the install script.
+  - file.absent: { path: /etc/systemd/system/k3s.service.env }
+    removal: leave
+  - file.absent: { path: /usr/local/bin/k3s-install.sh }
+    removal: leave
+
+handlers:
+  restart: { systemd.restart: { name: k3s } }
+
+health:
+  - name: unit
+    systemd: { unit: k3s, state: active, min_uptime: 60s }
+  - name: apiserver
+    command:
+      run: [/usr/local/bin/k3s, kubectl, get, --raw, /readyz]
+      expect: { exit: 0, stdout_matches: '^ok' }
+  - name: nodes-ready
+    command:
+      run: "/usr/local/bin/k3s kubectl get nodes --no-headers | awk '$2 != \"Ready\" {bad=1} END {exit bad}'"
+    required: false     # one agent rebooting shouldn't fail the server's own rollout

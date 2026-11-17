@@ -1,0 +1,16 @@
+#!/bin/bash
+# {{ buckle_managed }}
+case $1 in
+    onbatt_shutdown)
+        logger "UPS on battery for {{ vars.nut_onbatt_grace }}s - shutting down system"
+        /usr/bin/systemctl poweroff -i
+        ;;
+    immediate_shutdown)
+        logger "UPS critical (FSD) - immediate shutdown"
+        /usr/bin/systemctl poweroff -i
+        ;;
+    delayed_shutdown)
+        logger "UPS critical (FSD) - delayed shutdown"
+        /usr/bin/systemctl poweroff -i
+        ;;
+esac

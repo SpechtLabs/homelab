@@ -1,0 +1,7 @@
+# {{ buckle_managed }}
+maxretry = 3
+
+[{{ vars.nut_ups_name }}]
+    driver = "dummy-ups"
+    port = "{{ vars.nut_ups_name }}@{{ vars.nut_upstream_host }}"
+    desc = "Proxy UPS"

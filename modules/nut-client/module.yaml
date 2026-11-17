@@ -1,0 +1,35 @@
+name: nut-client
+description: upsmon on every Pi, watching the NUC's UPS proxy and shutting down early or late.
+when: 'host.groups contains "nut-client"'
+tags: [power]
+vars:
+  nut_monitor_user: monuser
+  # early: cluster and storage Pis power off after 60s on battery.
+  # late:  the jumphost and time server hold on until the UPS calls FSD.
+  nut_shutdown_affinity: early
+  nut_onbatt_grace: 60
+tasks:
+  - apt.package: { name: nut-client }
+
+  # Whole files: geerlingguy.nut_client and nut_shutdown_behavior used to
+  # edit upsmon.conf line by line, and could undo each other.
+  - file.template: { src: nut.conf.j2, dest: /etc/nut/nut.conf, mode: "0640", owner: root, group: nut }
+    notify: [restart]
+  - file.template: { src: upsmon.conf.j2, dest: /etc/nut/upsmon.conf, mode: "0640", owner: root, group: nut }
+    notify: [restart]
+  - file.template: { src: upssched.conf.j2, dest: /etc/nut/upssched.conf, mode: "0640", owner: root, group: nut }
+    notify: [restart]
+  - file.template: { src: upssched-cmd.j2, dest: /etc/nut/upssched-cmd, mode: "0750", owner: root, group: nut }
+
+  - systemd.unit: { name: nut-monitor, enabled: true, active: true }
+
+handlers:
+  restart: { systemd.restart: { name: nut-monitor } }
+
+health:
+  - name: monitor
+    systemd: { unit: nut-monitor, state: active, min_uptime: 30s }
+  - name: ups-reachable
+    command:
+      run: ['upsc', '{{ vars.nut_ups_name }}@{{ vars.nut_server_host }}', 'ups.status']
+      expect: { exit: 0 }

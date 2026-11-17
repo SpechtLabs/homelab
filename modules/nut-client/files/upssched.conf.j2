@@ -1,0 +1,12 @@
+# {{ buckle_managed }}
+# Shutdown affinity: {{ vars.nut_shutdown_affinity }}
+CMDSCRIPT /etc/nut/upssched-cmd
+PIPEFN /var/run/nut/upssched.pipe
+LOCKFN /var/run/nut/upssched.lock
+{% if vars.nut_shutdown_affinity == "early" -%}
+AT ONBATT * START-TIMER onbatt_shutdown {{ vars.nut_onbatt_grace }}
+AT ONLINE * CANCEL-TIMER onbatt_shutdown
+AT FSD * EXECUTE immediate_shutdown
+{% else -%}
+AT FSD * EXECUTE delayed_shutdown
+{% endif -%}

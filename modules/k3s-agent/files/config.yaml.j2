@@ -1,0 +1,4 @@
+# {{ buckle_managed }}
+server: https://{{ vars.k3s_server }}:{{ vars.k3s_api_port }}
+token: "{{ secrets.K3S_TOKEN }}"
+data-dir: /var/lib/rancher/k3s

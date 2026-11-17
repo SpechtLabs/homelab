@@ -1,0 +1,9 @@
+o11y_external_labels:
+  hostname: meet.realschule-rottweil.de
+o11y_log_paths:
+  - /var/log/*.log
+  - /var/log/jitsi/*.log
+  - /var/log/prosody/*.log
+  - /var/log/prosody/*.err
+o11y_local_scrapes:
+  - { job: jitsi_exporter, port: 8080 }

@@ -1,0 +1,4 @@
+# Compute blades also run the blade exporter (fan/PoE telemetry).
+o11y_local_scrapes:
+  - { job: rpi_exporter, port: 9243 }
+  - { job: blade_exporter, port: 9666 }

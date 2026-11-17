@@ -1,0 +1,42 @@
+name: rpi-exporter
+description: cedi/rpi_exporter (SoC temperature, clocks, throttling) on :9243.
+when: 'host.groups contains "pi"'
+tags: [o11y]
+vars:
+  rpi_exporter_port: 9243
+  rpi_exporter_vcgencmd: /usr/bin/vcgencmd
+tasks:
+  - github.release:
+      repo: cedi/rpi_exporter
+      version: '{{ vars.rpi_exporter_version }}'
+      asset: 'rpi_exporter_{version}_linux_{arch}.tar.gz'
+      checksum_asset: checksums.txt
+      extract: rpi_exporter
+      dest: /usr/local/bin/rpi_exporter
+      mode: "0755"
+      probe: [/usr/local/bin/rpi_exporter, --version]
+      probe_regex: 'version (\S+)'
+    tags: [network]
+    notify: [restart]
+
+  - user.account:
+      name: rpi_exporter
+      shell: /sbin/nologin
+      groups: [video]                # vcgencmd needs /dev/vchiq
+
+  - file.template:
+      src: rpi_exporter.service.j2
+      dest: /etc/systemd/system/rpi_exporter.service
+      mode: "0644"
+    notify: [restart]
+
+  - systemd.unit: { name: rpi_exporter, enabled: true, active: true, daemon_reload: true }
+
+handlers:
+  restart: { systemd.restart: { name: rpi_exporter } }
+
+health:
+  - name: metrics
+    http:
+      url: 'http://127.0.0.1:{{ vars.rpi_exporter_port }}/'
+      expect: { body_contains: Metrics }

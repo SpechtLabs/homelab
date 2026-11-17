@@ -1,0 +1,19 @@
+# {{ buckle_managed }}
+MONITOR {{ vars.nut_ups_name }}@{{ vars.nut_server_host }} 1 {{ vars.nut_monitor_user }} {{ secrets.NUT_MONITOR_PASSWORD }} secondary
+MINSUPPLIES 1
+SHUTDOWNCMD "/sbin/shutdown -h +0"
+RUN_AS_USER root
+
+POLLFREQ 5
+POLLFREQALERT 5
+HOSTSYNC 15
+DEADTIME 30
+POWERDOWNFLAG /etc/nut/killpower
+RBWARNTIME 43200
+NOCOMMWARNTIME 300
+FINALDELAY {{ 5 if vars.nut_shutdown_affinity == "early" else 180 }}
+
+NOTIFYCMD /sbin/upssched
+NOTIFYFLAG ONLINE SYSLOG+EXEC
+NOTIFYFLAG ONBATT SYSLOG+EXEC
+NOTIFYFLAG FSD SYSLOG+EXEC

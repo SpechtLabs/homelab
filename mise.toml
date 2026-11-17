@@ -1,0 +1,6 @@
+[tools]
+"github:SierraSoftworks/buckle" = "2.13.0"
+
+[tasks.validate]
+description = "Validate the config and dry-plan every host in fixtures/facts"
+run = "buckle validate --config . $(printf -- '--facts %s ' fixtures/facts/*.json)"

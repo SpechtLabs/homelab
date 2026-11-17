@@ -1,0 +1,51 @@
+name: tsidp
+description: tsidp, the tailnet's OIDC identity provider (idp.<tailnet>), exposed via Funnel.
+when: 'host.groups contains "tsidp"'
+tags: [identity]
+vars:
+  tsidp_state_dir: /data
+  tsidp_hostname: idp
+  tsidp_port: 443
+  tsidp_log: info
+  tsidp_use_funnel: true
+  tsidp_enable_sts: true
+  tsidp_advertise_tags: "tag:core-infra,tag:core-services,tag:tsidp"
+tasks:
+  - github.release:
+      repo: tailscale/tsidp
+      version: '{{ vars.tsidp_version }}'
+      asset: 'tsidp_{version}_linux_{arch}.tar.gz'
+      checksum_asset: 'tsidp_{version}_checksums.txt'
+      extract: tsidp
+      dest: /usr/local/bin/tsidp
+      mode: "0755"
+      probe: [/usr/local/bin/tsidp, -version]
+      probe_regex: '(\d+\.\d+\.\d+)'
+    tags: [network]
+    notify: [restart]
+
+  # Already holds the node key from the Ansible days; never removed.
+  - file.directory: { path: '{{ vars.tsidp_state_dir }}', mode: "0700" }
+    id: tsidp-state
+    removal: leave
+
+  - file.template: { src: tsidp.env.j2, dest: /etc/default/tsidp, mode: "0600" }
+    notify: [restart]
+  - file.template: { src: tsidp.service.j2, dest: /etc/systemd/system/tsidp.service, mode: "0644" }
+    notify: [restart]
+  - systemd.unit: { name: tsidp, enabled: true, active: true, daemon_reload: true }
+
+  # `go install` put the old binary here; Go itself can go too, by hand.
+  - file.absent: { path: /root/go/bin/tsidp }
+    removal: leave
+
+handlers:
+  restart: { systemd.restart: { name: tsidp } }
+
+health:
+  - name: unit
+    systemd: { unit: tsidp, state: active, min_uptime: 30s }
+  - name: discovery
+    http:
+      url: 'https://{{ vars.tsidp_hostname }}.{{ vars.tailnet }}/.well-known/openid-configuration'
+      expect: { status: 200, body_contains: issuer }

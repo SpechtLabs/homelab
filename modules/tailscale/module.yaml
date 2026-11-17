@@ -1,0 +1,48 @@
+name: tailscale
+description: Keeps tailscaled installed, current and running, and its prefs (SSH, exit node) set.
+when: 'host.groups contains "debian"'
+tags: [network]
+vars:
+  tailscale_ssh: true
+  tailscale_exit_node: false
+# Joining and tags happen once, at enrolment (Buckle's join command or the
+# installer's --tailscale-tags). Tags are identity, so this module never touches them.
+facts:
+  provides: [tailscale]
+tasks:
+  # artis3n.tailscale wrote a one-line .list for the same URI; apt refuses two
+  # sources with different keys, so drop it before Buckle writes its .sources.
+  - file.absent: { path: /etc/apt/sources.list.d/tailscale.list }
+    removal: leave
+
+  - apt.repository:
+      name: tailscale
+      uri: 'https://pkgs.tailscale.com/stable/{{ host.facts.os.id }}'
+      suites: ['{{ host.facts.os.codename }}']
+      components: [main]
+      signed_by:
+        keyring_url: 'https://pkgs.tailscale.com/stable/{{ host.facts.os.id }}/{{ host.facts.os.codename }}.noarmor.gpg'
+    tags: [network]
+  - apt.package: { name: tailscale, state: latest }
+  - systemd.unit: { name: tailscaled, enabled: true, active: true }
+
+  # `tailscale set` changes prefs without re-authenticating, unlike `tailscale up`.
+  - command.run:
+      run: [tailscale, set, --ssh]
+      unless: "tailscale debug prefs | grep -Eq '\"RunSSH\": *true'"
+    id: tailscale-ssh
+    when: 'vars.tailscale_ssh == true'
+    removal: leave
+
+  - command.run:
+      run: [tailscale, set, --advertise-exit-node]
+      unless: "tailscale debug prefs | grep -q '0.0.0.0/0'"
+      remove: [tailscale, set, --advertise-exit-node=false]
+    id: tailscale-exit-node
+    when: 'vars.tailscale_exit_node == true'
+
+health:
+  - name: connected
+    command:
+      run: [tailscale, ip, '-4']
+      expect: { exit: 0 }

@@ -1,0 +1,24 @@
+# Every host. Module defaults live in each module.yaml; this file holds what
+# several modules share.
+tailnet: sphinx-map.ts.net
+
+# The account people log in as. Pis use `pi`; VPS hosts and the NUC use root.
+admin_user: pi
+admin_home: '{{ "/root" if vars.admin_user == "root" else "/home/" ~ vars.admin_user }}'
+
+# o11y: homelab stack by default; spechtlabs hosts override the endpoints.
+o11y_loki_url: http://homelab-loki.k8s.specht-labs.de/loki/api/v1/push
+o11y_mimir_url: http://homelab-mimir.k8s.specht-labs.de/api/v1/push
+o11y_tempo_url: http://homelab-tempo.k8s.specht-labs.de
+o11y_log_paths: ["/var/log/*.log"]
+o11y_external_labels: {}
+# Exporters on this host, scraped over localhost: {job, port[, path]}
+o11y_local_scrapes: []
+# Collector only: other machines' exporters: {name, job, targets[, path, params]}
+o11y_remote_scrapes: []
+o11y_otlp_receiver: false
+alloy_custom_args: ""
+
+# NUT
+nut_server_host: 'nuc.{{ vars.tailnet }}'
+nut_ups_name: ups

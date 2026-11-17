@@ -1,0 +1,10 @@
+# {{ buckle_managed }}
+token: "{{ secrets.K3S_TOKEN }}"
+data-dir: /var/lib/rancher/k3s
+{%- if vars.k3s_disable %}
+disable:
+{%- for component in vars.k3s_disable %}
+  - {{ component }}
+{%- endfor %}
+{%- endif %}
+disable-network-policy: {{ vars.k3s_disable_network_policy | lower }}

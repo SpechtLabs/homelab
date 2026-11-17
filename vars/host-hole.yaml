@@ -1,0 +1,6 @@
+tailscale_exit_node: true
+o11y_log_paths:
+  - /var/log/*.log
+  - /var/log/letsencrypt/*.log
+  - /var/log/*.err
+  - /var/log/*.out

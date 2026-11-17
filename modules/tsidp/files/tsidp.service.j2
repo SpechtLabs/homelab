@@ -1,0 +1,22 @@
+# {{ buckle_managed }}
+[Unit]
+Description=Tailscale (OIDC) IDP
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=root
+EnvironmentFile=/etc/default/tsidp
+ExecStart=/usr/local/bin/tsidp \
+  -dir {{ vars.tsidp_state_dir }} \
+  -hostname {{ vars.tsidp_hostname }} \
+  -port {{ vars.tsidp_port }} \
+  -log {{ vars.tsidp_log }}{% if vars.tsidp_use_funnel %} \
+  -funnel{% endif %}{% if vars.tsidp_enable_sts %} \
+  -enable-sts{% endif %}{% if vars.tsidp_advertise_tags %} \
+  -advertise-tags {{ vars.tsidp_advertise_tags }}{% endif %}
+Restart=on-failure
+TimeoutStopSec=20s
+
+[Install]
+WantedBy=multi-user.target

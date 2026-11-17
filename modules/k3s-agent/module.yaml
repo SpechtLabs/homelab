@@ -1,0 +1,53 @@
+name: k3s-agent
+description: k3s worker nodes, joined to the server over its MagicDNS name.
+when: 'host.groups contains "k3s-agent"'
+needs: [base]
+tags: [k3s]
+bake: 5m
+vars:
+  k3s_server: clusterpi-leader
+  k3s_api_port: 6443
+tasks:
+  - sysctl.param: { name: net.ipv4.ip_forward, value: 1 }
+  - sysctl.param: { name: net.ipv6.conf.all.forwarding, value: 1 }
+
+  - github.release:
+      repo: k3s-io/k3s
+      version: '{{ vars.k3s_version }}'
+      asset: 'k3s-{arch}'                 # aarch64 -> k3s-arm64; every k3s node is a Pi
+      checksum_asset: 'sha256sum-{arch}.txt'
+      dest: /usr/local/bin/k3s
+      mode: "0755"
+      probe: [/usr/local/bin/k3s, --version]
+      probe_regex: 'k3s version (v\S+)'
+    tags: [network]
+    notify: [restart]
+
+  - file.directory: { path: /etc/rancher/k3s, mode: "0755" }
+  - file.template:
+      src: config.yaml.j2
+      dest: /etc/rancher/k3s/config.yaml
+      mode: "0600"
+    notify: [restart]
+  - file.copy: { src: k3s-agent.service, dest: /etc/systemd/system/k3s-agent.service, mode: "0644" }
+    notify: [restart]
+  - systemd.unit: { name: k3s-agent, enabled: true, active: true, daemon_reload: true }
+
+  - file.absent: { path: /etc/systemd/system/k3s-agent.service.env }
+    removal: leave
+  - file.absent: { path: /usr/local/bin/k3s-install.sh }
+    removal: leave
+
+handlers:
+  restart: { systemd.restart: { name: k3s-agent } }
+
+actions:
+  reboot:
+    name: Reboot node
+    description: Reboot this k3s agent (drain it first with kubectl if workloads matter)
+    system.reboot: { delay: 5s, timeout: 10m }
+    confirm: true
+
+health:
+  - name: unit
+    systemd: { unit: k3s-agent, state: active, min_uptime: 60s }

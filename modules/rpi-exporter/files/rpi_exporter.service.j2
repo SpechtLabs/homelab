@@ -1,0 +1,15 @@
+# {{ buckle_managed }}
+[Unit]
+Description=Prometheus exporter for RPi temperature metrics
+Documentation=https://github.com/cedi/rpi_exporter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=rpi_exporter
+ExecStart=/usr/local/bin/rpi_exporter --web.listen-address=:{{ vars.rpi_exporter_port }} --vcgencmd={{ vars.rpi_exporter_vcgencmd }}
+Restart=on-failure
+TimeoutStopSec=20s
+
+[Install]
+WantedBy=multi-user.target

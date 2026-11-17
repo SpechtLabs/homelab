@@ -1,0 +1,5 @@
+# VPS hosts that ship to the spechtlabs o11y stack instead of the homelab one.
+admin_user: root
+o11y_loki_url: http://spechtlabs-loki.k8s.specht-labs.de/loki/api/v1/push
+o11y_mimir_url: http://spechtlabs-mimir.k8s.specht-labs.de/api/v1/push
+o11y_tempo_url: http://spechtlabs-tempo.k8s.specht-labs.de

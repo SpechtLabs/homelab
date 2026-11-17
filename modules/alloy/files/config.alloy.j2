@@ -1,0 +1,160 @@
+// {{ buckle_managed }}
+// Host: {{ host.id }}
+
+// ── Logs ─────────────────────────────────────────────────────────────────────
+
+loki.write "grafana_loki" {
+  endpoint {
+    url = "{{ vars.o11y_loki_url }}"
+  }
+{%- if vars.o11y_external_labels %}
+
+  external_labels = {
+{%- for key, value in vars.o11y_external_labels | items %}
+    {{ key }} = "{{ value }}",
+{%- endfor %}
+  }
+{%- endif %}
+}
+
+local.file_match "local_files" {
+  path_targets = [
+{%- for path in vars.o11y_log_paths %}
+    {"__path__" = "{{ path }}"},
+{%- endfor %}
+  ]
+  sync_period = "5s"
+}
+
+loki.source.file "log_scrape" {
+  targets       = local.file_match.local_files.targets
+  forward_to    = [loki.process.log_scrape.receiver]
+  tail_from_end = true
+}
+
+loki.process "log_scrape" {
+  forward_to = [loki.write.grafana_loki.receiver]
+
+  stage.static_labels {
+    values = {
+      hostname = "{{ host.id }}",
+    }
+  }
+}
+
+loki.relabel "journal" {
+  forward_to = []
+
+  rule {
+    source_labels = ["__journal__systemd_unit"]
+    target_label  = "unit"
+  }
+
+  rule {
+    source_labels = ["__journal__hostname"]
+    target_label  = "hostname"
+  }
+}
+
+loki.source.journal "log_syslog" {
+  format_as_json = true
+  relabel_rules  = loki.relabel.journal.rules
+  forward_to     = [loki.write.grafana_loki.receiver]
+}
+
+// ── Metrics ──────────────────────────────────────────────────────────────────
+
+prometheus.remote_write "mimir" {
+  endpoint {
+    url = "{{ vars.o11y_mimir_url }}"
+  }
+}
+
+// The embedded node_exporter, labelled like the standalone one it replaces.
+prometheus.exporter.unix "node" { }
+
+discovery.relabel "node" {
+  targets = prometheus.exporter.unix.node.targets
+
+  rule {
+    target_label = "instance"
+    replacement  = "{{ host.id }}:9100"
+  }
+}
+
+prometheus.scrape "node_exporter" {
+  job_name   = "node_exporter"
+  targets    = discovery.relabel.node.output
+  forward_to = [prometheus.remote_write.mimir.receiver]
+}
+{% for scrape in vars.o11y_local_scrapes %}
+prometheus.scrape "{{ scrape.job }}" {
+  job_name = "{{ scrape.job }}"
+  targets  = [
+    {"__address__" = "127.0.0.1:{{ scrape.port }}", "instance" = "{{ host.id }}:{{ scrape.port }}"},
+  ]
+{%- if scrape.path is defined %}
+  metrics_path = "{{ scrape.path }}"
+{%- endif %}
+  forward_to = [prometheus.remote_write.mimir.receiver]
+}
+{% endfor %}
+{%- for scrape in vars.o11y_remote_scrapes %}
+prometheus.scrape "{{ scrape.name }}" {
+  job_name = "{{ scrape.job }}"
+  targets  = [
+{%- for target in scrape.targets %}
+    {"__address__" = "{{ target }}"},
+{%- endfor %}
+  ]
+{%- if scrape.path is defined %}
+  metrics_path = "{{ scrape.path }}"
+{%- endif %}
+{%- if scrape.params is defined %}
+  params = {
+{%- for key, values in scrape.params | items %}
+    "{{ key }}" = {{ values | to_json }},
+{%- endfor %}
+  }
+{%- endif %}
+  forward_to = [prometheus.remote_write.mimir.receiver]
+}
+{% endfor %}
+prometheus.exporter.self "self" { }
+
+prometheus.scrape "self" {
+  targets    = prometheus.exporter.self.self.targets
+  forward_to = [prometheus.remote_write.mimir.receiver]
+}
+{%- if vars.o11y_otlp_receiver %}
+
+// ── OTLP from the cluster ────────────────────────────────────────────────────
+
+otelcol.receiver.otlp "default" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+  output {
+    metrics = [otelcol.exporter.prometheus.to_mimir.input]
+    logs    = [otelcol.exporter.loki.to_loki.input]
+    traces  = [otelcol.exporter.otlphttp.tempo.input]
+  }
+}
+
+otelcol.exporter.otlphttp "tempo" {
+  client {
+    endpoint = "{{ vars.o11y_tempo_url }}"
+  }
+}
+
+otelcol.exporter.prometheus "to_mimir" {
+  forward_to = [prometheus.remote_write.mimir.receiver]
+}
+
+otelcol.exporter.loki "to_loki" {
+  forward_to = [loki.write.grafana_loki.receiver]
+}
+{%- endif %}

@@ -1,0 +1,14 @@
+# {{ buckle_managed }}
+[Unit]
+Description=Synchronize system clock or PTP hardware clock (PHC)
+Documentation=man:phc2sys
+Requires=ptp4l@{{ vars.ptp_interface }}.service
+After=ptp4l@{{ vars.ptp_interface }}.service
+Before=time-sync.target
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/phc2sys -w -c {{ vars.ptp_interface }} -s CLOCK_REALTIME
+
+[Install]
+WantedBy=multi-user.target

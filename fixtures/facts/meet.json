@@ -1,0 +1,42 @@
+{
+  "os": {
+    "family": "debian",
+    "id": "ubuntu",
+    "codename": "noble",
+    "version": "24.04",
+    "pretty_name": "",
+    "kernel": "6.1.0-27-amd64"
+  },
+  "hardware": {
+    "arch": "x86_64",
+    "model": null,
+    "vendor": null,
+    "raspberry_pi": null,
+    "cpus": 4,
+    "mem": {
+      "total_mb": 16384
+    },
+    "swap": {
+      "total_mb": 0
+    }
+  },
+  "net": {
+    "hostname": "meet",
+    "fqdn": "meet.sphinx-map.ts.net"
+  },
+  "tailscale": {
+    "hostname": "meet.sphinx-map.ts.net",
+    "ips": [
+      "100.64.0.2"
+    ],
+    "tags": [
+      "tag:core-services",
+      "tag:o11y-agent"
+    ],
+    "online": true,
+    "backend_state": "Running",
+    "tailnet": "sphinx-map.ts.net"
+  },
+  "script": {},
+  "cloud": null
+}

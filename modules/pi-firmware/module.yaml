@@ -1,0 +1,73 @@
+name: pi-firmware
+description: Raspberry Pi boot firmware (config.txt [all], cmdline.txt); reboots when either changes.
+when: 'host.groups contains "pi"'
+needs: [pi-facts]          # the PoE HAT task keys off host.facts.script.rpi
+tags: [base, hardware]
+vars:
+  # Fan trip points in millidegrees C: the PoE+ HAT fan and the Pi 5 active cooler.
+  rpi_fan_temps: [65000, 70000, 75000, 80000]
+  rpi_pciex1_gen: 3
+  # GPS/PPS board wiring (UART, I2C, SPI, PPS on GPIO 18); set per host.
+  rpi_gps_pps: false
+  rpi_pps_gpio: 18
+# Each task owns only the lines and keys it lists; the rest of config.txt is
+# left alone. Ansible inserted its lines with `insertafter: "[all]"`, which is a
+# regex character class, not a section, so they may sit in another section:
+# review each host's first plan for duplicates.
+tasks:
+  - file.ini:
+      path: /boot/firmware/config.txt
+      section: all
+      lines: [dtoverlay=rpi-poe-plus]
+      settings:
+        dtparam=poe_fan_temp0: '{{ vars.rpi_fan_temps[0] }}'
+        dtparam=poe_fan_temp1: '{{ vars.rpi_fan_temps[1] }}'
+        dtparam=poe_fan_temp2: '{{ vars.rpi_fan_temps[2] }}'
+        dtparam=poe_fan_temp3: '{{ vars.rpi_fan_temps[3] }}'
+    id: rpi-poe-hat
+    when: 'host.facts.script.rpi.hat_product contains "PoE"'
+    notify: [reboot]
+
+  - file.ini:
+      path: /boot/firmware/config.txt
+      section: all
+      settings:
+        dtparam=fan_temp0: '{{ vars.rpi_fan_temps[0] }}'
+        dtparam=fan_temp1: '{{ vars.rpi_fan_temps[1] }}'
+        dtparam=fan_temp2: '{{ vars.rpi_fan_temps[2] }}'
+        dtparam=fan_temp3: '{{ vars.rpi_fan_temps[3] }}'
+        dtparam=pciex1_gen: '{{ vars.rpi_pciex1_gen }}'
+    id: rpi5-cooling-pcie
+    when: 'host.facts.hardware.raspberry_pi.version == 5'
+    notify: [reboot]
+
+  - file.ini:
+      path: /boot/firmware/config.txt
+      section: all
+      lines:
+        - 'dtoverlay=pps-gpio,gpiopin={{ vars.rpi_pps_gpio }}'
+        - dtparam=i2c_arm=on
+        - dtparam=i2s=on
+        - dtparam=spi=on
+        - dtparam=uart0=on
+      settings: { enable_uart: 1 }
+    id: rpi-gps-pps
+    when: 'vars.rpi_gps_pps == true'
+    notify: [reboot]
+
+  - file.tokens:
+      path: /boot/firmware/cmdline.txt
+      present: [cgroup_enable=cpuset, cgroup_memory=1, cgroup_enable=memory]
+    id: rpi-cmdline-cgroups
+    notify: [reboot]
+
+  # The serial console would fight gpsd for the UART.
+  - file.tokens:
+      path: /boot/firmware/cmdline.txt
+      absent: [console=serial0]
+    id: rpi-cmdline-no-serial-console
+    when: 'vars.rpi_gps_pps == true'
+    notify: [reboot]
+
+handlers:
+  reboot: { system.reboot: { delay: 10s, timeout: 5m } }

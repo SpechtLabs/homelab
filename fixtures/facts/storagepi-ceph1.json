@@ -1,0 +1,51 @@
+{
+  "os": {
+    "family": "debian",
+    "id": "debian",
+    "codename": "bookworm",
+    "version": "12",
+    "pretty_name": "Debian GNU/Linux 12 (bookworm)",
+    "kernel": "6.6.51+rpt-rpi-2712"
+  },
+  "hardware": {
+    "arch": "aarch64",
+    "model": "Raspberry Pi 5 Model B Rev 1.0",
+    "vendor": "Raspberry Pi",
+    "raspberry_pi": {
+      "version": 5,
+      "model": "Model B",
+      "compute_module": false,
+      "revision": "1.0"
+    },
+    "cpus": 4,
+    "mem": {
+      "total_mb": 8192
+    },
+    "swap": {
+      "total_mb": 0
+    }
+  },
+  "net": {
+    "hostname": "storagepi-ceph1",
+    "fqdn": "storagepi-ceph1.sphinx-map.ts.net"
+  },
+  "tailscale": {
+    "hostname": "storagepi-ceph1.sphinx-map.ts.net",
+    "ips": [
+      "100.64.0.1"
+    ],
+    "tags": [
+      "tag:homelab"
+    ],
+    "online": true,
+    "backend_state": "Running",
+    "tailnet": "sphinx-map.ts.net"
+  },
+  "script": {
+    "rpi": {
+      "hat_product": "",
+      "hat_vendor": ""
+    }
+  },
+  "cloud": null
+}

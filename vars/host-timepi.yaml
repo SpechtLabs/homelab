@@ -1,0 +1,3 @@
+# GPS/PPS board: UART, I2C, I2S, SPI and the PPS GPIO overlay (modules/pi-firmware).
+admin_user: cedi
+rpi_gps_pps: true

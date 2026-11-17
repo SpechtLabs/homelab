@@ -1,0 +1,14 @@
+name: pi-facts
+description: A custom fact provider exposing the Pi's HAT EEPROM as host.facts.script.rpi.
+when: 'host.groups contains "pi"'
+tags: [base, hardware]
+facts:
+  provides: [script]
+tasks:
+  - file.directory: { path: /var/lib/buckle/facts.d, mode: "0700" }
+  - file.copy:
+      src: rpi-facts.sh
+      dest: /var/lib/buckle/facts.d/rpi
+      mode: "0755"
+      owner: root
+      group: root

@@ -1,0 +1,47 @@
+# /etc/buckle/server.yaml on the NUC. Installed by hand (see bootstrap/README.md),
+# not by Buckle itself: the server shouldn't be able to break its own config.
+listen:
+  # The NUC's tailnet address only. WireGuard encrypts; agents are identified
+  # by tailscaled's whois, so there is no TLS and no bootstrap token.
+  grpc: "${{ env.BUCKLE_LISTEN_ADDR }}:7700"
+  http: "${{ env.BUCKLE_LISTEN_ADDR }}:7701"
+  tls: { mode: none }
+data_dir: /var/lib/buckle-server
+
+source:
+  git:
+    url: https://github.com/cedi/homelab.git
+    branch: main
+    poll: 30s
+    credentials: { token: "${{ env.GIT_TOKEN }}" }
+
+agents:
+  auth: [tailscale]
+  registration: auto
+  tailscale:
+    # Existing hosts already carry these tags; anything else waits in the UI.
+    allowed_tags: ["tag:homelab", "tag:core-infra", "tag:core-services"]
+    # "Add an agent" mints a tagged, single-use, pre-approved auth key.
+    provisioning:
+      flow: client
+      client_id: "${{ env.TS_OAUTH_CLIENT_ID }}"
+      client_secret: "${{ env.TS_OAUTH_CLIENT_SECRET }}"
+      tags: ["tag:homelab", "tag:core-infra", "tag:core-services"]
+  join:
+    server_url: http://nuc.sphinx-map.ts.net:7700
+  minimum_agent_version: "2.13.0"
+  desired_version: "2.13.0"     # renovate: datasource=github-releases depName=SierraSoftworks/buckle
+
+web:
+  base_url: http://nuc.sphinx-map.ts.net:7701
+  # No OIDC yet, so lock admin actions to the tailnet. Swap for tsidp later:
+  #   oidc: { endpoint: https://idp.sphinx-map.ts.net, client_id: buckle,
+  #           client_secret: "${{ env.OIDC_CLIENT_SECRET }}" }
+  admin_acl: 'client_ip startswith "100."'
+
+secrets:
+  providers:
+    file: { root: /etc/buckle/secrets }
+
+telemetry:
+  otlp_endpoint: http://127.0.0.1:4317     # the NUC's own Alloy OTLP receiver

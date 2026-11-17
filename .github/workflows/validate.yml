@@ -1,0 +1,20 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  buckle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: jdx/mise-action@v3
+      # Every host in fixtures/facts gets a dry plan: selectors, templates and
+      # task specs are checked against that host's facts.
+      - name: buckle validate
+        run: |
+          args=()
+          for f in fixtures/facts/*.json; do args+=(--facts "$f"); done
+          mise exec -- buckle validate --config . "${args[@]}"

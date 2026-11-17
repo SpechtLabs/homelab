@@ -1,0 +1,107 @@
+# Homelab fleet, managed by Buckle (https://buckle.sierrasoftworks.com).
+#
+# Nothing in here lists hosts. Groups are derived from facts the agents report
+# (Raspberry Pi generation, HAT EEPROM, Tailscale tags) and, where hardware
+# can't tell, from host-id globs. A host's id is its tailnet node name.
+version: 2
+
+fleet:
+  groups:
+    # What the machine is
+    debian: 'host.facts.os.family == "debian"'
+    pi:     'host.facts.hardware.raspberry_pi.version != null'
+    pi5:    'host.facts.hardware.raspberry_pi.version == 5'
+
+    # What the machine is for
+    k3s-server: 'host.id == "clusterpi-leader"'
+    k3s-agent:  'host.id like "clusterpi-worker*"'
+    ceph:       'host.id like "storagepi-ceph*"'
+    blades:     'host.id like "blade-pi*"'
+    ptp-grandmaster: 'host.id == "timepi-gps"'
+    o11y-collector:  'host.facts.tailscale.tags contains "tag:o11y-collector"'
+    spechtlabs:      'host.id in ["hole", "meet"]'
+    tsidp:           'host.id == "nuc"'
+
+    # Power: the NUC proxies the Synology's UPS; Pis shut down early unless
+    # they are the ones that should outlive the cluster.
+    nut-server: 'host.id == "nuc"'
+    nut-client: 'host.facts.hardware.raspberry_pi.version != null'
+    nut-late:   'host.id in ["jumphost", "timepi"]'
+
+# Broad to narrow; later wins. Module defaults sit below all of these.
+vars:
+  - file: vars/defaults.yaml
+  - file: vars/versions.yaml
+
+  # hardware
+  - when: 'host.facts.hardware.raspberry_pi.version != null'
+    file: vars/hw-pi.yaml
+
+  # role
+  - when: 'host.groups contains "blades"'
+    file: vars/group-blades.yaml
+  - when: 'host.groups contains "nut-late"'
+    values: { nut_shutdown_affinity: late }
+  - when: 'host.groups contains "spechtlabs"'
+    file: vars/group-spechtlabs.yaml
+  - when: 'host.groups contains "o11y-collector"'
+    file: vars/group-o11y-collector.yaml
+
+  # host exceptions
+  - when: 'host.id == "nuc"'
+    file: vars/host-nuc.yaml
+  - when: 'host.id == "hole"'
+    file: vars/host-hole.yaml
+  - when: 'host.id == "meet"'
+    file: vars/host-meet.yaml
+  - when: 'host.id == "timepi"'
+    file: vars/host-timepi.yaml
+  - when: 'host.id == "jumphost"'
+    values: { dotfiles_preset: core }
+
+# References only. On the server these resolve under
+# secrets.providers.file.root (/etc/buckle/secrets).
+secrets:
+  K3S_TOKEN:              { file: /etc/buckle/secrets/K3S_TOKEN }
+  NUT_UPSTREAM_PASSWORD:  { file: /etc/buckle/secrets/NUT_UPSTREAM_PASSWORD }
+  NUT_ADMIN_PASSWORD:     { file: /etc/buckle/secrets/NUT_ADMIN_PASSWORD }
+  NUT_MONITOR_PASSWORD:   { file: /etc/buckle/secrets/NUT_MONITOR_PASSWORD }
+
+rollout:
+  trigger: manual          # flip to auto once the migration is done
+  supersede: latest
+  on_failure: pause
+  settle: 2m
+  health:
+    bake: 5m
+    baseline: hold
+  stragglers:
+    parallel: 1
+    approval: auto
+  # A host belongs to the first phase that selects it.
+  phases:
+    - name: canary
+      select: 'host.id == "blade-pi4"'
+      approval: required
+      bake: 10m
+    - name: k3s-server
+      select: 'host.groups contains "k3s-server"'
+      approval: if_destructive
+      bake: 5m
+    - name: k3s-agents
+      select: 'host.groups contains "k3s-agent"'
+      parallel: 1
+      approval: if_destructive
+    - name: ceph
+      select: 'host.groups contains "ceph"'
+      parallel: 1
+      approval: if_destructive
+    - name: core
+      # The NUC runs the Buckle server, NUT proxy, tsidp and the o11y collector.
+      select: 'host.id in ["nuc", "hole", "meet"]'
+      parallel: 1
+      approval: required
+    - name: rest
+      select: 'true'
+      parallel: 3
+      approval: if_destructive

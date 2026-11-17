@@ -1,0 +1,11 @@
+# {{ buckle_managed }}
+[{{ vars.nut_admin_user }}]
+    password = {{ secrets.NUT_ADMIN_PASSWORD }}
+    actions = set
+    actions = fsd
+    instcmds = all
+    upsmon primary
+
+[{{ vars.nut_monitor_user }}]
+    password = {{ secrets.NUT_MONITOR_PASSWORD }}
+    upsmon secondary

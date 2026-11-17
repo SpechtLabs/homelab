@@ -1,0 +1,42 @@
+name: base
+description: Hostname, locale and the bootstrap packages every Debian host gets.
+when: 'host.groups contains "debian"'
+tags: [base]
+vars:
+  locale: en_US.UTF-8
+tasks:
+  - hostname.set: { name: '{{ host.id }}' }
+
+  - apt.update: { max_age: 6h }
+  - apt.package:
+      names: [git, curl, sudo, locales]
+
+  - file.line:
+      path: /etc/locale.gen
+      regex: '^#?\s*{{ vars.locale | replace(".", "\\.") }} UTF-8'
+      line: '{{ vars.locale }} UTF-8'
+    notify: [locale-gen]
+  - file.template:
+      src: lang.sh.j2
+      dest: /etc/profile.d/lang.sh
+      mode: "0644"
+      owner: root
+      group: root
+
+# On demand from the host page, never in a rollout.
+actions:
+  upgrade:
+    name: Upgrade packages
+    apt.upgrade: { autoremove: true }
+    notify: [reboot-if-required]
+  reboot:
+    name: Reboot
+    system.reboot: { delay: 5s, timeout: 10m }
+    confirm: true
+    description: Reboot this host now
+
+handlers:
+  locale-gen:
+    command.run: { run: [locale-gen] }
+  reboot-if-required:
+    system.reboot: { only_if: test -f /run/reboot-required }

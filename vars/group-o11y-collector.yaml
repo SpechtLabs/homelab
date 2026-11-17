@@ -1,0 +1,32 @@
+# The collector: receives OTLP from the cluster and scrapes the machines that
+# can't run Alloy themselves (the Synology, Tailscale proxies).
+o11y_otlp_receiver: true
+alloy_custom_args: --server.http.listen-addr=0.0.0.0:12345
+o11y_remote_scrapes:
+  - name: nas_node_exporter
+    job: node_exporter
+    targets: ["nas:9100"]
+  - name: snmp_exporter
+    job: snmp
+    targets: ["192.168.0.64:9116"]
+    path: /snmp
+    params: { module: [synology], auth: [snmpv3], target: [nas] }
+  - name: cadvisor
+    job: cadvisor
+    targets: ["192.168.0.64:8123"]
+  # tailscaled metrics. 100.100.100.100 is this node's own; the :5252 ones are
+  # copied as-is from the Ansible config: they are not Buckle agents.
+  - name: tailscale_exporter
+    job: tailscale_exporter
+    targets:
+      - "100.100.100.100"
+      - "100.65.216.48:5252"
+      - "100.92.89.43:5252"
+      - "100.94.152.81:5252"
+      - "100.123.236.103:5252"
+      - "100.126.248.78:5252"
+      - "100.103.254.83:5252"
+      - "100.95.24.14:5252"
+      - "100.122.149.90:5252"
+      - "100.83.246.57:5252"
+      - "100.85.86.18:5252"

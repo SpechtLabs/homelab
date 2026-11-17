@@ -1,0 +1,41 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Versions pinned in Buckle vars, marked with a renovate comment",
+      "managerFilePatterns": [
+        "/^vars/.+\\.yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: extractVersion=(?<extractVersion>\\S+))?\\n\\w+: (?<currentValue>\\S+)"
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Buckle agent version the server rolls out",
+      "managerFilePatterns": [
+        "/^bootstrap/server\\.yaml$/"
+      ],
+      "matchStrings": [
+        "desired_version: \"(?<currentValue>[^\"]+)\"\\s+# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)"
+      ],
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "k3s: one minor at a time, never automerge",
+      "matchDepNames": [
+        "k3s-io/k3s"
+      ],
+      "separateMinorPatch": true,
+      "separateMultipleMinor": true,
+      "automerge": false,
+      "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\+k3s(?<build>\\d+)$"
+    }
+  ]
+}
