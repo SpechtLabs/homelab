@@ -7,7 +7,9 @@ vars:
   dotfiles_repo: https://github.com/cedi/dotfiles.git
   dotfiles_ref: main
   dotfiles_preset: server          # server, core or full
-  login_shell: /usr/bin/fish
+  # Unmanaged unless set: the NUC's root and cedi use zsh, whatever Ansible intended.
+  # Set e.g. `login_shell: /usr/bin/fish` in a vars overlay to manage it.
+  login_shell: ""
 tasks:
   - apt.package: { name: fish }
 
@@ -25,6 +27,7 @@ tasks:
       name: '{{ vars.admin_user }}'
       shell: '{{ vars.login_shell }}'
     id: admin-login-shell
+    when: 'vars.login_shell != ""'
     removal: leave                  # removing this task must not userdel the admin
 
 handlers:

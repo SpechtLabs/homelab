@@ -96,12 +96,14 @@ rollout:
       select: 'host.groups contains "ceph"'
       parallel: 1
       approval: if_destructive
-    - name: core
-      # The NUC runs the Buckle server, NUT proxy, tsidp and the o11y collector.
-      select: 'host.id in ["nuc", "hole", "meet"]'
-      parallel: 1
-      approval: required
     - name: rest
-      select: 'true'
+      select: '!(host.id in ["nuc", "hole", "meet"])'
       parallel: 3
       approval: if_destructive
+    # Last on purpose: the NUC runs the Buckle server, NUT proxy, tsidp and the
+    # o11y collector, and its new Alloy config stops scraping the Pis centrally.
+    # Every Pi must already ship its own metrics by then.
+    - name: core
+      select: 'true'
+      parallel: 1
+      approval: required

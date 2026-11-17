@@ -1,24 +1,24 @@
 {
   "os": {
+    "codename": "oracular",
     "family": "debian",
-    "id": "debian",
-    "codename": "bookworm",
-    "version": "12",
-    "pretty_name": "",
-    "kernel": "6.1.0-27-amd64"
+    "id": "ubuntu",
+    "kernel": "6.11.0-29-generic",
+    "pretty_name": "Ubuntu 24.10",
+    "version": "24.10"
   },
   "hardware": {
     "arch": "x86_64",
-    "model": null,
-    "vendor": null,
-    "raspberry_pi": null,
-    "cpus": 4,
+    "cpus": 2,
     "mem": {
-      "total_mb": 16384
+      "total_mb": 7348
     },
+    "model": "MMLPCAP-R7",
+    "raspberry_pi": null,
     "swap": {
-      "total_mb": 0
-    }
+      "total_mb": 4095
+    },
+    "vendor": "GIGABYTE"
   },
   "net": {
     "hostname": "nuc",
@@ -26,16 +26,14 @@
   },
   "tailscale": {
     "hostname": "nuc.sphinx-map.ts.net",
-    "ips": [
-      "100.64.0.2"
-    ],
     "tags": [
       "tag:core-infra",
-      "tag:o11y-collector"
+      "tag:o11y-collector",
+      "tag:o11y-endpoint"
     ],
     "online": true,
     "backend_state": "Running",
-    "tailnet": "sphinx-map.ts.net"
+    "tailnet": "cedi.github"
   },
   "script": {},
   "cloud": null

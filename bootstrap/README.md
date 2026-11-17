@@ -106,8 +106,11 @@ the right tags and the agent in one paste.
 so CI plans against what the hosts actually report:
 
 ```sh
+# Keep only what selectors and templates read: the repo is public, and raw
+# facts include MAC addresses, public IPv6, local users and every systemd unit.
+trim='{os, hardware: (.hardware | del(.disks, .disk)), net: {hostname: .net.hostname, fqdn: .net.fqdn}, tailscale: (.tailscale | if . then {hostname, tags, online, backend_state, tailnet} else null end), script, cloud}'
 for h in $(ls fixtures/facts | sed 's/\.json$//'); do
-  tailscale ssh "$h" -- sudo buckle facts > "fixtures/facts/$h.json"   # user@ as above
+  tailscale ssh "$h" -- sudo buckle facts | jq "$trim" > "fixtures/facts/$h.json"   # user@ as above
 done
 ```
 
@@ -115,6 +118,10 @@ Check one Pi before anything else: `jq .os fixtures/facts/jumphost.json` must sa
 `"family": "debian"`. Every apt task depends on it.
 
 ## 6. First rollouts
+
+**Enrol every Pi before the first rollout.** The NUC's new Alloy config stops scraping the
+Pis centrally, so a Pi that isn't running Buckle's Alloy yet goes dark. The `core` phase (NUC,
+hole, meet) runs last for this reason, but it can't cover hosts that aren't enrolled.
 
 Start one from the Rollouts page and read every host's plan before approving. What to look for:
 

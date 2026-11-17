@@ -4,6 +4,9 @@ when: 'host.groups contains "nut-server"'
 tags: [power]
 vars:
   # The Synology's built-in NUT server. DSM hard-codes this account.
+  # The NAS answers on .64 (its SNMP exporter does). On 2026-11-17 the NUC's
+  # live config pointed at .156 instead, and neither address accepted NUT
+  # connections: enable DSM's network UPS server and permit the NUC's IP.
   nut_upstream_host: 192.168.0.64
   nut_upstream_user: monuser
   nut_admin_user: admin
