@@ -39,7 +39,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `nut-client` | Pis | upsmon + upssched; early or late shutdown |
 | `k3s-server` | clusterpi-leader | k3s control plane |
 | `k3s-agent` | clusterpi-worker* | k3s workers; *action*: reboot |
-| `ptp-server` | timepi | gpsd + PPS into ntpsec; ptp4l/phc2sys behind `ptp_enabled` |
+| `ptp-server` | timepi | GPS + PPS discipline ntpsec (NTP); phc2sys copies the clock to eth0's PHC and ptp4l serves PTP from it |
 | `tsidp` | nuc | tailnet OIDC provider |
 | `buckle` | all | Buckle itself at `buckle_version`; restarts the agent (and the server on the NUC) after the run |
 | `argocd-seed` | clusterpi-leader | installs Argo CD only on a cluster that has none, from k8s-deployment, with the age key |
@@ -94,10 +94,6 @@ Found during the migration (2026-11-17/18); none of them caused by it.
 - **UPS chain down.** The NUC's NUT proxy reaches no upstream (`192.168.0.64` refuses NUT; the old
   config pointed at `.156`). Enable DSM's network UPS server and permit the NUC. Until then the Pis
   have no UPS-triggered shutdown; the `ups-reachable` checks are informational.
-- **timepi's GPS isn't disciplining the clock.** gpsd feeds ntpsec nothing (SHM reach 0) and PPS is
-  a falseticker, so ntpsec syncs from the public pool.
-- **PTP broken on timepi.** `ptp4l`: "driver rejected most general HWTSTAMP filter"; `phc2sys`
-  exits on its arguments. Off in config (`ptp_enabled: false`) until fixed.
 - **GitHub API rate limit.** `github.release` spends one anonymous API call (60/h per IP, shared
   by every host at home) per plan while a host isn't on the pinned version. Fine in steady state;
   a fleet-wide upgrade of many hosts at once can exhaust it, so roll those in phases.

@@ -39,5 +39,16 @@ actions:
 handlers:
   locale-gen:
     command.run: { run: [locale-gen] }
+  # Debian and Raspberry Pi OS kernels don't create /run/reboot-required (only
+  # Ubuntu's update-notifier does), so also reboot when a newer kernel of the
+  # running flavour (2712, v8, generic, ...) is installed than the one running.
   reboot-if-required:
-    system.reboot: { only_if: test -f /run/reboot-required }
+    system.reboot:
+      only_if:
+        - sh
+        - -c
+        - |
+          test -f /run/reboot-required && exit 0
+          r=$(uname -r)
+          newest=$(ls /boot/vmlinuz-*-"${r##*-}" 2>/dev/null | sed 's|^/boot/vmlinuz-||' | sort -V | tail -n1)
+          test -n "$newest" && test "$newest" != "$r"

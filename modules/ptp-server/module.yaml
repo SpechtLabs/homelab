@@ -6,13 +6,19 @@ tags: [time]
 vars:
   ptp_gps_device: /dev/ttyAMA0
   ptp_pps_device: /dev/pps0
-  ptp_gpsd_options: "-n -s 115200"
+  # No -s: gpsd detects the speed. The receiver talks NMEA at 9600 baud; the
+  # `-s 115200` timepi had by hand made gpsd read noise (no GPS time, so ntpsec
+  # rejected PPS too, as PPS needs a selected GPS source to number its seconds).
+  ptp_gpsd_options: "-n"
   ptp_gpsd_usbauto: "false"
-  ntp_gps_offset: "0.000"       # fudge time1 for the GPS SHM refclock, in seconds
-  # PTP is broken on timepi as of 2026-11-17: ptp4l faults with "driver rejected
-  # most general HWTSTAMP filter" and phc2sys exits on its arguments. Off until
-  # fixed, so Buckle neither manages nor health-checks it.
-  ptp_enabled: false
+  # fudge time1 for the GPS SHM refclock, in seconds: how late the NMEA time
+  # arrives after the PPS edge (measured on timepi: ~151 ms at 9600 baud).
+  ntp_gps_offset: "0.151"
+  # PTP grandmaster: GPS+PPS discipline the system clock (ntpsec), phc2sys
+  # copies it to eth0's hardware clock, ptp4l serves that. Needs a kernel past
+  # 6.12.34 (whose PHCs refuse every adjustment: "physical clock is free
+  # running") and `hwts_filter full` (ptp4l.conf) on the Pi 5's Ethernet.
+  ptp_enabled: true
   ptp_interface: eth0
 tasks:
   # ntpsec is what runs (chrony conflicts with it and was never installed).
@@ -45,6 +51,25 @@ tasks:
     id: phc2sys-legacy-unit
     when: 'vars.ptp_enabled == true'
     removal: leave
+  # eth0's hardware clock appears only once the interface is up, seconds after
+  # the unit would start. A ptp4l started earlier stays FAULTY for good
+  # (fault_reset_interval doesn't recover it), so wait for the link first.
+  # phc2sys is ordered after ptp4l, so it waits too.
+  - systemd.dropin:
+      unit: 'ptp4l@{{ vars.ptp_interface }}.service'
+      content: |
+        [Unit]
+        Wants=network-online.target
+        After=network-online.target
+
+        [Service]
+        ExecStartPre=/bin/sh -c 'until [ "$$(cat /sys/class/net/%i/operstate)" = up ]; do sleep 1; done'
+        TimeoutStartSec=120
+        Restart=on-failure
+        RestartSec=5s
+    id: ptp4l-dropin
+    when: 'vars.ptp_enabled == true'
+    notify: [restart-ptp4l]
   - systemd.unit: { name: 'ptp4l@{{ vars.ptp_interface }}', enabled: true, active: true }
     id: ptp4l-service
     when: 'vars.ptp_enabled == true'
@@ -67,9 +92,21 @@ health:
     command:
       run: [ntpq, -pn]
       expect: { stdout_matches: '(?m)^\*' }      # some source is selected
-  # Informational until the GPS feed works again (SHM reach 0, PPS a falseticker).
+  # Informational until ntpsec has been seen selecting PPS with the fixed gpsd.
+  - name: gps-reachable
+    command:
+      run: [ntpq, -pn]
+      expect: { stdout_matches: '(?m)^.SHM\(0\)\s+\.GPS\.\s+0 l\s+\S+\s+\d+\s+[1-7][0-7]*\s' }
+    required: false
   - name: pps-selected
     command:
       run: [ntpq, -pn]
       expect: { stdout_matches: '(?m)^[*o]PPS' }
     required: false
+  # PTP (health checks take no `when`: drop these two with ptp_enabled: false).
+  - name: ptp4l-master
+    command:
+      run: [pmc, -u, -b, "0", GET PORT_DATA_SET]
+      expect: { stdout_matches: 'portState\s+MASTER' }
+  - name: phc2sys
+    systemd: { unit: 'phc2sys-{{ vars.ptp_interface }}', state: active, min_uptime: 30s }

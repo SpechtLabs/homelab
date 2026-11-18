@@ -9,6 +9,9 @@ Before=time-sync.target
 [Service]
 Type=simple
 ExecStart=/usr/sbin/phc2sys -w -c {{ vars.ptp_interface }} -s CLOCK_REALTIME
+# Exits if eth0's hardware clock isn't there yet (early boot): retry.
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target

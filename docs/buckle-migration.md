@@ -47,6 +47,12 @@ Checked against the real CLI (`buckle validate` with one facts file per host, pl
   "driver rejected most general HWTSTAMP filter"; `phc2sys` exits on its arguments), so it sits
   behind `ptp_enabled: false`. Login shells are unmanaged by default (the Pis use fish, the NUC
   zsh), and PCIe Gen 3 on a Pi 5 depends on an NVMe fact from `pi-facts`.
+- **timepi fixed (2026-11-18)**: the hand-edited gpsd options forced 115200 baud while the
+  receiver talks 9600, so gpsd decoded nothing and ntpsec had no GPS source to number the PPS
+  seconds with. PTP had two more causes: the Pi 5's Ethernet only timestamps all packets or none
+  (`hwts_filter full`), and kernel 6.12.34's PHCs refused every adjustment ("physical clock is
+  free running", fixed upstream after the `ptp_vclock_in_use()` rework); 6.12.115 works.
+  `ptp_enabled` is on, and GPS, PPS and the ptp4l port state are health checks.
 
 ---
 
