@@ -49,6 +49,6 @@ redirect URI `https://nas.sphinx-map.ts.net` has to be listed both there and on
 the `synology` client in tsidp's admin UI, spelled the same way (no trailing
 slash).
 
-Plain `http://nas.sphinx-map.ts.net` still lands on Nginx Proxy Manager's
-default page, since NPM binds port 80 on every interface and serve only
-handles 443.
+Serve only handles 443. Browsers go to HTTPS on their own and get DSM, but
+an explicit `http://nas.sphinx-map.ts.net` (port 80) reaches Nginx Proxy
+Manager's default page, because NPM binds port 80 on every interface.
