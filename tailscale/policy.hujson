@@ -330,7 +330,21 @@
 			"src":    "x1bay@github",
 			"proto":  "tcp",
 			"accept": ["nas:443", "nas:5001", "nas:6690", "hass:8123"],
-			"deny":   ["hass-schiltach:8123"],
+			// Only DSM and Drive on the NAS: no Jellyfin port (svc:stream instead),
+			// plain DSM, SSH or SMB.
+			"deny":   ["hass-schiltach:8123", "nas:8096", "nas:5000", "nas:22", "nas:445"],
+		},
+		// Homelab boxes and Home Assistant get only their own ports on the NAS.
+		{
+			"src":    "tag:homelab",
+			"proto":  "tcp",
+			"accept": ["nas:3493"],
+			"deny":   ["nas:443", "nas:445", "nas:5001", "nas:22"],
+		},
+		{
+			"src":    "tag:smarthome",
+			"proto":  "tcp",
+			"deny":   ["nas:443", "nas:5001", "nas:22"],
 		},
 		{
 			"src":    "group:synology-users",
