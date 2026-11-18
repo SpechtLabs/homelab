@@ -18,6 +18,7 @@ vars:
   ceph_rgw_hosts: []
   ceph_cephadm_pubkey: ''
   ceph_mon_settings: {}
+  ceph_health_mutes: []
   ceph_mgr_modules: []
   ceph_config: {}
   ceph_rbd_pools: []

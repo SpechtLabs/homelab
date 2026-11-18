@@ -35,6 +35,15 @@ ceph_rgw_hosts: [storagepi-ceph2]
 ceph_mon_settings:
   auth_allowed_ciphers: aes,aes256k
 
+# Health checks muted for good (`ceph health mute <code> --sticky`; still
+# listed, as muted, in `ceph health detail`). The three are that decision:
+# client.k3s's aes key, and aes allowed for auth and for new keys. Ceph has no
+# option to turn them off. A second aes client would go unnoticed here.
+ceph_health_mutes:
+  - AUTH_INSECURE_CLIENT_KEY_TYPE
+  - AUTH_INSECURE_KEYS_ALLOWED
+  - AUTH_INSECURE_KEYS_CREATABLE
+
 # mgr modules to enable. prometheus serves the cluster's metrics on :9283
 # (bootstrap --skip-monitoring-stack leaves it off).
 ceph_mgr_modules: [prometheus]
