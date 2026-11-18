@@ -1,5 +1,5 @@
 name: pi-firmware
-description: Raspberry Pi boot firmware (config.txt [all], cmdline.txt); reboots when either changes.
+description: Raspberry Pi boot firmware (config.txt [all], cmdline.txt), reboots when either changes; WiFi off.
 when: 'host.groups contains "pi"'
 needs: [pi-facts]          # the PoE HAT task keys off host.facts.script.rpi
 tags: [base, hardware]
@@ -70,6 +70,22 @@ tasks:
     id: rpi-gps-pps
     when: 'vars.rpi_gps_pps == true'
     notify: [reboot]
+
+  # Ethernet only. WiFi off now through NetworkManager (it keeps that across
+  # reboots), and off in the firmware from the next boot; on its own that
+  # line reboots nothing (no notify), so 14 Pis don't restart for it at once.
+  # Every Pi's addresses that matter (k3s node IPs, flannel, timepi's NTP)
+  # are on eth0.
+  - command.run:
+      run: [nmcli, radio, wifi, 'off']
+      unless: [sh, -c, 'nmcli -t radio wifi | grep -qx disabled']
+    id: rpi-wifi-off
+    removal: leave
+  - file.ini:
+      path: /boot/firmware/config.txt
+      section: all
+      lines: [dtoverlay=disable-wifi]
+    id: rpi-wifi-disabled
 
   - file.tokens:
       path: /boot/firmware/cmdline.txt
