@@ -322,9 +322,10 @@
 				],
 			},
 		},
-		// Admins reach Buckle's UI and API at https://buckle.<tailnet>.
+		// Admins and SREs reach Buckle's UI and API at https://buckle.<tailnet>.
+		// Signing in still needs the buckle-admins claim (server.yaml's user_acl).
 		{
-			"src": ["group:admins"],
+			"src": ["group:admins", "group:sre"],
 			"dst": ["svc:buckle"],
 			"ip":  ["tcp:443"],
 		},
