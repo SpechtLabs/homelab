@@ -22,8 +22,25 @@ tasks:
       owner: '{{ vars.admin_user }}'
     id: dotfiles-checkout
     tags: [network]
-    notify: [install]
     removal: leave                  # never delete someone's home-directory checkout
+
+  # Install once per pinned commit, before fish becomes the login shell: the
+  # fish config expects the tools the installer provides (mise and friends).
+  # The marker makes it idempotent and catches hosts whose checkout was already
+  # at the pin but never installed for this account.
+  - command.run:
+      run: >-
+        test "$(git rev-parse HEAD)" = "{{ vars.dotfiles_ref }}" &&
+        bash install_linux.sh --yes --preset {{ vars.dotfiles_preset }} &&
+        mkdir -p "$HOME/.local/state" &&
+        echo "{{ vars.dotfiles_ref }}" > "$HOME/.local/state/buckle-dotfiles"
+      unless: 'grep -qx "{{ vars.dotfiles_ref }}" "{{ vars.admin_home }}/.local/state/buckle-dotfiles"'
+      cwd: '{{ vars.admin_home }}/.dotfiles'
+      user: '{{ vars.admin_user }}'
+      env: { HOME: '{{ vars.admin_home }}', DOTFILES_NO_UPDATE: "1" }   # the pin decides the commit, not the installer
+      timeout: 20m
+    id: dotfiles-install
+    removal: leave
 
   - user.account:
       name: '{{ vars.admin_user }}'
@@ -31,13 +48,3 @@ tasks:
     id: admin-login-shell
     when: 'vars.login_shell != ""'
     removal: leave                  # removing this task must not userdel the admin
-
-handlers:
-  # Runs only when the checkout moved, so drift passes never re-run it.
-  install:
-    command.run:
-      run: ['bash', 'install_linux.sh', '--yes', '--preset', '{{ vars.dotfiles_preset }}']
-      cwd: '{{ vars.admin_home }}/.dotfiles'
-      user: '{{ vars.admin_user }}'
-      env: { HOME: '{{ vars.admin_home }}' }
-      timeout: 15m
