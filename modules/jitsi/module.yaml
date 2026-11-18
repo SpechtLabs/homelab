@@ -87,7 +87,7 @@ tasks:
   # log in over TLS on localhost and verify them against the system (and so
   # Java) trust store. The quick-install made them valid for one year, and
   # they expired on 2026-01-22. Renew 30 days before expiry, for ten years,
-  # and trust the new ones; the quick-install's paths stay as they were.
+  # at the quick-install's paths.
   - command.run:
       run:
         - sh
@@ -99,9 +99,7 @@ tasks:
           -keyout /var/lib/prosody/$h.key -out /var/lib/prosody/$h.crt 2>/dev/null;
           chown prosody:prosody /var/lib/prosody/$h.key /var/lib/prosody/$h.crt;
           chmod 0640 /var/lib/prosody/$h.key; chmod 0644 /var/lib/prosody/$h.crt;
-          cp /var/lib/prosody/$h.crt /usr/local/share/ca-certificates/$h.crt;
-          done;
-          update-ca-certificates --fresh >/dev/null
+          done
       unless:
         - sh
         - -c
@@ -110,6 +108,30 @@ tasks:
           openssl x509 -checkend 2592000 -noout -in /var/lib/prosody/auth.{{ vars.jitsi_domain }}.crt
       timeout: 5m
     id: prosody-internal-certs
+    removal: leave
+    notify: [restart-prosody]
+  # ...and trusted: whenever Java's store lacks the current certificate (after
+  # a renewal, or if anything rebuilt the store), link both into the system
+  # store as the quick-install did, rebuild it (ca-certificates-java rebuilds
+  # Java's), and restart what logs in with it.
+  - command.run:
+      run:
+        - sh
+        - -c
+        - >-
+          set -e;
+          for h in {{ vars.jitsi_domain }} auth.{{ vars.jitsi_domain }}; do
+          ln -sfn /var/lib/prosody/$h.crt /usr/local/share/ca-certificates/$h.crt;
+          done;
+          update-ca-certificates --fresh >/dev/null
+      unless:
+        - sh
+        - -c
+        - >-
+          fp=$(openssl x509 -noout -fingerprint -sha256 -in /var/lib/prosody/auth.{{ vars.jitsi_domain }}.crt | cut -d= -f2) &&
+          keytool -list -cacerts -storepass changeit 2>/dev/null | grep -q "$fp"
+      timeout: 5m
+    id: prosody-internal-certs-trusted
     removal: leave
     notify: [restart-prosody, restart-jicofo, restart-jvb]
 

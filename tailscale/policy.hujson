@@ -29,7 +29,7 @@
 		"clusterpi-leader":    "100.92.89.43",
 		"hass":                "100.75.135.70",
 		"nuc":                 "100.122.149.90",
-		"idp":                 "100.94.137.32",
+		"idp":                 "100.77.112.23",
 		"hass-schiltach":      "100.89.41.43",
 		"hole":                "100.65.216.48",
 	},
@@ -73,6 +73,15 @@
 			"attr":   ["mullvad"],
 		},
 	],
+	// Tailscale Services (svc:<name>.<tailnet>) that tagged hosts may advertise
+	// without approval in the admin console.
+	"autoApprovers": {
+		"services": {
+			// Jellyfin on the NAS: `tailscale serve --service=svc:stream --https=443 http://localhost:8096`
+			"svc:stream": ["tag:core-services"],
+		},
+	},
+
 	"ssh": [
 		// admins can access the homelab unrestricted
 		{
@@ -228,7 +237,16 @@
 		{
 			"src": ["group:synology-users"],
 			"dst": ["nas"],
-			"ip":  ["5000", "5001"], // DSM HTTP/HTTPS
+			"ip":  [
+				"tcp:443", // DSM through `tailscale serve` (https://nas.<tailnet>)
+				"5000", "5001", // DSM HTTP/HTTPS
+			],
+		},
+		// Synology users can stream from Jellyfin at https://stream.<tailnet>
+		{
+			"src": ["group:synology-users"],
+			"dst": ["svc:stream"],
+			"ip":  ["tcp:443"],
 		},
 		// Admins can manage tsidp and register OIDC clients. Their tokens carry
 		// groups: ["buckle-admins"], which Buckle's admin_acl checks: who
@@ -308,7 +326,7 @@
 		{
 			"src":    "group:synology-users",
 			"proto":  "tcp",
-			"accept": ["nas:5000", "nas:5001"],
+			"accept": ["nas:443", "nas:5000", "nas:5001"],
 		},
 		{
 			"src":   "group:vpn",
