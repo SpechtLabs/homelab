@@ -1,6 +1,6 @@
 # {{ buckle_managed }}
-# /etc/ntpsec/ntp.conf: GPS (gpsd SHM) and PPS refclocks, with the public pool
-# as a fallback. See ntp.conf(5).
+# /etc/ntpsec/ntp.conf: GPS PPS through gpsd (SHM 1), with the public pool as
+# a fallback. See ntp.conf(5).
 
 driftfile /var/lib/ntpsec/ntp.drift
 leapfile /usr/share/zoneinfo/leap-seconds.list
@@ -17,10 +17,13 @@ restrict default kod nomodify nopeer noquery limited
 restrict 127.0.0.1
 restrict ::1
 
-# pps-gpio /dev/pps0
-server 127.127.22.0 minpoll 4 maxpoll 4
-fudge 127.127.22.0 refid PPS
+# gpsd NMEA time (SHM 0): numbers the PPS seconds inside gpsd. Its arrival
+# wanders with the 9600-baud sentence load (150-600 ms seen), so it is never
+# selected; time1 only keeps its ntpq offset readable.
+server 127.127.28.0 minpoll 4 maxpoll 4 noselect
+fudge 127.127.28.0 time1 {{ vars.ntp_gps_offset }} refid GPS
 
-# gpsd clock via shared memory
-server 127.127.28.0 minpoll 4 maxpoll 4 prefer
-fudge 127.127.28.0 time1 {{ vars.ntp_gps_offset }} refid GPS flag1 1
+# gpsd PPS (SHM 1): each PPS edge, numbered by the NMEA second (which only has
+# to be right to +-0.5 s). The clock ntpsec follows.
+server 127.127.28.1 minpoll 4 maxpoll 4 prefer
+fudge 127.127.28.1 refid PPS

@@ -7,13 +7,13 @@ vars:
   ptp_gps_device: /dev/ttyAMA0
   ptp_pps_device: /dev/pps0
   # No -s: gpsd detects the speed. The receiver talks NMEA at 9600 baud; the
-  # `-s 115200` timepi had by hand made gpsd read noise (no GPS time, so ntpsec
-  # rejected PPS too, as PPS needs a selected GPS source to number its seconds).
+  # `-s 115200` timepi had by hand made gpsd read noise, so there was no GPS
+  # time to number the PPS seconds with.
   ptp_gpsd_options: "-n"
   ptp_gpsd_usbauto: "false"
-  # fudge time1 for the GPS SHM refclock, in seconds: how late the NMEA time
-  # arrives after the PPS edge (measured on timepi: ~151 ms at 9600 baud).
-  ntp_gps_offset: "0.151"
+  # fudge time1 for the (never selected) NMEA refclock, in seconds: roughly how
+  # late NMEA arrives after the PPS edge; 150-600 ms on timepi at 9600 baud.
+  ntp_gps_offset: "0.600"
   # PTP grandmaster: GPS+PPS discipline the system clock (ntpsec), phc2sys
   # copies it to eth0's hardware clock, ptp4l serves that. Needs a kernel past
   # 6.12.34 (whose PHCs refuse every adjustment: "physical clock is free
@@ -22,6 +22,8 @@ vars:
   ptp_interface: eth0
 tasks:
   # ntpsec is what runs (chrony conflicts with it and was never installed).
+  # gpsd reads the NMEA and /dev/pps0 and hands ntpsec the PPS edges, numbered
+  # by the NMEA second, through shared memory (unit 1).
   - apt.package:
       names: [ntpsec, pps-tools, gpsd, gpsd-clients]
 
@@ -92,17 +94,11 @@ health:
     command:
       run: [ntpq, -pn]
       expect: { stdout_matches: '(?m)^\*' }      # some source is selected
-  # Informational until ntpsec has been seen selecting PPS with the fixed gpsd.
-  - name: gps-reachable
+  # GPS: gpsd's PPS (SHM 1) is the clock ntpsec follows.
+  - name: gps-pps-selected
     command:
       run: [ntpq, -pn]
-      expect: { stdout_matches: '(?m)^.SHM\(0\)\s+\.GPS\.\s+0 l\s+\S+\s+\d+\s+[1-7][0-7]*\s' }
-    required: false
-  - name: pps-selected
-    command:
-      run: [ntpq, -pn]
-      expect: { stdout_matches: '(?m)^[*o]PPS' }
-    required: false
+      expect: { stdout_matches: '(?m)^\*SHM\(1\)\s+\.PPS\.' }
   # PTP (health checks take no `when`: drop these two with ptp_enabled: false).
   - name: ptp4l-master
     command:
