@@ -132,6 +132,13 @@
 			"dst":    ["tag:homelab"],
 			"ip":     ["*"],
 		},
+		// Allow the homelab hosts' Alloy (modules/alloy in this repo) to push logs and
+		// metrics to homelab-loki/homelab-mimir on the o11y endpoint, plain HTTP only.
+		{
+			"src":    ["tag:homelab"],
+			"dst":    ["tag:o11y-endpoint"],
+			"ip":     ["tcp:80"],
+		},
 		// Allow vpn members to access exit nodes
 		{
 			"src": ["group:vpn"],
@@ -307,6 +314,12 @@
 			"src":   "group:vpn",
 			"proto": "tcp",
 			"deny":  ["tag:homelab:443", "tag:homelab:80"],
+		},
+		{
+			"src":    "tag:homelab",
+			"proto":  "tcp",
+			"accept": ["tag:o11y-endpoint:80"],
+			"deny":   ["tag:o11y-endpoint:443", "tag:core-infra:22"],
 		},
 		{
 			"src":    "group:vpn",
