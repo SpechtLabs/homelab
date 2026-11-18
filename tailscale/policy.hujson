@@ -244,6 +244,12 @@
 				"tcp:6690", // Synology Drive sync
 			],
 		},
+		// Home Assistant writes its backups to a share on the NAS (network storage, SMB or NFS).
+		{
+			"src": ["hass"],
+			"dst": ["nas"],
+			"ip":  ["tcp:445", "tcp:2049"],
+		},
 		// Synology users can stream from Jellyfin at https://stream.<tailnet>
 		{
 			"src": ["group:synology-users"],
@@ -329,6 +335,11 @@
 			"src":    "group:synology-users",
 			"proto":  "tcp",
 			"accept": ["nas:443", "nas:5001", "nas:6690"],
+		},
+		{
+			"src":    "hass",
+			"proto":  "tcp",
+			"accept": ["nas:445", "nas:2049"],
 		},
 		{
 			"src":   "group:vpn",
