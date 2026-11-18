@@ -11,6 +11,24 @@ vars:
   jitsi_jvb_muc_nickname: ""
   jitsi_packages: {}
 tasks:
+  # Sources: deb822 files with their signing keys (the quick-install's lists
+  # trusted Prosody's repository without a signature check).
+  - file.absent: { path: /etc/apt/sources.list.d/jitsi-stable.list }
+    removal: leave
+  - file.absent: { path: /etc/apt/sources.list.d/prosody-debian-packages.list }
+    removal: leave
+  - apt.repository:
+      name: jitsi
+      uri: https://download.jitsi.org
+      suites: [stable/]
+      signed_by: { url: https://download.jitsi.org/jitsi-key.gpg.key }
+  - apt.repository:
+      name: prosody
+      uri: https://packages.prosody.im/debian
+      suites: ['{{ host.facts.os.codename }}']
+      components: [main]
+      signed_by: { url: https://prosody.im/files/prosody-debian-packages.key }
+
   # Versions: pinned (apt preferences) and installed at exactly these. Bump them
   # together in vars, read the release notes, and check the plan's file diffs.
   - file.template: { src: apt-pin.j2, dest: /etc/apt/preferences.d/buckle-jitsi, mode: "0644" }
@@ -108,8 +126,9 @@ tasks:
     removal: leave
     notify: [reload-nginx]
 
-  # coturn: TURN relay for clients that can't reach the bridge directly.
-  - file.template: { src: turnserver.conf.j2, dest: /etc/turnserver.conf, mode: "0644" }
+  # coturn: TURN relay for clients that can't reach the bridge directly. The
+  # config holds the TURN secret: readable by coturn (turnserver) only.
+  - file.template: { src: turnserver.conf.j2, dest: /etc/turnserver.conf, owner: root, group: turnserver, mode: "0640" }
     id: coturn-conf
     removal: leave
     notify: [restart-coturn]
