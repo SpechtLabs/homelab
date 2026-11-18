@@ -1,0 +1,6 @@
+# {{ buckle_managed }}
+# The LAN's GPS time server (timepi: stratum 1 from GPS/PPS). The pools are
+# the fallback timesyncd moves on to when it doesn't answer.
+[Time]
+NTP={{ vars.ntp_server }}
+FallbackNTP={{ vars.ntp_fallback }}

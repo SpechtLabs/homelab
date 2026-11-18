@@ -24,3 +24,8 @@ alloy_custom_args: ""
 # NUT
 nut_server_host: 'nuc.{{ vars.tailnet }}'
 nut_ups_name: ups
+
+# Time (modules/time-sync): timepi's LAN address (keep its DHCP lease fixed;
+# the tailnet name would make time depend on Tailscale coming up first).
+ntp_server: 192.168.0.109
+ntp_fallback: 0.debian.pool.ntp.org 1.debian.pool.ntp.org 2.debian.pool.ntp.org 3.debian.pool.ntp.org

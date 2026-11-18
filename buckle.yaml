@@ -18,6 +18,8 @@ fleet:
     ceph:       'host.id like "storagepi-ceph*"'
     blades:     'host.id like "blade-pi*"'
     ptp-grandmaster: 'host.id == "timepi"'
+    # Everything at home that keeps its own clock syncs from timepi over the LAN.
+    ntp-client:      '(host.facts.hardware.raspberry_pi.version != null || host.id == "nuc") && host.id != "timepi"'
     o11y-collector:  'host.facts.tailscale.tags contains "tag:o11y-collector"'
     spechtlabs:      'host.id in ["hole", "meet"]'
     jitsi:           'host.id == "meet"'

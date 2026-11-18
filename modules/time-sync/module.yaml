@@ -1,0 +1,27 @@
+name: time-sync
+description: systemd-timesyncd on every Pi and the NUC syncs from timepi over the LAN, with the public pools as fallback.
+when: 'host.groups contains "ntp-client"'
+tags: [time]
+tasks:
+  - file.template:
+      src: timesyncd.conf.j2
+      dest: /etc/systemd/timesyncd.conf.d/buckle.conf
+      mode: "0644"
+    notify: [restart]
+  - systemd.unit: { name: systemd-timesyncd, enabled: true, active: true }
+
+handlers:
+  restart: { systemd.restart: { name: systemd-timesyncd } }
+
+health:
+  - name: synchronized
+    command:
+      run: [timedatectl, show, -p, NTPSynchronized, --value]
+      expect: { stdout_matches: '^yes' }
+  # Informational: if timepi is down the host falls back to the pools, and
+  # that must not stop every rollout on every host.
+  - name: source-timepi
+    command:
+      run: [timedatectl, show-timesync, -p, ServerAddress, --value]
+      expect: { stdout_matches: '(?m)^{{ vars.ntp_server }}$' }
+    required: false

@@ -39,6 +39,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `nut-client` | Pis | upsmon + upssched; early or late shutdown |
 | `k3s-server` | clusterpi-leader | k3s control plane |
 | `k3s-agent` | clusterpi-worker* | k3s workers; *action*: reboot |
+| `time-sync` | Pis, nuc | systemd-timesyncd from timepi over the LAN, public pools as fallback |
 | `ptp-server` | timepi | GPS + PPS discipline ntpsec (NTP); phc2sys copies the clock to eth0's PHC and ptp4l serves PTP from it |
 | `tsidp` | nuc | tailnet OIDC provider |
 | `buckle` | all | Buckle itself at `buckle_version`; restarts the agent (and the server on the NUC) after the run |
