@@ -244,9 +244,10 @@
 				"tcp:6690", // Synology Drive sync
 			],
 		},
-		// Home Assistant writes its backups to a share on the NAS (network storage, SMB or NFS).
+		// Home Assistant (hass and hass-schiltach) writes its backups to a share on
+		// the NAS (network storage, SMB or NFS).
 		{
-			"src": ["hass"],
+			"src": ["tag:smarthome"],
 			"dst": ["nas"],
 			"ip":  ["tcp:445", "tcp:2049"],
 		},
@@ -337,7 +338,12 @@
 			"accept": ["nas:443", "nas:5001", "nas:6690"],
 		},
 		{
-			"src":    "hass",
+			"src":    "tag:smarthome",
+			"proto":  "tcp",
+			"accept": ["nas:445", "nas:2049"],
+		},
+		{
+			"src":    "hass-schiltach",
 			"proto":  "tcp",
 			"accept": ["nas:445", "nas:2049"],
 		},
