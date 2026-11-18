@@ -17,6 +17,7 @@ vars:
   ceph_hosts: {}
   ceph_rgw_hosts: []
   ceph_cephadm_pubkey: ''
+  ceph_mgr_modules: []
   ceph_config: {}
   ceph_rbd_pools: []
   ceph_clients: {}

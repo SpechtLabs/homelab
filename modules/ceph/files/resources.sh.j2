@@ -1,8 +1,11 @@
-# Buckle (modules/ceph): config settings, pools, client keys and S3 users from
+# Buckle (modules/ceph): mgr modules, config settings, pools, client keys and S3 users from
 # vars/group-ceph.yaml; runs in `cephadm shell` whenever this file changes.
 # Each step checks first, so it only ever creates or sets: removing an entry
 # here removes nothing from the cluster.
 set -eu
+{% for module in vars.ceph_mgr_modules %}
+ceph mgr module enable '{{ module }}'
+{%- endfor %}
 {% for who, settings in vars.ceph_config | items %}
 {%- for key, value in settings | items %}
 ceph config set '{{ who }}' '{{ key }}' '{{ value }}'

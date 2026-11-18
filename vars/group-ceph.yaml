@@ -29,6 +29,10 @@ ceph_hosts:
 # away from the host with the active mgr.
 ceph_rgw_hosts: [storagepi-ceph2]
 
+# mgr modules to enable. prometheus serves the cluster's metrics on :9283
+# (bootstrap --skip-monitoring-stack leaves it off).
+ceph_mgr_modules: [prometheus]
+
 # `ceph config set <who> <key> <value>` (modules/ceph, files/resources.sh.j2).
 ceph_config:
   mgr:
