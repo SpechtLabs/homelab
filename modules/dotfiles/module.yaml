@@ -37,7 +37,7 @@ tasks:
       unless: 'grep -qx "{{ vars.dotfiles_ref }}" "{{ vars.admin_home }}/.local/state/buckle-dotfiles"'
       cwd: '{{ vars.admin_home }}/.dotfiles'
       user: '{{ vars.admin_user }}'
-      env: { HOME: '{{ vars.admin_home }}', DOTFILES_NO_UPDATE: "1" }   # the pin decides the commit, not the installer
+      env: { HOME: '{{ vars.admin_home }}', TERM: dumb, DOTFILES_NO_UPDATE: "1" }   # no terminal here; the pin decides the commit
       timeout: 20m
     id: dotfiles-install
     removal: leave
