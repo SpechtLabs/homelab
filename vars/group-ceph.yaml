@@ -8,6 +8,11 @@
 # changes won't start. Replacing a host's Tailscale node means re-adding its
 # mon at the new address.
 
+# 4K pages (modules/pi-firmware): on the Pi 5's default 16K-page kernel,
+# BlueStore asserts while creating an OSD (BlueFS::append_try_flush,
+# p2aligned(pos1 ^ pos2, _page_size); Ceph 20.2.5, 2026-11-18).
+rpi_kernel: kernel8.img
+
 # Where cephadm bootstraps the cluster and where Buckle applies the specs.
 ceph_admin_host: storagepi-ceph1
 
@@ -21,6 +26,6 @@ ceph_hosts:
 # Hosts that run the S3 gateway (RGW), on ceph_rgw_port.
 ceph_rgw_hosts: []
 
-# cephadm's SSH public key (`ceph cephadm get-pub-key` after bootstrap);
-# empty until the cluster exists.
-ceph_cephadm_pubkey: ''
+# cephadm's SSH public key (`ceph cephadm get-pub-key`; bootstrap made it
+# 2026-11-18). root on every Ceph host accepts it from tailnet addresses.
+ceph_cephadm_pubkey: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAqO3vD/QF7X+uPmH8N1KiiWXI4UrYAFgsHRkLCAeoyk ceph-85412c6c-e39c-11f1-ba59-2ccf678b0944'

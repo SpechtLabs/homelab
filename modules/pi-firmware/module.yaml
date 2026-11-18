@@ -14,6 +14,10 @@ vars:
   # GPS/PPS board wiring (UART, I2C, SPI, PPS on GPIO 18); set per host.
   rpi_gps_pps: false
   rpi_pps_gpio: 18
+  # Kernel image to boot instead of the firmware's default; set per group.
+  # On a Pi 5, kernel8.img is the 4K-page kernel (the default kernel_2712.img
+  # uses 16K pages, which some software can't run on: Ceph's BlueStore).
+  rpi_kernel: ''
 # Each task owns only the lines and keys it lists; the rest of config.txt is
 # left alone. Ansible inserted its lines with `insertafter: "[all]"`, which is a
 # regex character class, not a section, so they may sit in another section:
@@ -55,6 +59,16 @@ tasks:
         dtparam=pciex1_gen: '{{ vars.rpi_pciex1_gen }}'
     id: rpi5-pcie-gen3
     when: 'host.facts.hardware.raspberry_pi.version == 5'
+    notify: [reboot]
+
+  # auto_initramfs=1 loads the matching initramfs (kernel8.img: initramfs8),
+  # which raspi-firmware's hooks keep current for every flavour.
+  - file.ini:
+      path: /boot/firmware/config.txt
+      section: all
+      settings: { kernel: '{{ vars.rpi_kernel }}' }
+    id: rpi-kernel
+    when: 'vars.rpi_kernel != ""'
     notify: [reboot]
 
   - file.ini:
