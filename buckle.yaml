@@ -109,4 +109,4 @@ rollout:
     - name: core
       select: 'true'
       parallel: 1
-      approval: required
+      approval: if_destructive
