@@ -70,14 +70,13 @@ tasks:
 
   # ── Network: cephadm places mons only on hosts it sees in public_network,
   #    and it can't see tailnet addresses (files/ceph-tailnet-route.service.j2).
+  #    Every host in the ceph group must be in ceph_hosts for its address.
   - file.template:
       src: ceph-tailnet-route.service.j2
       dest: /etc/systemd/system/ceph-tailnet-route.service
       mode: "0644"
-    when: 'host.id in vars.ceph_hosts'
     notify: [restart-tailnet-route]
   - systemd.unit: { name: ceph-tailnet-route, enabled: true, active: true, daemon_reload: true }
-    when: 'host.id in vars.ceph_hosts'
 
   # ── Admin host: bootstrap material and the cluster's specs.
   - file.directory: { path: /etc/ceph/buckle, mode: "0700" }
