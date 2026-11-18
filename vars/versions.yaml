@@ -14,4 +14,4 @@ tsidp_version: 0.0.20
 # like drift, auto-corrected on every host within 15 minutes, outside any
 # rollout. Renovate proposes newer commits as PRs instead.
 # renovate: datasource=git-refs depName=https://github.com/cedi/dotfiles branch=main
-dotfiles_ref: 18b12aae1ae68a301b370b6da02001c601c54830
+dotfiles_ref: 60a9c3d21ff2be746340d0c853a01006561a1af8
