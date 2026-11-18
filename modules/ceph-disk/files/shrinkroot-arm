@@ -1,0 +1,60 @@
+#!/bin/sh
+# shrinkroot-arm <N>G   arm the initramfs shrink for the next boot
+# shrinkroot-arm --done exit 0 if the root disk is split already
+#
+# (Buckle: modules/ceph-disk.) Arming checks that the initramfs the firmware
+# will boot carries the shrink script and its tools, that root fits in half of
+# <N>G, then puts shrinkroot=<N>G on cmdline.txt. The reboot is Buckle's.
+set -eu
+
+root=$(findmnt -n -o SOURCE /)
+part=$(basename "$(readlink -f "$root")")
+sys=/sys/class/block/$part
+partnum=$(cat "$sys/partition")
+disk=$(basename "$(readlink -f "$sys/..")")
+case "$disk" in
+	*[0-9]) pfx=${disk}p ;;
+	*) pfx=$disk ;;
+esac
+newpart=${pfx}$((partnum + 1))
+
+if [ "${1:-}" = --done ]; then
+	test -e "/sys/class/block/$newpart"
+	exit
+fi
+
+size=${1:?usage: shrinkroot-arm <N>G | --done}
+case "$size" in
+	*G) gib=${size%G} ;;
+	*) echo "size $size is not <N>G" >&2; exit 2 ;;
+esac
+case "$gib" in
+	'' | *[!0-9]*) echo "size $size is not <N>G" >&2; exit 2 ;;
+esac
+
+die() { echo "shrinkroot-arm: $*" >&2; exit 1; }
+
+[ ! -e "/sys/class/block/$newpart" ] || die "/dev/$newpart exists: already split"
+[ "$partnum" = 2 ] || die "root is $root (partition $partnum), expected partition 2"
+[ "$(findmnt -n -o SOURCE /boot/firmware)" = "/dev/${pfx}1" ] || die "/boot/firmware is not /dev/${pfx}1"
+[ "$(findmnt -n -o FSTYPE /)" = ext4 ] || die "root is not ext4"
+
+used_mib=$(df -B1M --output=used / | tail -n1 | tr -d ' ')
+[ $((used_mib * 2)) -le $((gib * 1024)) ] || die "${used_mib} MiB used on /, more than half of $size"
+
+grep -qE '^[[:space:]]*auto_initramfs=1' /boot/firmware/config.txt || die "config.txt does not set auto_initramfs=1"
+# The image the firmware loads for this kernel flavour (as raspi-firmware's
+# post-update hook names it): 2712 -> initramfs_2712, v8 -> initramfs8.
+flavour=$(uname -r)
+flavour=${flavour##*-rpi-}
+img=/boot/firmware/initramfs$(echo "$flavour" | sed 's/^v//;s/^6//;s/2712/_2712/;s/-/_/')
+[ -f "$img" ] || die "$img missing"
+contents=$(lsinitramfs "$img")
+for f in scripts/local-premount/shrinkroot usr/sbin/sfdisk usr/sbin/dumpe2fs usr/sbin/resize2fs usr/sbin/e2fsck; do
+	echo "$contents" | grep -qx "$f" || die "$img lacks $f (update-initramfs -u -k all)"
+done
+
+sed -i 's/ *shrinkroot=[^ ]*//g; 1s/$/ shrinkroot='"$size"'/' /boot/firmware/cmdline.txt
+sync
+echo "armed: $(cat /boot/firmware/cmdline.txt)"
+echo "next boot shrinks $root to $size and adds /dev/$newpart; log: /boot/firmware/shrinkroot.log"

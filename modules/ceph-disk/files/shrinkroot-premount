@@ -1,0 +1,175 @@
+#!/bin/sh
+# initramfs local-premount script (Buckle: modules/ceph-disk).
+#
+# With `shrinkroot=<N>G` on the kernel command line, split the root disk once,
+# before the root filesystem is mounted:
+#
+#   1. take the token off cmdline.txt (so this runs at most once: a failure or
+#      a hang here never becomes a boot loop; the next boot is a normal one),
+#   2. e2fsck, then shrink the root ext4 to 15/16 of N,
+#   3. shrink the root partition to N, add one partition over the rest of the
+#      disk (the Ceph OSD's), and grow the ext4 back to fill N.
+#
+# Each step leaves a bootable disk: a smaller filesystem in its old partition,
+# then that filesystem in a partition still larger than it, then a new
+# partition behind it. Anything unexpected stops it before the next step and
+# boot carries on. Assumes the Raspberry Pi layout: boot (vfat) is partition
+# 1 of the same disk, root is the last partition. The log goes to
+# shrinkroot.log on the boot partition (/boot/firmware once up).
+#
+# Tests run it against a loop device with ROOT and SHRINKROOT_CMDLINE set.
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in prereqs) prereqs; exit 0 ;; esac
+
+cmdline=${SHRINKROOT_CMDLINE:-/proc/cmdline}
+size=
+for arg in $(cat "$cmdline"); do
+	case "$arg" in shrinkroot=*) size=${arg#shrinkroot=} ;; esac
+done
+[ -n "$size" ] || exit 0
+
+LOG=/run/shrinkroot.log
+MNT=/run/shrinkroot-boot
+
+log() {
+	msg="shrinkroot[$(cut -d' ' -f1 /proc/uptime)]: $*"
+	echo "$msg" >>"$LOG"
+	echo "$msg" >&2
+}
+
+# Append /run's log to the boot partition's (unmounted again straight away,
+# because sfdisk re-reads the partition table only while nothing is mounted).
+flush() {
+	mkdir -p "$MNT"
+	if mount -t vfat -o codepage=437,iocharset=ascii "$boot" "$MNT"; then
+		cat "$LOG" >>"$MNT/shrinkroot.log"
+		sync
+		umount "$MNT"
+	fi
+	: >"$LOG"
+}
+
+# Stop here and boot as usual.
+stop() {
+	log "STOP: $*"
+	flush
+	exit 0
+}
+
+# --- which disk, which partitions --------------------------------------------
+root=$ROOT
+case "$root" in
+	/dev/*) ;;
+	*) log "STOP: root=$root is not a device path"; exit 0 ;;
+esac
+part=$(basename "$(readlink -f "$root")")
+sys=/sys/class/block/$part
+if [ ! -r "$sys/partition" ]; then
+	log "STOP: $root is not a partition"
+	exit 0
+fi
+partnum=$(cat "$sys/partition")
+disk=$(basename "$(readlink -f "$sys/..")")
+case "$disk" in
+	*[0-9]) pfx=${disk}p ;;
+	*) pfx=$disk ;;
+esac
+boot=/dev/${pfx}1
+newpart=${pfx}$((partnum + 1))
+
+# --- once: the token comes off before anything else --------------------------
+log "shrinkroot=$size requested for $root (disk /dev/$disk)"
+mkdir -p "$MNT"
+if ! mount -t vfat -o codepage=437,iocharset=ascii "$boot" "$MNT"; then
+	log "STOP: cannot mount $boot to take shrinkroot= off cmdline.txt; nothing changed"
+	exit 0
+fi
+sed -i 's/ *shrinkroot=[^ ]*//g' "$MNT/cmdline.txt"
+if grep -q 'shrinkroot=' "$MNT/cmdline.txt"; then
+	umount "$MNT"
+	log "STOP: shrinkroot= still in $boot:cmdline.txt; nothing changed"
+	exit 0
+fi
+sync
+umount "$MNT"
+log "took shrinkroot= off $boot:cmdline.txt"
+
+# --- checks -------------------------------------------------------------------
+[ "$partnum" = 2 ] || stop "root is partition $partnum, expected 2; nothing changed"
+[ ! -e "/sys/class/block/$newpart" ] || stop "/dev/$newpart exists already: disk is split; nothing changed"
+
+case "$size" in
+	*G) gib=${size%G} ;;
+	*) stop "size $size is not <N>G; nothing changed" ;;
+esac
+case "$gib" in
+	'' | *[!0-9]*) stop "size $size is not <N>G; nothing changed" ;;
+esac
+
+start=$(cat "$sys/start")
+cur=$(cat "$sys/size")
+target=$((gib * 1024 * 1024 * 2))      # 512-byte sectors
+fs_mib=$((gib * 1024 * 15 / 16))
+[ "$cur" -gt $((target + 4 * 1024 * 1024 * 2)) ] ||
+	stop "root partition is $((cur / 2048)) MiB, not at least 4 GiB more than $size; nothing changed"
+
+fsinfo() { dumpe2fs -h "$root" 2>/dev/null | sed -n "s/^$1: *//p"; }
+bs=$(fsinfo 'Block size')
+blocks=$(fsinfo 'Block count')
+free=$(fsinfo 'Free blocks')
+[ -n "$bs" ] && [ -n "$blocks" ] && [ -n "$free" ] || stop "$root is not ext2/3/4; nothing changed"
+used_mib=$(((blocks - free) * bs / 1048576))
+[ $((used_mib * 2)) -le $((gib * 1024)) ] ||
+	stop "${used_mib} MiB used: more than half of $size; nothing changed"
+log "partition $((cur / 2048)) MiB at sector $start, ext4 ${used_mib} MiB used; root becomes ${gib} GiB"
+flush
+
+# --- 1. filesystem ------------------------------------------------------------
+log "e2fsck -f -y $root"
+e2fsck -f -y "$root" >>"$LOG" 2>&1
+rc=$?
+[ $rc -lt 4 ] || stop "e2fsck exit $rc; nothing changed"
+flush
+
+log "resize2fs $root ${fs_mib}M"
+resize2fs "$root" "${fs_mib}M" >>"$LOG" 2>&1
+rc=$?
+[ $rc -eq 0 ] || stop "resize2fs exit $rc; partition table unchanged"
+bs=$(fsinfo 'Block size')
+blocks=$(fsinfo 'Block count')
+fs_sectors=$((blocks * bs / 512))
+[ "$fs_sectors" -le "$target" ] ||
+	stop "ext4 is $((fs_sectors / 2048)) MiB after resize2fs, larger than ${gib} GiB; partition table unchanged"
+log "ext4 is now $((fs_sectors / 2048)) MiB"
+flush
+
+# --- 2. partitions ------------------------------------------------------------
+log "sfdisk: partition $partnum to $target sectors"
+echo "size=$target" | sfdisk -N "$partnum" "/dev/$disk" >>"$LOG" 2>&1
+rc=$?
+[ $rc -eq 0 ] || stop "sfdisk (shrink partition $partnum) exit $rc; ext4 fits either way"
+
+newstart=$((start + target))
+log "sfdisk: new partition from sector $newstart to the end"
+echo "start=$newstart, type=83" | sfdisk --append "/dev/$disk" >>"$LOG" 2>&1
+rc=$?
+[ $rc -eq 0 ] || stop "sfdisk (append) exit $rc; root partition is ${gib} GiB, no new partition"
+flush
+
+# --- 3. grow the filesystem back to the partition -----------------------------
+i=0
+while [ "$(cat "$sys/size")" != "$target" ] || [ ! -e "/sys/class/block/$newpart" ]; do
+	[ $i -eq 0 ] && blockdev --rereadpt "/dev/$disk" >>"$LOG" 2>&1
+	i=$((i + 1))
+	[ $i -le 10 ] || stop "kernel still sees the old partition table; ext4 stays at ${fs_mib} MiB (grow it later: resize2fs $root)"
+	sleep 1
+done
+log "kernel sees /dev/$part at ${gib} GiB and /dev/$newpart"
+
+log "resize2fs $root (fill partition)"
+resize2fs "$root" >>"$LOG" 2>&1 || log "resize2fs grow exit $?; ext4 stays at ${fs_mib} MiB (grow it later: resize2fs $root)"
+e2fsck -f -y "$root" >>"$LOG" 2>&1
+log "e2fsck exit $?; done"
+flush
+exit 0

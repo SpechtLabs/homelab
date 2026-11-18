@@ -1,0 +1,15 @@
+#!/bin/sh
+# initramfs-tools hook (Buckle: modules/ceph-disk). Puts what
+# scripts/local-premount/shrinkroot needs into the initramfs. e2fsck and
+# resize2fs are usually there already (fsck and firstboot hooks); copy them
+# anyway so the shrink never depends on another package's hook.
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in prereqs) prereqs; exit 0 ;; esac
+
+. /usr/share/initramfs-tools/hook-functions
+
+copy_exec /usr/sbin/e2fsck /sbin
+copy_exec /usr/sbin/resize2fs /sbin
+copy_exec /usr/sbin/dumpe2fs /sbin
+copy_exec /usr/sbin/sfdisk /sbin

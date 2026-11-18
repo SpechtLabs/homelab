@@ -1,0 +1,55 @@
+name: ceph-disk
+description: Splits each Ceph Pi's NVMe into a small root and an OSD partition, once, from the initramfs.
+when: 'host.groups contains "ceph"'
+tags: [ceph, hardware]
+vars:
+  # Root's size after the split; the rest of the disk becomes the OSD's
+  # partition (nvme0n1p3). Root holds the OS, container images and the mon
+  # store; 10-15 GB were in use when the Pis were split.
+  ceph_root_size: 64G
+# The Ceph Pis boot from their NVMe and root (ext4) filled it. A mounted ext4
+# can grow but not shrink, so the shrink runs in the initramfs before root is
+# mounted (files/shrinkroot-premount, which explains each step). The tasks
+# only put it in the initramfs, where it does nothing without shrinkroot= on
+# the kernel command line; the `shrink-root` action arms it and reboots.
+tasks:
+  - file.copy:
+      src: shrinkroot-hook
+      dest: /etc/initramfs-tools/hooks/shrinkroot
+      mode: "0755"
+      owner: root
+      group: root
+    notify: [update-initramfs]
+  - file.copy:
+      src: shrinkroot-premount
+      dest: /etc/initramfs-tools/scripts/local-premount/shrinkroot
+      mode: "0755"
+      owner: root
+      group: root
+    notify: [update-initramfs]
+  - file.copy:
+      src: shrinkroot-arm
+      dest: /usr/local/sbin/shrinkroot-arm
+      mode: "0755"
+      owner: root
+      group: root
+
+# One host at a time, from the host page. Read /boot/firmware/shrinkroot.log
+# afterwards; `lsblk` should show nvme0n1p2 at ceph_root_size and nvme0n1p3.
+actions:
+  shrink-root:
+    name: Split the NVMe for Ceph
+    description: Shrink root and add the OSD partition on the next boot (reboots now)
+    confirm: true
+    command.run:
+      run: [/usr/local/sbin/shrinkroot-arm, '{{ vars.ceph_root_size }}']
+      unless: [/usr/local/sbin/shrinkroot-arm, --done]
+    notify: [reboot]
+
+handlers:
+  # Every installed kernel's initrd; raspi-firmware's post-update hook copies
+  # the newest to /boot/firmware/initramfs_2712, which the firmware loads.
+  update-initramfs:
+    command.run: { run: [update-initramfs, -u, -k, all] }
+  reboot:
+    system.reboot: { delay: 10s, timeout: 10m }
