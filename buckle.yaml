@@ -68,7 +68,7 @@ secrets:
   NUT_MONITOR_PASSWORD:   { file: /etc/buckle/secrets/NUT_MONITOR_PASSWORD }
 
 rollout:
-  trigger: manual          # flip to auto once the migration is done
+  trigger: auto            # every valid revision on main starts a rollout
   supersede: latest
   on_failure: pause
   settle: 2m
@@ -80,9 +80,11 @@ rollout:
     approval: auto
   # A host belongs to the first phase that selects it.
   phases:
+    # No approval: the canary's 10 minute bake and health checks are the gate.
+    # A failure pauses the rollout (on_failure: pause) before any other host.
     - name: canary
       select: 'host.id == "blade-pi4"'
-      approval: required
+      approval: auto
       bake: 10m
     - name: k3s-server
       select: 'host.groups contains "k3s-server"'
