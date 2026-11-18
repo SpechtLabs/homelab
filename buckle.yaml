@@ -90,7 +90,7 @@ rollout:
       bake: 5m
     - name: k3s-agents
       select: 'host.groups contains "k3s-agent"'
-      parallel: 1
+      parallel: 2              # half the workers at a time; the other two carry the load
       approval: if_destructive
     - name: ceph
       select: 'host.groups contains "ceph"'
