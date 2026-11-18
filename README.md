@@ -50,7 +50,7 @@ mise exec -- buckle validate --config . $(printf -- '--facts %s ' fixtures/facts
 - **Change something**: open a PR. CI dry-plans every host, and once it's merged the server
   rolls it out.
 - **Upgrade k3s / Alloy / rpi_exporter / tsidp**: merge the renovate PR that bumps
-  `vars/versions.yaml`. k3s goes server first, then one agent at a time.
+  `vars/versions.yaml`. k3s goes server first, then two agents at a time.
 - **Upgrade Buckle**: bump `mise.toml` and `desired_version` in `bootstrap/server.yaml`; update
   the server binary, then upgrade agents from the UI (canary first).
 - **Reboot or patch a host**: the host page's actions (`base: upgrade`, `base: reboot`,
