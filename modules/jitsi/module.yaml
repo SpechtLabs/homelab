@@ -83,6 +83,36 @@ tasks:
     removal: leave
     notify: [restart-prosody]
 
+  # Prosody's own certificates for meet's internal XMPP: jicofo and the bridge
+  # log in over TLS on localhost and verify them against the system (and so
+  # Java) trust store. The quick-install made them valid for one year, and
+  # they expired on 2026-01-22. Renew 30 days before expiry, for ten years,
+  # and trust the new ones; the quick-install's paths stay as they were.
+  - command.run:
+      run:
+        - sh
+        - -c
+        - >-
+          set -e;
+          for h in {{ vars.jitsi_domain }} auth.{{ vars.jitsi_domain }}; do
+          openssl req -x509 -newkey rsa:2048 -nodes -sha256 -days 3650 -subj "/CN=$h" -addext "subjectAltName=DNS:$h"
+          -keyout /var/lib/prosody/$h.key -out /var/lib/prosody/$h.crt 2>/dev/null;
+          chown prosody:prosody /var/lib/prosody/$h.key /var/lib/prosody/$h.crt;
+          chmod 0640 /var/lib/prosody/$h.key; chmod 0644 /var/lib/prosody/$h.crt;
+          cp /var/lib/prosody/$h.crt /usr/local/share/ca-certificates/$h.crt;
+          done;
+          update-ca-certificates --fresh >/dev/null
+      unless:
+        - sh
+        - -c
+        - >-
+          openssl x509 -checkend 2592000 -noout -in /var/lib/prosody/{{ vars.jitsi_domain }}.crt &&
+          openssl x509 -checkend 2592000 -noout -in /var/lib/prosody/auth.{{ vars.jitsi_domain }}.crt
+      timeout: 5m
+    id: prosody-internal-certs
+    removal: leave
+    notify: [restart-prosody, restart-jicofo, restart-jvb]
+
   # jicofo: conference focus.
   - file.template: { src: jicofo.conf.j2, dest: /etc/jitsi/jicofo/jicofo.conf, owner: jicofo, group: jitsi, mode: "0644" }
     id: jicofo-conf
@@ -179,6 +209,11 @@ health:
     http:
       url: 'https://{{ vars.jitsi_domain }}/'
       expect: { status: 200 }
+  # The internal XMPP certificate (renewed above, 30 days ahead).
+  - name: internal-certificate
+    command:
+      run: ['openssl', 'x509', '-checkend', '1209600', '-noout', '-in', '/var/lib/prosody/auth.{{ vars.jitsi_domain }}.crt']
+      expect: { exit: 0 }
   # acme.sh renews at 60 days; fail with two weeks still left.
   - name: certificate
     command:
