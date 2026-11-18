@@ -68,6 +68,17 @@ tasks:
       key: 'from="{{ vars.ceph_public_network }}" {{ vars.ceph_cephadm_pubkey }}'
     when: 'vars.ceph_cephadm_pubkey != ""'
 
+  # ── Network: cephadm places mons only on hosts it sees in public_network,
+  #    and it can't see tailnet addresses (files/ceph-tailnet-route.service.j2).
+  - file.template:
+      src: ceph-tailnet-route.service.j2
+      dest: /etc/systemd/system/ceph-tailnet-route.service
+      mode: "0644"
+    when: 'host.id in vars.ceph_hosts'
+    notify: [restart-tailnet-route]
+  - systemd.unit: { name: ceph-tailnet-route, enabled: true, active: true, daemon_reload: true }
+    when: 'host.id in vars.ceph_hosts'
+
   # ── Admin host: bootstrap material and the cluster's specs.
   - file.directory: { path: /etc/ceph/buckle, mode: "0700" }
     when: 'host.id == vars.ceph_admin_host'
@@ -140,6 +151,7 @@ actions:
 handlers:
   reload-sshd:
     command.run: { run: 'sshd -t && systemctl reload ssh' }
+  restart-tailnet-route: { systemd.restart: { name: ceph-tailnet-route } }
   # Specs before resources: handlers run in the order they are listed here.
   orch-apply:
     command.run: { run: [/usr/local/sbin/ceph-buckle-apply, cluster] }
@@ -147,6 +159,10 @@ handlers:
     command.run: { run: [/usr/local/sbin/ceph-buckle-apply, resources] }
 
 health:
+  - name: tailnet-route
+    command:
+      run: 'ip route show table main dev tailscale0 | grep -q "scope link src 100\\."'
+      expect: { exit: 0 }
   # Until the cluster exists there is nothing to check. HEALTH_WARN passes
   # (a node down, a pool without an application); HEALTH_ERR fails.
   - name: cluster

@@ -1,0 +1,20 @@
+# {{ buckle_managed }}
+# A main-table route for this host's own tailnet address, so cephadm sees it.
+# cephadm decides which hosts may run a mon from `ip route ls` (main table,
+# lines with `scope link ... src`); Tailscale keeps its routes in table 52, so
+# without this every host is "not in public_network 100.64.0.0/10". Traffic to
+# the host's own address is answered from the local table first: this route
+# never carries a packet. Restarts with tailscaled, which recreates the device.
+[Unit]
+Description=Main-table route for this host's tailnet address (cephadm)
+After=tailscaled.service
+PartOf=tailscaled.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'for i in $(seq 120); do ip -4 addr show dev tailscale0 2>/dev/null | grep -q "inet {{ vars.ceph_hosts[host.id] }}/" && exec ip route replace {{ vars.ceph_hosts[host.id] }}/32 dev tailscale0 scope link src {{ vars.ceph_hosts[host.id] }}; sleep 1; done; echo "tailscale0 has no {{ vars.ceph_hosts[host.id] }}" >&2; exit 1'
+ExecStop=-/sbin/ip route del {{ vars.ceph_hosts[host.id] }}/32 dev tailscale0
+
+[Install]
+WantedBy=tailscaled.service
