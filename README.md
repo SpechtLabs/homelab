@@ -35,7 +35,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `pi-firmware` | Pis | `config.txt` (PoE+ HAT fan, Pi 5 cooling/PCIe, GPS/PPS wiring), cgroups in `cmdline.txt`; reboots on change |
 | `pi-tools` | Pi 5 | rpi-clone |
 | `rpi-exporter` | Pis | cedi/rpi_exporter on :9243 |
-| `nut-server` | nuc | upsd proxying the Synology's UPS |
+| `nut-server` | nuc | upsd proxying the UPS Tower's NUT server to the Pis |
 | `nut-client` | Pis | upsmon + upssched; early or late shutdown |
 | `k3s-server` | clusterpi-leader | k3s control plane |
 | `k3s-agent` | clusterpi-worker* | k3s workers; *action*: reboot |
@@ -91,9 +91,6 @@ Found during the migration (2026-11-17/18); none of them caused by it.
   broke every `apt-get update`. `/etc/apt/sources.list.d/ubuntu.sources` points at
   `old-releases.ubuntu.com` by hand (original: `ubuntu.sources.bak-20261118`). apt works, but there
   are no security updates: move the NUC to 26.04 LTS.
-- **UPS chain down.** The NUC's NUT proxy reaches no upstream (`192.168.0.64` refuses NUT; the old
-  config pointed at `.156`). Enable DSM's network UPS server and permit the NUC. Until then the Pis
-  have no UPS-triggered shutdown; the `ups-reachable` checks are informational.
 - **GitHub API rate limit.** `github.release` spends one anonymous API call (60/h per IP, shared
   by every host at home) per plan while a host isn't on the pinned version. Fine in steady state;
   a fleet-wide upgrade of many hosts at once can exhaust it, so roll those in phases.

@@ -1,13 +1,13 @@
 name: nut-server
-description: upsd on the NUC, re-exporting the Synology's UPS (dummy-ups proxy) to the Pis.
+description: upsd on the NUC, re-exporting the UPS Tower's NUT server (dummy-ups proxy) to the Pis.
 when: 'host.groups contains "nut-server"'
 tags: [power]
 vars:
-  # The Synology's built-in NUT server. DSM hard-codes this account.
-  # The NAS answers on .64 (its SNMP exporter does). On 2026-11-17 the NUC's
-  # live config pointed at .156 instead, and neither address accepted NUT
-  # connections: enable DSM's network UPS server and permit the NUC's IP.
-  nut_upstream_host: 192.168.0.64
+  # The Ubiquiti UPS Tower (UPSTower.local) serves NUT itself, UPS name `ups`.
+  # Keep its DHCP lease fixed. It accepts any login, so monuser and the
+  # stored NUT_UPSTREAM_PASSWORD (DSM's old fixed account) still work.
+  # (Not the Synology on .64: it has no NUT server enabled.)
+  nut_upstream_host: 192.168.0.156
   nut_upstream_user: monuser
   nut_admin_user: admin
   nut_monitor_user: monuser
@@ -37,9 +37,9 @@ handlers:
 health:
   - name: upsd
     tcp: { address: '127.0.0.1:3493' }
-  # Informational: depends on the Synology's NUT server, not on this host.
+  # The UPS Tower reached through this proxy: the whole fleet's power-loss
+  # shutdown depends on it.
   - name: proxied-ups
     command:
       run: ['upsc', '{{ vars.nut_ups_name }}@localhost', 'ups.status']
       expect: { exit: 0 }
-    required: false

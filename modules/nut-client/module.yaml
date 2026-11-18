@@ -29,10 +29,9 @@ handlers:
 health:
   - name: monitor
     systemd: { unit: nut-monitor, state: active, min_uptime: 30s }
-  # Informational: the UPS chain (NUC proxy -> Synology) can be down without
-  # this host's change being at fault, and must not fail every Pi's rollout.
+  # Without the UPS this host has no power-loss shutdown. The chain (NUC proxy
+  # -> UPS Tower) fails the NUC's proxied-ups check first, in core.
   - name: ups-reachable
     command:
       run: ['upsc', '{{ vars.nut_ups_name }}@{{ vars.nut_server_host }}', 'ups.status']
       expect: { exit: 0 }
-    required: false
