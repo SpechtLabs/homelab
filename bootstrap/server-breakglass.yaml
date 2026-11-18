@@ -1,0 +1,49 @@
+# /etc/buckle/server-breakglass.yaml: the same server WITHOUT sign-in, for when
+# tsidp is down. The API/UI listens on localhost only, reached through an SSH
+# tunnel. Run by buckle-server-breakglass.service; keep everything except
+# `web` and `listen.http` identical to server.yaml.
+listen:
+  # The NUC's tailnet address only. WireGuard encrypts; agents are identified
+  # by tailscaled's whois, so there is no TLS and no bootstrap token.
+  grpc: "${{ env.BUCKLE_LISTEN_ADDR }}:7700"
+  http: "127.0.0.1:7701"                 # localhost only: no sign-in here
+  tls: { mode: none }
+data_dir: /var/lib/buckle-server
+
+source:
+  git:
+    url: https://github.com/cedi/homelab.git
+    branch: main
+    poll: 30s
+    # Public repository: no credentials. If it goes private, add a read-only
+    # fine-grained PAT:  credentials: { token: "${{ env.GIT_TOKEN }}" }
+
+agents:
+  auth: [tailscale]
+  registration: auto
+  tailscale:
+    # Existing hosts already carry these tags; anything else waits in the UI.
+    allowed_tags: ["tag:homelab", "tag:core-infra", "tag:core-services"]
+    # Uncomment once the Tailscale OAuth client exists (bootstrap/README.md, step 1):
+    # "Add an agent" then mints a tagged, single-use, pre-approved auth key.
+    # provisioning:
+    #   flow: client
+    #   client_id: "${{ env.TS_OAUTH_CLIENT_ID }}"
+    #   client_secret: "${{ env.TS_OAUTH_CLIENT_SECRET }}"
+    #   tags: ["tag:homelab", "tag:core-infra", "tag:core-services"]
+  join:
+    server_url: http://nuc.sphinx-map.ts.net:7700
+  minimum_agent_version: "2.13.0"
+  desired_version: "2.13.0"     # renovate: datasource=github-releases depName=SierraSoftworks/buckle
+
+web:
+  base_url: http://127.0.0.1:7701
+  # No oidc and no admin_acl: whoever reaches localhost:7701 is admin, and
+  # only someone with a shell on the NUC (or an SSH tunnel to it) can.
+
+secrets:
+  providers:
+    file: { root: /etc/buckle/secrets }
+
+telemetry:
+  otlp_endpoint: http://127.0.0.1:4317     # the NUC's own Alloy OTLP receiver

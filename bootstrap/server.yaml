@@ -36,10 +36,16 @@ agents:
 
 web:
   base_url: http://nuc.sphinx-map.ts.net:7701
-  # No OIDC yet, so lock admin actions to the tailnet. Swap for tsidp later:
-  #   oidc: { endpoint: https://idp.sphinx-map.ts.net, client_id: buckle,
-  #           client_secret: "${{ env.OIDC_CLIENT_SECRET }}" }
-  admin_acl: 'client_ip startswith "100."'
+  # Sign-in through tsidp. tsidp adds groups=[buckle-admins] to the tokens of
+  # group:admins (tailscale/policy.hujson); nobody else may read or act.
+  # tsidp offline? See "Break-glass" in bootstrap/README.md.
+  user_acl:  '"buckle-admins" in claims.groups'
+  admin_acl: '"buckle-admins" in claims.groups'
+  oidc:
+    endpoint: https://idp.sphinx-map.ts.net
+    client_id: "${{ env.OIDC_CLIENT_ID }}"
+    client_secret: "${{ env.OIDC_CLIENT_SECRET }}"
+    scopes: [openid, profile, email, offline_access]
 
 secrets:
   providers:

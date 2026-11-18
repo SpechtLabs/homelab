@@ -1,0 +1,18 @@
+# /etc/systemd/system/buckle-server-breakglass.service on the NUC. Never enabled.
+# The fleet server without sign-in, API/UI on 127.0.0.1:7701 only, for when
+# tsidp is unreachable. Starting it stops buckle-server (same database);
+# stopping it, or 4 hours passing, brings buckle-server back.
+[Unit]
+Description=Buckle fleet server (break-glass: no sign-in, localhost only)
+Documentation=https://github.com/cedi/homelab/blob/main/bootstrap/README.md
+Conflicts=buckle-server.service
+After=buckle-server.service network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=/etc/buckle/server.env
+ExecStart=/usr/local/bin/buckle server --config /etc/buckle/server-breakglass.yaml
+ExecStopPost=/bin/systemctl start --no-block buckle-server.service
+RuntimeMaxSec=4h
+StateDirectory=buckle-server
+StateDirectoryMode=0700

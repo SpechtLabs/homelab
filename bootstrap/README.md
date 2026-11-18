@@ -126,3 +126,27 @@ Start one from the Rollouts page and read every host's plan before approving. Wh
 - **`ptp-server`**: removes ntpsec and keeps chrony.
 
 Once a full rollout has gone through cleanly, set `rollout.trigger: auto`.
+
+## Sign-in and break-glass
+
+The UI and API (http://nuc.sphinx-map.ts.net:7701) sign in through tsidp. tsidp puts
+`groups: ["buckle-admins"]` into the tokens of `group:admins` (`tailscale/policy.hujson`), and
+`server.yaml`'s `user_acl` and `admin_acl` require it: changing who may use Buckle is a policy
+change. The OIDC client was registered with tsidp's dynamic client registration; its ID and
+secret live in `/etc/buckle/server.env` (`OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`).
+
+Sign-in needs tsidp: without it there is no new login, and existing sessions stop working
+within the hour, as Buckle revalidates them against tsidp. Agents and rollouts don't depend on
+it. When tsidp is down:
+
+```sh
+ssh cedi@nuc sudo systemctl start buckle-server-breakglass   # stops buckle-server
+ssh -L 7701:127.0.0.1:7701 cedi@nuc                          # then open http://localhost:7701
+ssh cedi@nuc sudo systemctl stop buckle-server-breakglass    # back to sign-in
+```
+
+`buckle-server-breakglass` is the same server and database with `server-breakglass.yaml`: no
+sign-in, API/UI on `127.0.0.1:7701` only, agents unaffected. It reverts to `buckle-server`
+when stopped and after 4 hours at most. SSH to the NUC doesn't depend on tsidp (Tailscale SSH or
+the LAN). Keep `server-breakglass.yaml` identical to `server.yaml` apart from `web` and
+`listen.http`.
