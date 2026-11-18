@@ -17,7 +17,8 @@
 # 1 of the same disk, root is the last partition. The log goes to
 # shrinkroot.log on the boot partition (/boot/firmware once up).
 #
-# Tests run it against a loop device with ROOT and SHRINKROOT_CMDLINE set.
+# Tests run it against a loop device with ROOT and SHRINKROOT_CMDLINE set;
+# set ROOT=PARTUUID=... there too, since that is what it gets at boot.
 PREREQ=""
 prereqs() { echo "$PREREQ"; }
 case "$1" in prereqs) prereqs; exit 0 ;; esac
@@ -58,10 +59,22 @@ stop() {
 }
 
 # --- which disk, which partitions --------------------------------------------
+# local-premount runs from mount_premount, before local_mount_root has turned
+# root=PARTUUID=... into a device (or waited for it), so do what it does next:
+# local_device_setup waits for udev and the device and sets DEV. With
+# may_panic=false it returns 1 instead of dropping to a rescue shell.
 root=$ROOT
 case "$root" in
 	/dev/*) ;;
-	*) log "STOP: root=$root is not a device path"; exit 0 ;;
+	*)
+		. /scripts/functions
+		. /scripts/local
+		if ! local_device_setup "$root" "root file system" false >/dev/null; then
+			log "STOP: root=$root did not show up; nothing changed"
+			exit 0
+		fi
+		root=$DEV
+		;;
 esac
 part=$(basename "$(readlink -f "$root")")
 sys=/sys/class/block/$part
