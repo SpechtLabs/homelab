@@ -20,6 +20,7 @@ fleet:
     ptp-grandmaster: 'host.id == "timepi"'
     o11y-collector:  'host.facts.tailscale.tags contains "tag:o11y-collector"'
     spechtlabs:      'host.id in ["hole", "meet"]'
+    jitsi:           'host.id == "meet"'
     tsidp:           'host.id == "nuc"'
     buckle-server:   'host.facts.tailscale.tags contains "tag:buckle-server"'
 
@@ -82,6 +83,11 @@ secrets:
   # age private key for k8s-deployment's SOPS secrets: the one thing a fresh
   # cluster's Argo CD can't get from git (modules/argocd-seed).
   ARGOCD_AGE_KEY:         { file: /etc/buckle/secrets/ARGOCD_AGE_KEY }
+  # Jitsi on meet (modules/jitsi): the bridge's and jicofo's XMPP passwords
+  # (their Prosody accounts must match) and the TURN secret (coturn + Prosody).
+  JITSI_JVB_PASSWORD:     { file: /etc/buckle/secrets/JITSI_JVB_PASSWORD }
+  JITSI_FOCUS_PASSWORD:   { file: /etc/buckle/secrets/JITSI_FOCUS_PASSWORD }
+  JITSI_TURN_SECRET:      { file: /etc/buckle/secrets/JITSI_TURN_SECRET }
 
 rollout:
   trigger: auto            # every valid revision on main starts a rollout

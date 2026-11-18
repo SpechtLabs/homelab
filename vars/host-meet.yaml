@@ -7,3 +7,17 @@ o11y_log_paths:
   - /var/log/prosody/*.err
 o11y_local_scrapes:
   - { job: jitsi_exporter, port: 8080 }
+
+# Jitsi (modules/jitsi). Versions as installed on 2026-11-18; pinned, so the
+# nightly upgrade leaves them alone. Bump together, from download.jitsi.org's
+# stable repo and packages.prosody.im.
+jitsi_domain: meet.realschule-rottweil.de
+jitsi_packages:
+  jitsi-meet: 2.0.10314-1
+  jitsi-meet-web: 1.0.8648-1
+  jitsi-meet-web-config: 1.0.8648-1
+  jitsi-meet-prosody: 1.0.8648-1
+  jitsi-meet-turnserver: 1.0.8648-1
+  jicofo: 1.0-1138-1
+  jitsi-videobridge2: 2.3-236-g95ef6210-1
+  prosody: 13.0.2-1~noble1

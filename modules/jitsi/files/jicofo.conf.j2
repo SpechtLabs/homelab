@@ -1,0 +1,22 @@
+# Jicofo HOCON configuration. See reference.conf in /usr/share/jicofo/jicofo.jar for
+#available options, syntax, and default values.
+jicofo {
+  #authentication: {
+  #  enabled: true
+  #  type: XMPP
+  #  login-url: {{ vars.jitsi_domain }}
+  #}
+  xmpp: {
+    client: {
+      client-proxy: "focus.{{ vars.jitsi_domain }}"
+      xmpp-domain: "{{ vars.jitsi_domain }}"
+      domain: "auth.{{ vars.jitsi_domain }}"
+      username: "focus"
+      password: "{{ secrets.JITSI_FOCUS_PASSWORD }}"
+    }
+    trusted-domains: [ "recorder.{{ vars.jitsi_domain }}" ]
+  }
+  bridge: {
+    brewery-jid: "JvbBrewery@internal.auth.{{ vars.jitsi_domain }}"
+  }
+}

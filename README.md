@@ -42,6 +42,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `ptp-server` | timepi | GPS + PPS discipline ntpsec (NTP); phc2sys copies the clock to eth0's PHC and ptp4l serves PTP from it |
 | `tsidp` | nuc | tailnet OIDC provider |
 | `buckle` | all | Buckle itself at `buckle_version`; restarts the agent (and the server on the NUC) after the run |
+| `jitsi` | meet | Jitsi Meet: Prosody, jicofo, videobridge, nginx, coturn configs and pinned package versions |
 | `argocd-seed` | clusterpi-leader | installs Argo CD only on a cluster that has none, from k8s-deployment, with the age key |
 
 ## The k3s cluster
@@ -79,6 +80,13 @@ mise exec -- buckle validate --config . $(printf -- '--facts %s ' fixtures/facts
   03:00 Europe/Berlin through the normal phases, and reboots only the hosts that need it, one
   or two at a time. Its runs show on the Schedules page; a failed host pauses that night's
   rollout like any other.
+- **Change Jitsi** (meet): edit `modules/jitsi/files/`. They are the quick-install's own files,
+  adopted as they were, so each change is visible in the plan's diff. Secrets
+  (`JITSI_JVB_PASSWORD`, `JITSI_FOCUS_PASSWORD`, `JITSI_TURN_SECRET`) are in the server's secret
+  store; the first two must match the `jvb` and `focus` accounts in Prosody.
+- **Upgrade Jitsi**: bump every version in `vars/host-meet.yaml`'s `jitsi_packages` together. An
+  apt pin keeps the nightly upgrade from moving them on its own. New package versions can ship
+  new config templates (`/usr/share/jitsi-meet-*`): diff them against `modules/jitsi/files/`.
 - **Reboot or patch a host now**: the host page's actions (`base: upgrade`, `base: reboot`,
   `k3s-agent: reboot`).
 - **Reset k3s**: by hand. It is deliberately not a Buckle removal hook.

@@ -1,0 +1,9 @@
+# {{ buckle_managed }}
+# Jitsi and Prosody move only when vars/host-meet.yaml's jitsi_packages does:
+# the nightly `base: upgrade` must not upgrade them under configs Buckle owns.
+{%- for name, version in vars.jitsi_packages | items %}
+
+Package: {{ name }}
+Pin: version {{ version }}
+Pin-Priority: 1001
+{%- endfor %}

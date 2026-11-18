@@ -1,0 +1,151 @@
+name: jitsi
+description: Jitsi Meet (Prosody, jicofo, videobridge, nginx, coturn) on meet, adopted from its quick-install.
+when: 'host.groups contains "jitsi"'
+tags: [jitsi]
+# The files are the quick-install's own output, adopted byte for byte on
+# 2026-11-18 (stock, of the Jan/Jul 2025 package versions): edit them here.
+# The three shared secrets live in the server's secret store. TLS stays with
+# the quick-install's acme.sh (root's crontab, /opt/acmesh), whose reload hook
+# restarts nginx and copies the certificate to coturn.
+vars:
+  jitsi_jvb_muc_nickname: ""
+  jitsi_packages: {}
+tasks:
+  # Versions: pinned (apt preferences) and installed at exactly these. Bump them
+  # together in vars, read the release notes, and check the plan's file diffs.
+  - file.template: { src: apt-pin.j2, dest: /etc/apt/preferences.d/buckle-jitsi, mode: "0644" }
+    id: jitsi-apt-pin
+  - apt.package: { name: prosody, version: '{{ vars.jitsi_packages["prosody"] }}' }
+    id: pkg-prosody
+    removal: leave
+  - apt.package: { name: jitsi-meet-web-config, version: '{{ vars.jitsi_packages["jitsi-meet-web-config"] }}' }
+    id: pkg-jitsi-meet-web-config
+    removal: leave
+  - apt.package: { name: jitsi-meet-web, version: '{{ vars.jitsi_packages["jitsi-meet-web"] }}' }
+    id: pkg-jitsi-meet-web
+    removal: leave
+  - apt.package: { name: jitsi-meet-prosody, version: '{{ vars.jitsi_packages["jitsi-meet-prosody"] }}' }
+    id: pkg-jitsi-meet-prosody
+    removal: leave
+  - apt.package: { name: jitsi-meet-turnserver, version: '{{ vars.jitsi_packages["jitsi-meet-turnserver"] }}' }
+    id: pkg-jitsi-meet-turnserver
+    removal: leave
+  - apt.package: { name: jicofo, version: '{{ vars.jitsi_packages["jicofo"] }}' }
+    id: pkg-jicofo
+    removal: leave
+  - apt.package: { name: jitsi-videobridge2, version: '{{ vars.jitsi_packages["jitsi-videobridge2"] }}' }
+    id: pkg-jitsi-videobridge2
+    removal: leave
+  - apt.package: { name: jitsi-meet, version: '{{ vars.jitsi_packages["jitsi-meet"] }}' }
+    id: pkg-jitsi-meet
+    removal: leave
+
+  # Prosody: XMPP for the web clients, jicofo and the bridge.
+  - file.template:
+      src: prosody.cfg.lua.j2
+      dest: '/etc/prosody/conf.avail/{{ vars.jitsi_domain }}.cfg.lua'
+      mode: "0644"
+    id: prosody-site
+    removal: leave
+    notify: [restart-prosody]
+  - file.symlink:
+      path: '/etc/prosody/conf.d/{{ vars.jitsi_domain }}.cfg.lua'
+      target: '/etc/prosody/conf.avail/{{ vars.jitsi_domain }}.cfg.lua'
+    id: prosody-site-enabled
+    removal: leave
+    notify: [restart-prosody]
+
+  # jicofo: conference focus.
+  - file.template: { src: jicofo.conf.j2, dest: /etc/jitsi/jicofo/jicofo.conf, owner: jicofo, group: jitsi, mode: "0644" }
+    id: jicofo-conf
+    removal: leave
+    notify: [restart-jicofo]
+  - file.template: { src: jicofo.env.j2, dest: /etc/jitsi/jicofo/config, owner: jicofo, group: jitsi, mode: "0644" }
+    id: jicofo-env
+    removal: leave
+    notify: [restart-jicofo]
+  - file.template: { src: jicofo-logging.properties.j2, dest: /etc/jitsi/jicofo/logging.properties, owner: jicofo, group: jitsi, mode: "0644" }
+    id: jicofo-logging
+    removal: leave
+    notify: [restart-jicofo]
+
+  # Videobridge: the media.
+  - file.template: { src: jvb.conf.j2, dest: /etc/jitsi/videobridge/jvb.conf, owner: jvb, group: jitsi, mode: "0644" }
+    id: jvb-conf
+    removal: leave
+    notify: [restart-jvb]
+  - file.template: { src: sip-communicator.properties.j2, dest: /etc/jitsi/videobridge/sip-communicator.properties, owner: jvb, group: jitsi, mode: "0644" }
+    id: jvb-sip-communicator
+    removal: leave
+    notify: [restart-jvb]
+  - file.template: { src: jvb.env.j2, dest: /etc/jitsi/videobridge/config, owner: jvb, group: jitsi, mode: "0644" }
+    id: jvb-env
+    removal: leave
+    notify: [restart-jvb]
+  - file.template: { src: jvb-logging.properties.j2, dest: /etc/jitsi/videobridge/logging.properties, owner: jvb, group: jitsi, mode: "0644" }
+    id: jvb-logging
+    removal: leave
+    notify: [restart-jvb]
+
+  # Web: config.js and the nginx site in front of everything.
+  - file.template:
+      src: config.js.j2
+      dest: '/etc/jitsi/meet/{{ vars.jitsi_domain }}-config.js'
+      mode: "0644"
+    id: web-config
+    removal: leave
+  - file.template:
+      src: nginx-site.conf.j2
+      dest: '/etc/nginx/sites-available/{{ vars.jitsi_domain }}.conf'
+      mode: "0644"
+    id: nginx-site
+    removal: leave
+    notify: [reload-nginx]
+  - file.symlink:
+      path: '/etc/nginx/sites-enabled/{{ vars.jitsi_domain }}.conf'
+      target: '/etc/nginx/sites-available/{{ vars.jitsi_domain }}.conf'
+    id: nginx-site-enabled
+    removal: leave
+    notify: [reload-nginx]
+
+  # coturn: TURN relay for clients that can't reach the bridge directly.
+  - file.template: { src: turnserver.conf.j2, dest: /etc/turnserver.conf, mode: "0644" }
+    id: coturn-conf
+    removal: leave
+    notify: [restart-coturn]
+  - file.template: { src: coturn.default.j2, dest: /etc/default/coturn, mode: "0644" }
+    id: coturn-default
+    removal: leave
+    notify: [restart-coturn]
+
+  - systemd.unit: { name: prosody, enabled: true, active: true }
+  - systemd.unit: { name: jicofo, enabled: true, active: true }
+  - systemd.unit: { name: jitsi-videobridge2, enabled: true, active: true }
+  - systemd.unit: { name: nginx, enabled: true, active: true }
+  - systemd.unit: { name: coturn, enabled: true, active: true }
+
+handlers:
+  restart-prosody: { systemd.restart: { name: prosody } }
+  restart-jicofo:  { systemd.restart: { name: jicofo } }
+  restart-jvb:     { systemd.restart: { name: jitsi-videobridge2 } }
+  restart-coturn:  { systemd.restart: { name: coturn } }
+  reload-nginx:    { systemd.reload: { name: nginx } }
+
+health:
+  - name: prosody
+    systemd: { unit: prosody, state: active }
+  - name: jicofo
+    systemd: { unit: jicofo, state: active, min_uptime: 30s }
+  - name: videobridge
+    http: { url: 'http://127.0.0.1:8080/about/health' }
+  - name: coturn
+    systemd: { unit: coturn, state: active }
+  - name: site
+    http:
+      url: 'https://{{ vars.jitsi_domain }}/'
+      expect: { status: 200 }
+  # acme.sh renews at 60 days; fail with two weeks still left.
+  - name: certificate
+    command:
+      run: ['openssl', 'x509', '-checkend', '1209600', '-noout', '-in', '/etc/jitsi/meet/{{ vars.jitsi_domain }}.crt']
+      expect: { exit: 0 }
