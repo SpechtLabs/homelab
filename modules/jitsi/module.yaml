@@ -87,25 +87,30 @@ tasks:
   # log in over TLS on localhost and verify them against the system (and so
   # Java) trust store. The quick-install made them valid for one year, and
   # they expired on 2026-01-22. Renew 30 days before expiry, for ten years,
-  # at the quick-install's paths.
+  # at the quick-install's paths, with the names prosodyctl gave them: Prosody
+  # presents the domain's certificate to jicofo and the bridge too, so it has
+  # to name auth.<domain> and every component.
   - command.run:
       run:
         - sh
         - -c
         - >-
-          set -e;
-          for h in {{ vars.jitsi_domain }} auth.{{ vars.jitsi_domain }}; do
-          openssl req -x509 -newkey rsa:2048 -nodes -sha256 -days 3650 -subj "/CN=$h" -addext "subjectAltName=DNS:$h"
+          set -e; D={{ vars.jitsi_domain }};
+          gen() { h=$1; san=""; for n in "$@"; do san="$san,DNS:$n"; done;
+          openssl req -x509 -newkey rsa:2048 -nodes -sha256 -days 3650 -subj "/CN=$h" -addext "subjectAltName=${san#,}"
           -keyout /var/lib/prosody/$h.key -out /var/lib/prosody/$h.crt 2>/dev/null;
           chown prosody:prosody /var/lib/prosody/$h.key /var/lib/prosody/$h.crt;
-          chmod 0640 /var/lib/prosody/$h.key; chmod 0644 /var/lib/prosody/$h.crt;
-          done
+          chmod 0640 /var/lib/prosody/$h.key; chmod 0644 /var/lib/prosody/$h.crt; };
+          gen $D auth.$D internal.auth.$D conference.$D focus.$D lobby.$D breakout.$D endconference.$D
+          metadata.$D speakerstats.$D avmoderation.$D polls.$D filesharing.$D;
+          gen auth.$D internal.auth.$D
       unless:
         - sh
         - -c
         - >-
           openssl x509 -checkend 2592000 -noout -in /var/lib/prosody/{{ vars.jitsi_domain }}.crt &&
-          openssl x509 -checkend 2592000 -noout -in /var/lib/prosody/auth.{{ vars.jitsi_domain }}.crt
+          openssl x509 -checkend 2592000 -noout -in /var/lib/prosody/auth.{{ vars.jitsi_domain }}.crt &&
+          openssl x509 -noout -ext subjectAltName -in /var/lib/prosody/{{ vars.jitsi_domain }}.crt | grep -q 'DNS:auth.{{ vars.jitsi_domain }}'
       timeout: 5m
     id: prosody-internal-certs
     removal: leave
