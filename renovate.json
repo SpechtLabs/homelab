@@ -36,6 +36,19 @@
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "SierraSoftworks/buckle",
       "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "bladectl (compute-blade-agent's CLI) pinned for local use",
+      "managerFilePatterns": [
+        "/^mise\\.toml$/"
+      ],
+      "matchStrings": [
+        "\"github:compute-blade-community/compute-blade-agent\" = \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "compute-blade-community/compute-blade-agent",
+      "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ],
   "packageRules": [
@@ -58,6 +71,13 @@
       "major": {
         "enabled": false
       }
+    },
+    {
+      "description": "compute-blade-agent: agent on the blades and bladectl here in one PR",
+      "matchDepNames": [
+        "compute-blade-community/compute-blade-agent"
+      ],
+      "groupName": "compute-blade-agent"
     }
   ]
 }

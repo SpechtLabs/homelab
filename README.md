@@ -42,6 +42,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `ptp-server` | timepi | GPS + PPS discipline ntpsec (NTP); phc2sys copies the clock to eth0's PHC and ptp4l serves PTP from it |
 | `tsidp` | nuc | tailnet OIDC provider |
 | `buckle` | all | Buckle itself at `buckle_version`; restarts the agent (and the server on the NUC) after the run |
+| `compute-blade-agent` | blade-pi* | compute-blade-agent: fan curve, LEDs, button, metrics on :9666, bladectl's mTLS API on :8081; renews its certificates |
 | `jitsi` | meet | Jitsi Meet: Prosody, jicofo, videobridge, nginx, coturn configs and pinned package versions |
 | `argocd-seed` | clusterpi-leader | installs Argo CD only on a cluster that has none, from k8s-deployment, with the age key |
 
@@ -80,6 +81,9 @@ mise exec -- buckle validate --config . $(printf -- '--facts %s ' fixtures/facts
   03:00 Europe/Berlin through the normal phases, and reboots only the hosts that need it, one
   or two at a time. Its runs show on the Schedules page; a failed host pauses that night's
   rollout like any other.
+- **Blades from here**: `mise run bladectl-config` fetches each blade's bladectl client config
+  (mTLS, made by its agent) into `~/.config/bladectl/config.yaml`; then `bladectl -A get fan`,
+  `bladectl --blade blade-pi3 set identify`. Rerun it after the agent renews its certificates.
 - **Change Jitsi** (meet): edit `modules/jitsi/files/`. They are the quick-install's own files,
   adopted as they were, so each change is visible in the plan's diff. Secrets
   (`JITSI_JVB_PASSWORD`, `JITSI_FOCUS_PASSWORD`, `JITSI_TURN_SECRET`) are in the server's secret

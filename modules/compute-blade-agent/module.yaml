@@ -1,0 +1,52 @@
+name: compute-blade-agent
+description: compute-blade-agent on the compute blades (fan curve, LEDs, button, metrics on :9666) and bladectl's mTLS API on :8081.
+when: 'host.groups contains "blades"'
+tags: [hardware]
+tasks:
+  # The release's .deb, at exactly this version (bladectl comes with it).
+  - apt.package:
+      name: compute-blade-agent
+      version: '{{ vars.compute_blade_agent_version }}'
+      deb: 'https://github.com/compute-blade-community/compute-blade-agent/releases/download/v{{ vars.compute_blade_agent_version }}/compute-blade-agent_{{ vars.compute_blade_agent_version }}_linux_arm64.deb'
+    removal: leave
+    notify: [restart]
+
+  # The package default plus: gRPC on TCP :8081 with mTLS (bladectl from
+  # elsewhere), development logging, a three-step fan curve.
+  - file.template: { src: config.yaml.j2, dest: /etc/compute-blade-agent/config.yaml, owner: root, group: root, mode: "0644" }
+    id: agent-config
+    removal: leave
+    notify: [restart]
+
+  # The agent makes its server certificate and root's bladectl client
+  # certificate itself, valid for one year, and only when the files are
+  # missing (its CA lasts ten). Delete them 30 days before either expires and
+  # the restart makes new ones under the same CA. Afterwards, refresh your
+  # bladectl config: `mise run bladectl-config`.
+  - command.run:
+      run: [rm, -f, /etc/compute-blade-agent/server.pem, /etc/compute-blade-agent/server-key.pem, /root/.config/bladectl/config.yaml]
+      unless:
+        - sh
+        - -c
+        - >-
+          openssl x509 -checkend 2592000 -noout -in /etc/compute-blade-agent/server.pem &&
+          grep client-certificate-data /root/.config/bladectl/config.yaml | awk '{print $2}' | base64 -d |
+          openssl x509 -checkend 2592000 -noout
+    id: agent-certificates
+    removal: leave
+    notify: [restart]
+
+  - systemd.unit: { name: compute-blade-agent, enabled: true, active: true }
+
+handlers:
+  restart: { systemd.restart: { name: compute-blade-agent } }
+
+health:
+  - name: agent
+    systemd: { unit: compute-blade-agent, state: active, min_uptime: 30s }
+  - name: metrics
+    http: { url: 'http://127.0.0.1:9666/metrics' }
+  - name: api-certificate
+    command:
+      run: [openssl, x509, -checkend, "1209600", -noout, -in, /etc/compute-blade-agent/server.pem]
+      expect: { exit: 0 }

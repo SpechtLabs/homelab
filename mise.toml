@@ -1,6 +1,25 @@
 [tools]
 "github:SierraSoftworks/buckle" = "2.15.0"
+"github:compute-blade-community/compute-blade-agent" = "0.11.2"
+yq = "4.54.3"
 
 [tasks.validate]
 description = "Validate the config and dry-plan every host in fixtures/facts"
 run = "buckle validate --config . $(printf -- '--facts %s ' fixtures/facts/*.json)"
+
+[tasks.bladectl-config]
+description = "Fetch every blade's bladectl client config (mTLS) into ~/.config/bladectl/config.yaml"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+dir="$HOME/.config/bladectl"; mkdir -p "$dir"; chmod 700 "$dir"
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+for b in blade-pi1 blade-pi2 blade-pi3 blade-pi4; do
+  # root's config, written by the agent (modules/compute-blade-agent)
+  ssh -o BatchMode=yes "pi@$b" sudo cat /root/.config/bladectl/config.yaml > "$tmp/$b.yaml"
+  yq -i ".blades[0].name = \"$b\" | .blades[0].blade.server = \"$b:8081\"" "$tmp/$b.yaml"
+done
+yq ea '. as $b ireduce ({}; .blades += $b.blades) | .["current-blade"] = "blade-pi1"' "$tmp"/blade-pi*.yaml > "$tmp/config.yaml"
+install -m 0600 "$tmp/config.yaml" "$dir/config.yaml"
+echo "wrote $dir/config.yaml: $(yq '.blades[].name' "$dir/config.yaml" | paste -sd' ' -); try: bladectl -A get fan"
+'''
