@@ -79,14 +79,23 @@ rollout:
   stragglers:
     parallel: 1
     approval: auto
-  # A host belongs to the first phase that selects it.
+  # A host belongs to the first phase that selects it. Order: the blades prove
+  # a revision, then core (Buckle server first, then the hosts you log in
+  # through), then the cluster, storage and everything else.
   phases:
-    # No approval: the canary's 10 minute bake and health checks are the gate.
-    # A failure pauses the rollout (on_failure: pause) before any other host.
+    # No approval: the canary bake and health checks are the gate. A failure
+    # pauses the rollout (on_failure: pause) before any other host.
     - name: canary
-      select: 'host.id == "blade-pi4"'
+      select: 'host.groups contains "blades"'
+      parallel: 2
       approval: auto
       bake: 10m
+    # The NUC runs the Buckle server, NUT proxy, tsidp and the o11y collector;
+    # Buckle upgrades the server before its agents this way.
+    - name: core
+      select: 'host.id in ["nuc", "timepi", "jumphost"]'
+      parallel: 1
+      approval: if_destructive
     - name: k3s-server
       select: 'host.groups contains "k3s-server"'
       approval: if_destructive
@@ -100,13 +109,6 @@ rollout:
       parallel: 1
       approval: if_destructive
     - name: rest
-      select: '!(host.id in ["nuc", "hole", "meet"])'
-      parallel: 3
-      approval: if_destructive
-    # Last on purpose: the NUC runs the Buckle server, NUT proxy, tsidp and the
-    # o11y collector, and its new Alloy config stops scraping the Pis centrally.
-    # Every Pi must already ship its own metrics by then.
-    - name: core
       select: 'true'
-      parallel: 1
+      parallel: 3
       approval: if_destructive

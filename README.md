@@ -53,8 +53,9 @@ mise exec -- buckle validate --config . $(printf -- '--facts %s ' fixtures/facts
 - **Upgrade k3s / Alloy / rpi_exporter / tsidp**: merge the renovate PR that bumps
   `vars/versions.yaml`. k3s goes server first, then two agents at a time.
 - **Upgrade Buckle**: merge renovate's `buckle` PR (`buckle_version` in `vars/versions.yaml` and
-  the CLI in `mise.toml`). The `buckle` module updates every host through the phases, canary
-  first and the NUC (server) last; agents restart into the new version 90 seconds after their run.
+  the CLI in `mise.toml`). The `buckle` module updates every host through the phases: the blades
+  (canary), then the NUC (server) in `core`, then the rest; agents restart into the new version
+  90 seconds after their run.
   Major versions are left to you: read the release notes and upgrade the server first.
 - **Reboot or patch a host**: the host page's actions (`base: upgrade`, `base: reboot`,
   `k3s-agent: reboot`).

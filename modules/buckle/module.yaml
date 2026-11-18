@@ -9,8 +9,9 @@ tasks:
   # `buckle update` fetches the release, verifies GitHub's SHA-256 digest and
   # renames the new binary into place; the running agent keeps the old one
   # until the transient unit below restarts it, outside the agent's cgroup.
-  # Agents may be newer than the server within a major version, so the NUC
-  # (server) rolling last is fine. One GitHub API call per host per upgrade.
+  # The NUC (server) is in the core phase right after the canary, so the
+  # server upgrades before most agents, as Buckle recommends. One GitHub API
+  # call per host per upgrade.
   - command.run:
       run: >-
         {{ vars.buckle_bin }} update --to {{ vars.buckle_version }} &&
