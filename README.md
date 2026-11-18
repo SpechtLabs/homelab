@@ -16,6 +16,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `buckle.yaml` | Groups (derived from facts), vars layering, secret references, rollout phases |
 | `vars/` | Shared values, broad to narrow: `defaults`, `versions` (renovate), `hw-*`, `group-*`, `host-*` |
 | `modules/` | One concern each; see below |
+| `workloads/` | What Buckle applies to the k3s cluster (`labk3s`); see below |
 | `fixtures/facts/` | One facts file per host; CI dry-plans every host against them |
 | `bootstrap/` | The server's own config, installed by hand on the NUC |
 | `nas/` | Compose projects for the Synology, deployed through DSM (not Buckle) |
@@ -40,6 +41,22 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `ptp-server` | timepi | gpsd + PPS into ntpsec; ptp4l/phc2sys behind `ptp_enabled` |
 | `tsidp` | nuc | tailnet OIDC provider |
 | `buckle` | all | Buckle itself at `buckle_version`; restarts the agent (and the server on the NUC) after the run |
+| `argocd-seed` | clusterpi-leader | installs Argo CD only on a cluster that has none, from k8s-deployment, with the age key |
+
+## The k3s cluster
+
+`buckle.yaml` declares the cluster `labk3s`: the k3s server is its executor and uses its own
+admin kubeconfig. Ownership is split so Buckle and Argo CD never manage the same object:
+
+- **Buckle** brings up k3s (`k3s-server`, `k3s-agent`), seeds Argo CD once on a cluster that has
+  none (`argocd-seed`: renders k8s-deployment's `apps/argocd/cluster/labk3s` with ksops and the
+  age key, like its `docs/first-deployment.md`), and owns the root Application
+  (`workloads/argocd-root`: `1-meta-labk3s`, with `Prune=false`).
+- **Argo CD** deploys everything else from
+  [SpechtLabs/k8s-deployment](https://github.com/SpechtLabs/k8s-deployment), itself included.
+
+On fresh Pis that's the whole bootstrap: enrol them, and the rollout installs k3s, seeds Argo CD
+and creates the root app. The only secret involved is `ARGOCD_AGE_KEY` on the Buckle server.
 
 ## Day to day
 

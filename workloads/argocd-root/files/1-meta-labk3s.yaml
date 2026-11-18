@@ -1,0 +1,25 @@
+# The root of labk3s's GitOps tree. Owned by Buckle, not by itself: Argo CD
+# can't create its own root on a fresh cluster. Prune=false keeps Argo CD from
+# ever pruning it, also while k8s-deployment still lists it.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: 1-meta-labk3s
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+spec:
+  destination:
+    namespace: argocd
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: argo-apps/labk3s
+    repoURL: https://github.com/SpechtLabs/k8s-deployment.git
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

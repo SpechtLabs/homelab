@@ -1,0 +1,9 @@
+name: argocd-root
+description: The root ("meta") Argo CD Application for labk3s; Argo CD deploys everything else from k8s-deployment, itself included.
+when: 'cluster.id == "labk3s"'
+needs: ['module:argocd-seed']
+namespace: argocd
+resources:
+  - 1-meta-labk3s.yaml
+# Dropping this workload must never delete the root Application.
+removal: keep

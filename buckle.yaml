@@ -29,6 +29,18 @@ fleet:
     nut-client: 'host.facts.hardware.raspberry_pi.version != null'
     nut-late:   'host.id in ["jumphost", "timepi"]'
 
+  # The k3s cluster as a Buckle target. The executor is the k3s server and
+  # uses its own admin kubeconfig (/etc/rancher/k3s/k3s.yaml): identity local.
+  # Buckle owns only the root Argo CD Application here (workloads/argocd-root);
+  # Argo CD deploys everything else, itself included, from k8s-deployment.
+  clusters:
+    labk3s:
+      kind: kubernetes
+      nodes:     'host.groups contains "k3s-server" || host.groups contains "k3s-agent"'
+      executors: 'host.groups contains "k3s-server"'
+      identity: local
+      labels: { site: home }
+
 # Broad to narrow; later wins. Module defaults sit below all of these.
 vars:
   - file: vars/defaults.yaml
@@ -67,6 +79,9 @@ secrets:
   NUT_UPSTREAM_PASSWORD:  { file: /etc/buckle/secrets/NUT_UPSTREAM_PASSWORD }
   NUT_ADMIN_PASSWORD:     { file: /etc/buckle/secrets/NUT_ADMIN_PASSWORD }
   NUT_MONITOR_PASSWORD:   { file: /etc/buckle/secrets/NUT_MONITOR_PASSWORD }
+  # age private key for k8s-deployment's SOPS secrets: the one thing a fresh
+  # cluster's Argo CD can't get from git (modules/argocd-seed).
+  ARGOCD_AGE_KEY:         { file: /etc/buckle/secrets/ARGOCD_AGE_KEY }
 
 rollout:
   trigger: auto            # every valid revision on main starts a rollout

@@ -1,0 +1,100 @@
+name: argocd-seed
+description: Installs Argo CD on a cluster that has none, as k8s-deployment's first deployment does; Argo CD manages itself from then on.
+when: 'host.groups contains "k3s-server"'
+needs: [k3s-server]
+tags: [k3s, argocd]
+vars:
+  argocd_seed_repo: https://github.com/SpechtLabs/k8s-deployment.git
+  argocd_seed_ref: main
+  argocd_seed_overlay: apps/argocd/cluster/labk3s
+  argocd_seed_dir: /var/lib/argocd-seed
+  argocd_seed_arch: '{{ "arm64" if host.facts.hardware.arch == "aarch64" else "amd64" }}'
+tasks:
+  # ── Tools, pinned to k8s-deployment's .mise.toml; release downloads (no
+  #    GitHub API), checksummed, one directory per version.
+  - file.directory: { path: '{{ vars.argocd_seed_dir }}', mode: "0700" }
+    id: seed-dir
+  - file.directory: { path: '{{ vars.argocd_seed_dir }}/dl', mode: "0700" }
+    id: seed-dl-dir
+
+  - file.download:
+      url: 'https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v{{ vars.argocd_seed_kustomize_version }}/kustomize_v{{ vars.argocd_seed_kustomize_version }}_linux_{{ vars.argocd_seed_arch }}.tar.gz'
+      dest: '{{ vars.argocd_seed_dir }}/dl/kustomize_v{{ vars.argocd_seed_kustomize_version }}.tar.gz'
+      checksum: 'https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v{{ vars.argocd_seed_kustomize_version }}/checksums.txt'
+    tags: [network]
+  - archive.extract:
+      src: '{{ vars.argocd_seed_dir }}/dl/kustomize_v{{ vars.argocd_seed_kustomize_version }}.tar.gz'
+      dest: '{{ vars.argocd_seed_dir }}/tools/kustomize-{{ vars.argocd_seed_kustomize_version }}'
+      include: [kustomize]
+      creates: kustomize
+
+  - file.download:
+      url: 'https://get.helm.sh/helm-v{{ vars.argocd_seed_helm_version }}-linux-{{ vars.argocd_seed_arch }}.tar.gz'
+      dest: '{{ vars.argocd_seed_dir }}/dl/helm-v{{ vars.argocd_seed_helm_version }}.tar.gz'
+      checksum: 'https://get.helm.sh/helm-v{{ vars.argocd_seed_helm_version }}-linux-{{ vars.argocd_seed_arch }}.tar.gz.sha256sum'
+    tags: [network]
+  - archive.extract:
+      src: '{{ vars.argocd_seed_dir }}/dl/helm-v{{ vars.argocd_seed_helm_version }}.tar.gz'
+      dest: '{{ vars.argocd_seed_dir }}/tools/helm-{{ vars.argocd_seed_helm_version }}'
+      include: ['linux-{{ vars.argocd_seed_arch }}/helm']
+      strip_components: 1
+      creates: helm
+
+  # ksops runs as a classic kustomize plugin, as k8s-deployment's generator
+  # expects: $KUSTOMIZE_PLUGIN_HOME/viaduct.ai/v1/ksops/ksops.
+  - file.download:
+      url: 'https://github.com/viaduct-ai/kustomize-sops/releases/download/v{{ vars.argocd_seed_ksops_version }}/ksops_{{ vars.argocd_seed_ksops_version }}_Linux_{{ vars.argocd_seed_arch }}.tar.gz'
+      dest: '{{ vars.argocd_seed_dir }}/dl/ksops_{{ vars.argocd_seed_ksops_version }}.tar.gz'
+      checksum: 'https://github.com/viaduct-ai/kustomize-sops/releases/download/v{{ vars.argocd_seed_ksops_version }}/checksums.txt'
+    tags: [network]
+  - archive.extract:
+      src: '{{ vars.argocd_seed_dir }}/dl/ksops_{{ vars.argocd_seed_ksops_version }}.tar.gz'
+      dest: '{{ vars.argocd_seed_dir }}/plugin-{{ vars.argocd_seed_ksops_version }}/viaduct.ai/v1/ksops'
+      include: [ksops]
+      creates: ksops
+
+  # ── What to render, and the key to decrypt it with.
+  - git.repository:
+      repo: '{{ vars.argocd_seed_repo }}'
+      path: '{{ vars.argocd_seed_dir }}/k8s-deployment'
+      ref: '{{ vars.argocd_seed_ref }}'
+      update: false               # only ever read on a cluster without Argo CD
+    id: seed-checkout
+    tags: [network]
+  - file.template:
+      src: age.key.j2
+      dest: '{{ vars.argocd_seed_dir }}/age.key'
+      mode: "0600"
+    id: seed-age-key
+
+  # ── The seed: render the cluster's Argo CD overlay with its SOPS secrets and
+  #    apply it, only while the cluster has no Argo CD. Argo CD's own `argocd`
+  #    Application takes over from there; Buckle never applies this again.
+  - command.run:
+      run:
+        - bash
+        - -c
+        - |
+          set -euo pipefail
+          d='{{ vars.argocd_seed_dir }}'
+          export PATH="$d/tools/kustomize-{{ vars.argocd_seed_kustomize_version }}:$d/tools/helm-{{ vars.argocd_seed_helm_version }}:$PATH"
+          export KUSTOMIZE_PLUGIN_HOME="$d/plugin-{{ vars.argocd_seed_ksops_version }}"
+          export SOPS_AGE_KEY_FILE="$d/age.key"
+          export HOME="$d" XDG_CACHE_HOME="$d/cache"
+          cd "$d/k8s-deployment"
+          k3s kubectl create namespace argocd --dry-run=client -o yaml | k3s kubectl apply -f -
+          # Rendered secrets go straight into the cluster, never to disk.
+          kustomize build --enable-alpha-plugins --enable-helm '{{ vars.argocd_seed_overlay }}' |
+            k3s kubectl apply --server-side --force-conflicts --field-manager=argocd-seed -f -
+      unless: k3s kubectl -n argocd get deployment argocd-server
+      timeout: 20m
+    id: argocd-seed
+    removal: leave
+
+health:
+  # Argo CD manages itself; this only reports whether it's serving.
+  - name: argocd-server
+    command:
+      run: [k3s, kubectl, -n, argocd, get, deployment, argocd-server, -o, 'jsonpath={.status.availableReplicas}']
+      expect: { stdout_matches: '^[1-9]' }
+    required: false

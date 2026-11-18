@@ -18,3 +18,12 @@ tsidp_version: 0.0.20
 # rollout. Renovate proposes newer commits as PRs instead.
 # renovate: datasource=git-refs depName=https://github.com/cedi/dotfiles branch=main
 dotfiles_ref: 9ebf53033af6d29eb734a898c1c6bd67c8a9ab8b
+
+# Tools the Argo CD seed renders k8s-deployment with; keep in step with that
+# repo's .mise.toml.
+# renovate: datasource=github-releases depName=kubernetes-sigs/kustomize extractVersion=^kustomize/v(?<version>.*)$
+argocd_seed_kustomize_version: 5.8.3
+# renovate: datasource=github-releases depName=helm/helm extractVersion=^v(?<version>.*)$
+argocd_seed_helm_version: 4.3.2
+# renovate: datasource=github-releases depName=viaduct-ai/kustomize-sops extractVersion=^v(?<version>.*)$
+argocd_seed_ksops_version: 4.5.1
