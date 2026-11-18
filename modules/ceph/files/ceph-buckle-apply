@@ -1,0 +1,26 @@
+#!/bin/sh
+# ceph-buckle-apply cluster|resources   (Buckle: modules/ceph)
+#
+# Apply /etc/ceph/buckle/cluster.yaml (ceph orch apply) or resources.sh (in
+# cephadm shell) if it differs from the copy last applied, then record it.
+# Does nothing before the cluster exists. Both the task (catching up later)
+# and the handler (right after the template changed) call this.
+set -eu
+dir=/etc/ceph/buckle
+case "${1:-}" in
+	cluster) file=cluster.yaml applied=cluster.applied.yaml ;;
+	resources) file=resources.sh applied=resources.applied.sh ;;
+	*) echo "usage: ceph-buckle-apply cluster|resources" >&2; exit 2 ;;
+esac
+if [ ! -e /etc/ceph/ceph.client.admin.keyring ]; then
+	echo "no cluster yet (no admin keyring); $file waits" >&2
+	exit 0
+fi
+if cmp -s "$dir/$file" "$dir/$applied"; then
+	exit 0
+fi
+case "$1" in
+	cluster) /usr/local/sbin/cephadm shell --mount "$dir:/mnt/buckle:ro" -- ceph orch apply -i /mnt/buckle/cluster.yaml ;;
+	resources) /usr/local/sbin/cephadm shell --mount "$dir:/mnt/buckle:ro" -- sh /mnt/buckle/resources.sh ;;
+esac
+cp "$dir/$file" "$dir/$applied"

@@ -91,7 +91,8 @@ prometheus.scrape "node_exporter" {
 prometheus.scrape "{{ scrape.job }}" {
   job_name = "{{ scrape.job }}"
   targets  = [
-    {"__address__" = "127.0.0.1:{{ scrape.port }}", "instance" = "{{ host.id }}:{{ scrape.port }}"},
+    {"__address__" = "127.0.0.1:{{ scrape.port }}", "instance" = "{{ host.id }}:{{ scrape.port }}"
+{%- if scrape.labels is defined %}{% for key, value in scrape.labels | items %}, "{{ key }}" = "{{ value }}"{% endfor %}{% endif %}},
   ]
 {%- if scrape.path is defined %}
   metrics_path = "{{ scrape.path }}"

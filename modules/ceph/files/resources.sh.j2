@@ -1,0 +1,25 @@
+# Buckle (modules/ceph): config settings, pools, client keys and S3 users from
+# vars/group-ceph.yaml; runs in `cephadm shell` whenever this file changes.
+# Each step checks first, so it only ever creates or sets: removing an entry
+# here removes nothing from the cluster.
+set -eu
+{% for who, settings in vars.ceph_config | items %}
+{%- for key, value in settings | items %}
+ceph config set '{{ who }}' '{{ key }}' '{{ value }}'
+{%- endfor %}
+{%- endfor %}
+{% for pool in vars.ceph_rbd_pools %}
+# RBD pool {{ pool }}
+ceph osd pool ls | grep -qx '{{ pool }}' || ceph osd pool create '{{ pool }}'
+ceph osd pool application get '{{ pool }}' rbd >/dev/null 2>&1 || timeout 300 rbd pool init '{{ pool }}'
+{% endfor %}
+{%- for name, caps in vars.ceph_clients | items %}
+# client.{{ name }} (key: ceph auth get-key client.{{ name }})
+ceph auth get 'client.{{ name }}' >/dev/null 2>&1 || ceph auth get-or-create 'client.{{ name }}' >/dev/null
+ceph auth caps 'client.{{ name }}'{% for svc, cap in caps | items %} {{ svc }} '{{ cap }}'{% endfor %}
+{% endfor %}
+{%- for uid, display in vars.ceph_rgw_users | items %}
+# S3 user {{ uid }} (keys: radosgw-admin user info --uid={{ uid }})
+radosgw-admin user info --uid='{{ uid }}' >/dev/null 2>&1 ||
+	radosgw-admin user create --uid='{{ uid }}' --display-name='{{ display }}' >/dev/null
+{% endfor %}

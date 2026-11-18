@@ -17,6 +17,10 @@ vars:
   ceph_hosts: {}
   ceph_rgw_hosts: []
   ceph_cephadm_pubkey: ''
+  ceph_config: {}
+  ceph_rbd_pools: []
+  ceph_clients: {}
+  ceph_rgw_users: {}
 
 # Split of work, like k3s and Argo CD: Buckle owns the host (packages, disk,
 # SSH access for cephadm) and the cluster's desired state (files/cluster.yaml.j2);
@@ -84,21 +88,42 @@ tasks:
       dest: /usr/local/sbin/ceph-bootstrap
       mode: "0755"
     when: 'host.id == vars.ceph_admin_host'
+  # The cluster's specs, and config settings, pools, client keys and S3 users
+  # (files/cluster.yaml.j2, files/resources.sh.j2). A change applies at the
+  # end of the same run (handler); the guarded tasks catch up on a later run
+  # if the cluster didn't exist yet. (Guards are checked when the plan is made,
+  # before the template is written, so they alone would lag one run.)
+  - file.copy:
+      src: ceph-buckle-apply
+      dest: /usr/local/sbin/ceph-buckle-apply
+      mode: "0755"
+      owner: root
+      group: root
+    when: 'host.id == vars.ceph_admin_host'
   - file.template:
       src: cluster.yaml.j2
       dest: /etc/ceph/buckle/cluster.yaml
       mode: "0600"
     when: 'host.id == vars.ceph_admin_host'
-  # Applied when it differs from what was last applied, once the cluster exists.
+    notify: [orch-apply]
+  - file.template:
+      src: resources.sh.j2
+      dest: /etc/ceph/buckle/resources.sh
+      mode: "0600"
+    when: 'host.id == vars.ceph_admin_host'
+    notify: [resources]
   - command.run:
-      run: |
-        set -eu
-        /usr/local/sbin/cephadm shell --mount /etc/ceph/buckle:/mnt/buckle:ro -- \
-          ceph orch apply -i /mnt/buckle/cluster.yaml
-        cp /etc/ceph/buckle/cluster.yaml /etc/ceph/buckle/cluster.applied.yaml
+      run: [/usr/local/sbin/ceph-buckle-apply, cluster]
       unless: 'cmp -s /etc/ceph/buckle/cluster.yaml /etc/ceph/buckle/cluster.applied.yaml'
       only_if: 'test -e /etc/ceph/ceph.client.admin.keyring'
     id: orch-apply
+    when: 'host.id == vars.ceph_admin_host'
+    removal: leave
+  - command.run:
+      run: [/usr/local/sbin/ceph-buckle-apply, resources]
+      unless: 'cmp -s /etc/ceph/buckle/resources.sh /etc/ceph/buckle/resources.applied.sh'
+      only_if: 'test -e /etc/ceph/ceph.client.admin.keyring'
+    id: resources
     when: 'host.id == vars.ceph_admin_host'
     removal: leave
 
@@ -115,6 +140,11 @@ actions:
 handlers:
   reload-sshd:
     command.run: { run: 'sshd -t && systemctl reload ssh' }
+  # Specs before resources: handlers run in the order they are listed here.
+  orch-apply:
+    command.run: { run: [/usr/local/sbin/ceph-buckle-apply, cluster] }
+  resources:
+    command.run: { run: [/usr/local/sbin/ceph-buckle-apply, resources] }
 
 health:
   # Until the cluster exists there is nothing to check. HEALTH_WARN passes

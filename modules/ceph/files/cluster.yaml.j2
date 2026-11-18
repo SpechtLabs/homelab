@@ -18,10 +18,18 @@ placement:
     - '{{ name }}:{{ ip }}'
 {%- endfor %}
 ---
+# A mgr on every host: one active, the others standby. Each serves the
+# prometheus module on :9283 (standbys answer with an error, see ceph_config),
+# so every host's Alloy scrapes its own and exactly one returns metrics.
 service_type: mgr
 placement:
   label: mgr
-  count: 2
+---
+# Per-daemon performance counters (OSD latencies, RGW requests) for the
+# dashboards; the mgr's prometheus module leaves them out since Reef.
+service_type: ceph-exporter
+placement:
+  host_pattern: '*'
 ---
 # The LV modules/ceph made on each host's nvme0n1p3 (ceph-volume refuses
 # partitions, not LVs).

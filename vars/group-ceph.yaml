@@ -29,6 +29,23 @@ ceph_hosts:
 # away from the host with the active mgr.
 ceph_rgw_hosts: [storagepi-ceph2]
 
+# `ceph config set <who> <key> <value>` (modules/ceph, files/resources.sh.j2).
+ceph_config:
+  mgr:
+    # Standby mgrs answer /metrics with an error instead of redirecting to the
+    # active one: Alloy would follow and record its metrics a second time.
+    mgr/prometheus/standby_behaviour: error
+    # Per-image RBD metrics (RBD dashboards) for the k3s pool.
+    mgr/prometheus/rbd_stats_pools: k3s
+
+# Metrics (modules/alloy, to the homelab Mimir tenant): the mgr's prometheus
+# module and ceph-exporter, labelled with the cluster name the Ceph
+# dashboards select on. Replaces vars/hw-pi.yaml's list, so rpi_exporter again.
+o11y_local_scrapes:
+  - { job: rpi_exporter, port: 9243 }
+  - { job: ceph-mgr, port: 9283, labels: { cluster: homelab-ceph } }
+  - { job: ceph-exporter, port: 9926, labels: { cluster: homelab-ceph } }
+
 # cephadm's SSH public key (`ceph cephadm get-pub-key`; bootstrap made it
 # 2026-11-18). root on every Ceph host accepts it from tailnet addresses.
 ceph_cephadm_pubkey: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAqO3vD/QF7X+uPmH8N1KiiWXI4UrYAFgsHRkLCAeoyk ceph-85412c6c-e39c-11f1-ba59-2ccf678b0944'
