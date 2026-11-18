@@ -22,9 +22,12 @@ ceph_admin_host: storagepi-ceph1
 # these addresses explicitly. A host joins once it has the cephadm key below.
 ceph_hosts:
   storagepi-ceph1: 100.105.212.35
+  storagepi-ceph2: 100.107.71.68
+  storagepi-ceph3: 100.118.224.54
 
-# Hosts that run the S3 gateway (RGW), on ceph_rgw_port.
-ceph_rgw_hosts: []
+# Hosts that run the S3 gateway (RGW), on ceph_rgw_port: one, for experiments,
+# away from the host with the active mgr.
+ceph_rgw_hosts: [storagepi-ceph2]
 
 # cephadm's SSH public key (`ceph cephadm get-pub-key`; bootstrap made it
 # 2026-11-18). root on every Ceph host accepts it from tailnet addresses.
