@@ -1,0 +1,26 @@
+# The Ceph cluster on storagepi-ceph1..3 (modules/ceph).
+#
+# Everything Ceph speaks goes over the tailnet: public_network is Tailscale's
+# CGNAT range, so mons, OSDs and RGW bind to each host's 100.x address and
+# clients (the k3s nodes, ceph-csi) find the mons by MagicDNS name. A node
+# keeps its tailnet address for as long as it stays in the tailnet, which is
+# what a mon needs: the monmap stores addresses, and a mon whose address
+# changes won't start. Replacing a host's Tailscale node means re-adding its
+# mon at the new address.
+
+# Where cephadm bootstraps the cluster and where Buckle applies the specs.
+ceph_admin_host: storagepi-ceph1
+
+# The cluster's hosts and their tailnet IPv4 addresses (`tailscale ip -4`).
+# cephadm can't see these itself (`cephadm list-networks` only reads the main
+# routing table, Tailscale's routes live in table 52), so mons are placed at
+# these addresses explicitly. A host joins once it has the cephadm key below.
+ceph_hosts:
+  storagepi-ceph1: 100.105.212.35
+
+# Hosts that run the S3 gateway (RGW), on ceph_rgw_port.
+ceph_rgw_hosts: []
+
+# cephadm's SSH public key (`ceph cephadm get-pub-key` after bootstrap);
+# empty until the cluster exists.
+ceph_cephadm_pubkey: ''

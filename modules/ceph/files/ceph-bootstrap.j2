@@ -1,0 +1,21 @@
+#!/bin/sh
+# Buckle (modules/ceph, action `bootstrap`): create the cluster on this host,
+# once. The first mon binds to this host's tailnet address; cephadm can't
+# infer a network for it (see vars/group-ceph.yaml), hence --skip-mon-network
+# with public_network set in bootstrap.conf. No Prometheus/Grafana stack:
+# Alloy scrapes the mgr's prometheus module instead.
+set -eu
+if [ -e /etc/ceph/ceph.conf ]; then
+	echo "/etc/ceph/ceph.conf exists: this host is bootstrapped already" >&2
+	exit 1
+fi
+/usr/local/sbin/cephadm --image '{{ vars.ceph_image }}' bootstrap \
+	--mon-ip '{{ vars.ceph_hosts[host.id] }}' \
+	--skip-mon-network \
+	--config /etc/ceph/buckle/bootstrap.conf \
+	--ssh-config /etc/ceph/buckle/ssh_config \
+	--ssh-user root \
+	--skip-monitoring-stack
+echo
+echo "cephadm public key (vars/group-ceph.yaml ceph_cephadm_pubkey):"
+cat /etc/ceph/ceph.pub

@@ -1,0 +1,127 @@
+name: ceph
+description: Ceph through cephadm on the storage Pis; Buckle prepares the hosts and applies the cluster's orchestrator specs.
+when: 'host.groups contains "ceph"'
+needs: [base, tailscale]
+tags: [ceph]
+vars:
+  ceph_image: 'quay.io/ceph/ceph:v{{ vars.ceph_version }}'
+  # Tailscale's CGNAT range: every tailnet address (vars/group-ceph.yaml).
+  ceph_public_network: 100.64.0.0/10
+  # The OSD's partition (modules/ceph-disk split it off) and the LV made on it.
+  ceph_osd_partition: /dev/nvme0n1p3
+  ceph_osd_vg: ceph
+  ceph_osd_lv: osd
+  ceph_rgw_port: 7480
+  # Cluster facts, set in vars/group-ceph.yaml.
+  ceph_admin_host: ''
+  ceph_hosts: {}
+  ceph_rgw_hosts: []
+  ceph_cephadm_pubkey: ''
+
+# Split of work, like k3s and Argo CD: Buckle owns the host (packages, disk,
+# SSH access for cephadm) and the cluster's desired state (files/cluster.yaml.j2);
+# cephadm owns the daemons, their containers, placement and restarts.
+tasks:
+  # ── Host: what cephadm needs (`cephadm check-host`).
+  - apt.package: { names: [lvm2] }
+  # Docker CE came with the hosts (download.docker.com source); cephadm runs
+  # every daemon as a container through it.
+  - systemd.unit: { name: docker, enabled: true, active: true }
+  - file.download:
+      url: 'https://download.ceph.com/rpm-{{ vars.ceph_version }}/el9/noarch/cephadm'
+      dest: /usr/local/sbin/cephadm
+      mode: "0755"
+      checksum: 'sha256:{{ vars.ceph_cephadm_sha256 }}'
+    tags: [network]
+
+  # ── Disk: one LV over the OSD partition. ceph-volume takes LVs, not
+  #    partitions. Only on a blank partition, and never undone.
+  - command.run:
+      run: |
+        set -eu
+        dev={{ vars.ceph_osd_partition }}
+        sig=$(blkid -p -o value -s TYPE "$dev" || true)
+        if [ -n "$sig" ]; then echo "$dev holds $sig, not touching it" >&2; exit 1; fi
+        pvcreate "$dev"
+        vgcreate {{ vars.ceph_osd_vg }} "$dev"
+        lvcreate -l 100%FREE -n {{ vars.ceph_osd_lv }} {{ vars.ceph_osd_vg }}
+      unless: 'lvs {{ vars.ceph_osd_vg }}/{{ vars.ceph_osd_lv }}'
+      only_if: 'test -b {{ vars.ceph_osd_partition }}'
+    id: osd-lv
+    removal: leave
+
+  # ── SSH for cephadm: sshd on 2222 as well, root takes cephadm's key from
+  #    tailnet addresses only.
+  - file.copy:
+      src: sshd-cephadm.conf
+      dest: /etc/ssh/sshd_config.d/cephadm.conf
+      mode: "0644"
+      owner: root
+      group: root
+    notify: [reload-sshd]
+  - ssh.authorized_key:
+      user: root
+      key: 'from="{{ vars.ceph_public_network }}" {{ vars.ceph_cephadm_pubkey }}'
+    when: 'vars.ceph_cephadm_pubkey != ""'
+
+  # ── Admin host: bootstrap material and the cluster's specs.
+  - file.directory: { path: /etc/ceph/buckle, mode: "0700" }
+    when: 'host.id == vars.ceph_admin_host'
+  - file.template:
+      src: bootstrap.conf.j2
+      dest: /etc/ceph/buckle/bootstrap.conf
+      mode: "0600"
+    when: 'host.id == vars.ceph_admin_host'
+  - file.copy:
+      src: ssh_config
+      dest: /etc/ceph/buckle/ssh_config
+      mode: "0600"
+      owner: root
+      group: root
+    when: 'host.id == vars.ceph_admin_host'
+  - file.template:
+      src: ceph-bootstrap.j2
+      dest: /usr/local/sbin/ceph-bootstrap
+      mode: "0755"
+    when: 'host.id == vars.ceph_admin_host'
+  - file.template:
+      src: cluster.yaml.j2
+      dest: /etc/ceph/buckle/cluster.yaml
+      mode: "0600"
+    when: 'host.id == vars.ceph_admin_host'
+  # Applied when it differs from what was last applied, once the cluster exists.
+  - command.run:
+      run: |
+        set -eu
+        /usr/local/sbin/cephadm shell --mount /etc/ceph/buckle:/mnt/buckle:ro -- \
+          ceph orch apply -i /mnt/buckle/cluster.yaml
+        cp /etc/ceph/buckle/cluster.yaml /etc/ceph/buckle/cluster.applied.yaml
+      unless: 'cmp -s /etc/ceph/buckle/cluster.yaml /etc/ceph/buckle/cluster.applied.yaml'
+      only_if: 'test -e /etc/ceph/ceph.client.admin.keyring'
+    id: orch-apply
+    when: 'host.id == vars.ceph_admin_host'
+    removal: leave
+
+actions:
+  bootstrap:
+    name: Bootstrap the Ceph cluster
+    description: Create the cluster on this host (once); prints cephadm's public key for vars/group-ceph.yaml
+    confirm: true
+    command.run:
+      run: [/usr/local/sbin/ceph-bootstrap]
+      creates: /etc/ceph/ceph.conf
+      capture: always
+
+handlers:
+  reload-sshd:
+    command.run: { run: 'sshd -t && systemctl reload ssh' }
+
+health:
+  # Until the cluster exists there is nothing to check. HEALTH_WARN passes
+  # (a node down, a pool without an application); HEALTH_ERR fails.
+  - name: cluster
+    command:
+      run: |
+        test -e /etc/ceph/ceph.client.admin.keyring || { echo HEALTH_OK; exit 0; }
+        /usr/local/sbin/cephadm shell -- ceph health 2>/dev/null
+      expect: { exit: 0, stdout_matches: '^HEALTH_(OK|WARN)' }

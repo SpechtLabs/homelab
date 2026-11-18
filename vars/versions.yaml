@@ -22,6 +22,13 @@ tsidp_version: 0.0.20
 # renovate: datasource=git-refs depName=https://github.com/cedi/dotfiles branch=main
 dotfiles_ref: 9ebf53033af6d29eb734a898c1c6bd67c8a9ab8b
 
+# Ceph (modules/ceph): the image cephadm bootstraps with and its cephadm, the
+# same release (download.ceph.com/rpm-<version>/el9/noarch/cephadm; no
+# published checksum, so bump the sha256 with the version). A running
+# cluster upgrades through `ceph orch upgrade`, not through this.
+ceph_version: 20.2.5
+ceph_cephadm_sha256: 4cc603527d44ad8e753e1ed8a8e65cdcc05584fed74d1407425e0ae17ae13f55
+
 # Tools the Argo CD seed renders k8s-deployment with; keep in step with that
 # repo's .mise.toml.
 # renovate: datasource=github-releases depName=kubernetes-sigs/kustomize extractVersion=^kustomize/v(?<version>.*)$

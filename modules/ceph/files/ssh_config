@@ -1,0 +1,9 @@
+# Buckle (modules/ceph): cephadm's SSH client config (bootstrap --ssh-config;
+# the cluster keeps it in its config-key store afterwards). Port 2222: see
+# /etc/ssh/sshd_config.d/cephadm.conf on the hosts.
+Host *
+  User root
+  Port 2222
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+  ConnectTimeout 30

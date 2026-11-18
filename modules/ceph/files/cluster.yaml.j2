@@ -1,0 +1,47 @@
+# Buckle (modules/ceph): the cluster's orchestrator specs, applied with
+# `ceph orch apply -i` whenever this file changes. cephadm does the rest
+# (placing, starting, restarting daemons). Removing a service here does not
+# remove it from the cluster: `ceph orch rm <service>` does.
+{%- for name, ip in vars.ceph_hosts | items %}
+---
+service_type: host
+hostname: {{ name }}
+addr: {{ name }}.{{ vars.tailnet }}
+labels: [_admin, mon, mgr, osd]
+{%- endfor %}
+---
+# One mon per host, at its tailnet address (host:ip sets the mon's public addr).
+service_type: mon
+placement:
+  hosts:
+{%- for name, ip in vars.ceph_hosts | items %}
+    - '{{ name }}:{{ ip }}'
+{%- endfor %}
+---
+service_type: mgr
+placement:
+  label: mgr
+  count: 2
+---
+# The LV modules/ceph made on each host's nvme0n1p3 (ceph-volume refuses
+# partitions, not LVs).
+service_type: osd
+service_id: nvme
+placement:
+  label: osd
+spec:
+  data_devices:
+    paths:
+      - /dev/{{ vars.ceph_osd_vg }}/{{ vars.ceph_osd_lv }}
+{%- if vars.ceph_rgw_hosts %}
+---
+service_type: rgw
+service_id: s3
+placement:
+  hosts:
+{%- for name in vars.ceph_rgw_hosts %}
+    - {{ name }}
+{%- endfor %}
+spec:
+  rgw_frontend_port: {{ vars.ceph_rgw_port }}
+{%- endif %}

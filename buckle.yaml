@@ -62,6 +62,8 @@ vars:
     file: vars/group-spechtlabs.yaml
   - when: 'host.groups contains "o11y-collector"'
     file: vars/group-o11y-collector.yaml
+  - when: 'host.groups contains "ceph"'
+    file: vars/group-ceph.yaml
 
   # host exceptions
   - when: 'host.id == "nuc"'

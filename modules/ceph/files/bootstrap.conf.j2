@@ -1,0 +1,7 @@
+# Buckle (modules/ceph): initial config for `cephadm bootstrap --config`; the
+# cluster keeps these in its config database afterwards (`ceph config dump`),
+# so changing this file later changes nothing.
+[global]
+public_network = {{ vars.ceph_public_network }}
+osd_pool_default_size = 3
+osd_pool_default_min_size = 2
