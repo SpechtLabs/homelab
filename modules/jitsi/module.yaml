@@ -114,7 +114,9 @@ tasks:
       timeout: 5m
     id: prosody-internal-certs
     removal: leave
-    notify: [restart-prosody]
+    # Trust them in this same run: the trust step below decides at plan time,
+    # before the renewal, so on its own it would only catch up on the next run.
+    notify: [trust-internal-certs, restart-prosody, restart-jicofo, restart-jvb]
   # ...and trusted: whenever Java's store lacks the current certificate (after
   # a renewal, or if anything rebuilt the store), link both into the system
   # store as the quick-install did, rebuild it (ca-certificates-java rebuilds
@@ -211,6 +213,17 @@ tasks:
   - systemd.unit: { name: coturn, enabled: true, active: true }
 
 handlers:
+  trust-internal-certs:
+    command.run:
+      run:
+        - sh
+        - -c
+        - >-
+          set -e;
+          for h in {{ vars.jitsi_domain }} auth.{{ vars.jitsi_domain }}; do
+          ln -sfn /var/lib/prosody/$h.crt /usr/local/share/ca-certificates/$h.crt;
+          done;
+          update-ca-certificates --fresh >/dev/null
   restart-prosody: { systemd.restart: { name: prosody } }
   restart-jicofo:  { systemd.restart: { name: jicofo } }
   restart-jvb:     { systemd.restart: { name: jitsi-videobridge2 } }
