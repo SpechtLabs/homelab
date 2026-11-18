@@ -223,7 +223,9 @@
 			"dst": ["nas"],
 			"ip":  ["5000", "5001"], // DSM HTTP/HTTPS
 		},
-		// Admins can manage tsidp and register OIDC clients.
+		// Admins can manage tsidp and register OIDC clients. Their tokens carry
+		// groups: ["buckle-admins"], which Buckle's admin_acl checks: who
+		// administers the fleet is decided here, by group:admins.
 		{
 			"src": ["group:admins"],
 			"dst": ["tag:tsidp"],
@@ -231,8 +233,10 @@
 			"app": {
 				"tailscale.com/cap/tsidp": [
 					{
-						"allow_admin_ui": true,
-						"allow_dcr":      true,
+						"allow_admin_ui":    true,
+						"allow_dcr":         true,
+						"extraClaims":       {"groups": ["buckle-admins"]},
+						"includeInUserInfo": true,
 					},
 				],
 			},
