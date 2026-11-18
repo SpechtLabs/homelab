@@ -78,7 +78,7 @@
 	"autoApprovers": {
 		"services": {
 			// Jellyfin on the NAS: `tailscale serve --service=svc:stream --https=443 http://localhost:8096`
-			"svc:stream": ["tag:core-services"],
+			"svc:stream": ["tag:core-infra"],
 		},
 	},
 
@@ -233,13 +233,15 @@
 				"9666", // compute-blade-agent
 			],
 		},
-		// Synology users can reach the NAS over Tailscale
+		// Synology users can reach the NAS over Tailscale. The NAS is not in
+		// tag:core-services, so this is all they get: DSM and Drive. Jellyfin is svc:stream.
 		{
 			"src": ["group:synology-users"],
 			"dst": ["nas"],
 			"ip":  [
-				"tcp:443", // DSM through `tailscale serve` (https://nas.<tailnet>)
-				"5000", "5001", // DSM HTTP/HTTPS
+				"tcp:443",  // DSM through `tailscale serve` (https://nas.<tailnet>)
+				"tcp:5001", // DSM HTTPS, which the Synology mobile apps use
+				"tcp:6690", // Synology Drive sync
 			],
 		},
 		// Synology users can stream from Jellyfin at https://stream.<tailnet>
@@ -320,13 +322,13 @@
 		{
 			"src":    "x1bay@github",
 			"proto":  "tcp",
-			"accept": ["nas:5000", "nas:5001", "hass:8123"],
+			"accept": ["nas:443", "nas:5001", "nas:6690", "hass:8123"],
 			"deny":   ["hass-schiltach:8123"],
 		},
 		{
 			"src":    "group:synology-users",
 			"proto":  "tcp",
-			"accept": ["nas:443", "nas:5000", "nas:5001"],
+			"accept": ["nas:443", "nas:5001", "nas:6690"],
 		},
 		{
 			"src":   "group:vpn",
