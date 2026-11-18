@@ -36,7 +36,10 @@ agents:
   # at vars/versions.yaml's buckle_version.
 
 web:
-  base_url: http://nuc.sphinx-map.ts.net:7701
+  # Tailscale Service svc:buckle proxies https://buckle.<tailnet> to listen.http
+  # (bootstrap/README.md). tsidp's client for Buckle must list
+  # <base_url>/api/v1/auth/callback as a redirect URI.
+  base_url: https://buckle.sphinx-map.ts.net
   # Sign-in through tsidp. tsidp adds groups=[buckle-admins] to the tokens of
   # group:admins (tailscale/policy.hujson); nobody else may read or act.
   # tsidp offline? See "Break-glass" in bootstrap/README.md.

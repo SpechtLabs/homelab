@@ -60,7 +60,20 @@ journalctl -u buckle-server -f
 ```
 
 The repository has to exist on GitHub first (`cedi/homelab`), with a fine-grained, read-only
-token in `GIT_TOKEN`. The UI is at http://nuc.sphinx-map.ts.net:7701.
+token in `GIT_TOKEN`.
+
+The UI and API are the Tailscale Service `svc:buckle`, at https://buckle.sphinx-map.ts.net.
+Define it once in the admin console (Services → Define Service, name `buckle`, port `tcp:443`);
+the policy auto-approves it for `tag:buckle-server`. Then, on the NUC:
+
+```sh
+sudo tailscale serve --bg --service=svc:buckle --https=443 "http://$(tailscale ip -4):7701"
+```
+
+tailscaled keeps this across reboots. `web.base_url` in `server.yaml` is that URL, so tsidp's
+Buckle client needs `https://buckle.sphinx-map.ts.net/api/v1/auth/callback` as a redirect URI.
+Agents don't go through the Service: they dial `nuc:7700` directly, because the server
+identifies them by Tailscale whois, which a proxy would replace with the NUC's own identity.
 
 Nightly backup: install `bootstrap/backup.sh` as a cron job or timer on the NUC. Everything
 else can be rebuilt from git and the secrets.
@@ -129,7 +142,7 @@ Once a full rollout has gone through cleanly, set `rollout.trigger: auto`.
 
 ## Sign-in and break-glass
 
-The UI and API (http://nuc.sphinx-map.ts.net:7701) sign in through tsidp. tsidp puts
+The UI and API (https://buckle.sphinx-map.ts.net) sign in through tsidp. tsidp puts
 `groups: ["buckle-admins"]` into the tokens of `group:admins` (`tailscale/policy.hujson`), and
 `server.yaml`'s `user_acl` and `admin_acl` require it: changing who may use Buckle is a policy
 change. The OIDC client was registered with tsidp's dynamic client registration; its ID and

@@ -79,6 +79,9 @@
 		"services": {
 			// Jellyfin on the NAS: `tailscale serve --service=svc:stream --https=443 http://localhost:8096`
 			"svc:stream": ["tag:core-infra"],
+			// Buckle's UI and API on the NUC (bootstrap/README.md). Agents keep dialling
+			// nuc:7700 directly: the server identifies them by whois, which a proxy hides.
+			"svc:buckle": ["tag:buckle-server"],
 		},
 	},
 
@@ -319,8 +322,14 @@
 				],
 			},
 		},
+		// Admins reach Buckle's UI and API at https://buckle.<tailnet>.
+		{
+			"src": ["group:admins"],
+			"dst": ["svc:buckle"],
+			"ip":  ["tcp:443"],
+		},
 		// Buckle agents dial out to the server's gRPC port.
-		// (Admins reach the UI on 7701 through the admin grant above.)
+		// (Admins also reach the UI on nuc:7701 through the admin grant above.)
 		{
 			"src": ["tag:homelab", "tag:core-infra", "tag:core-services"],
 			"dst": ["tag:buckle-server"],
