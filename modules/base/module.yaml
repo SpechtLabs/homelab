@@ -16,6 +16,13 @@ tasks:
       regex: '^#?\s*{{ vars.locale | replace(".", "\\.") }} UTF-8'
       line: '{{ vars.locale }} UTF-8'
     notify: [locale-gen]
+  # PackageKit (desktop package management; part of Raspberry Pi OS and Ubuntu
+  # images) starts from apt's own hook after every update and refreshes the
+  # cache itself, holding apt's list lock just as Buckle's next apt step runs:
+  # storagepi-ceph3's first apply and meet's apt sources failed on it
+  # (2026-11-18). No server here uses it; apt's hook tolerates it masked.
+  - systemd.unit: { name: packagekit, active: false, masked: true }
+
   - file.template:
       src: lang.sh.j2
       dest: /etc/profile.d/lang.sh

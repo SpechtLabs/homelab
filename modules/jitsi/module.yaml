@@ -22,12 +22,14 @@ tasks:
       uri: https://download.jitsi.org
       suites: [stable/]
       signed_by: { url: https://download.jitsi.org/jitsi-key.gpg.key }
+    retry: { limit: 3, delay: 30s }   # apt's list lock isn't covered by its lock timeout
   - apt.repository:
       name: prosody
       uri: https://packages.prosody.im/debian
       suites: ['{{ host.facts.os.codename }}']
       components: [main]
       signed_by: { url: https://prosody.im/files/prosody-debian-packages.key }
+    retry: { limit: 3, delay: 30s }
 
   # Versions: pinned (apt preferences) and installed at exactly these. Bump them
   # together in vars, read the release notes, and check the plan's file diffs.
