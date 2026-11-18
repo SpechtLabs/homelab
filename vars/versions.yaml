@@ -3,7 +3,7 @@
 
 # Buckle itself: agents everywhere, and the server on the NUC (modules/buckle).
 # renovate: datasource=github-releases depName=SierraSoftworks/buckle extractVersion=^v(?<version>.*)$
-buckle_version: 2.13.0
+buckle_version: 2.14.0
 # renovate: datasource=github-releases depName=k3s-io/k3s
 k3s_version: v1.31.1+k3s1
 # renovate: datasource=github-releases depName=grafana/alloy extractVersion=^v(?<version>.*)$

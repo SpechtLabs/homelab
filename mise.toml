@@ -1,5 +1,5 @@
 [tools]
-"github:SierraSoftworks/buckle" = "2.13.0"
+"github:SierraSoftworks/buckle" = "2.14.0"
 
 [tasks.validate]
 description = "Validate the config and dry-plan every host in fixtures/facts"
