@@ -275,6 +275,22 @@
 				],
 			},
 		},
+		// Admins get groups: ["grafana-admins"] in their tsidp tokens; Grafana maps it
+		// to its Admin role. tsidp unions list claims across grants, so their tokens
+		// carry ["buckle-admins", "grafana-admins"].
+		{
+			"src": ["group:admins"],
+			"dst": ["tag:tsidp"],
+			"ip":  ["*"],
+			"app": {
+				"tailscale.com/cap/tsidp": [
+					{
+						"extraClaims":       {"groups": ["grafana-admins"]},
+						"includeInUserInfo": true,
+					},
+				],
+			},
+		},
 		// Synology users can authenticate to Synology through tsidp.
 		{
 			"src": ["group:synology-users"],
