@@ -23,7 +23,8 @@ tasks:
       owner: root
       group: root
 
-# On demand from the host page, never in a rollout.
+# On demand from the host page, never in a revision's rollout. `upgrade` also
+# runs nightly through schedules/nightly-upgrades.yaml.
 actions:
   upgrade:
     name: Upgrade packages

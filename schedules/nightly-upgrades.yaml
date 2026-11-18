@@ -1,0 +1,16 @@
+# Every night: apt upgrade on every Debian host (modules/base, action `upgrade`),
+# rebooting only the hosts that need it (/run/reboot-required). It runs through
+# the normal phases, so reboots go one or two at a time: blades first, then the
+# NUC/timepi/jumphost one by one, the k3s server alone, two agents at a time,
+# one Ceph node at a time, each phase gated on health.
+description: Upgrade packages on every host, rebooting where the upgrade needs it.
+cron: "0 3 * * *"
+timezone: Europe/Berlin
+module: base
+action: upgrade
+# Unattended: this commit is the sign-off. A failed host still pauses the
+# rollout (rollout.on_failure).
+approval: auto
+# A rollout from a push at 3am delays it; after 05:00 tonight's run is skipped.
+window: 2h
+note: Nightly package upgrades

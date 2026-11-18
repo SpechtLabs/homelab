@@ -17,6 +17,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `vars/` | Shared values, broad to narrow: `defaults`, `versions` (renovate), `hw-*`, `group-*`, `host-*` |
 | `modules/` | One concern each; see below |
 | `workloads/` | What Buckle applies to the k3s cluster (`labk3s`); see below |
+| `schedules/` | Actions Buckle runs on a cron schedule (nightly package upgrades) |
 | `fixtures/facts/` | One facts file per host; CI dry-plans every host against them |
 | `bootstrap/` | The server's own config, installed by hand on the NUC |
 | `nas/` | Compose projects for the Synology, deployed through DSM (not Buckle) |
@@ -74,7 +75,11 @@ mise exec -- buckle validate --config . $(printf -- '--facts %s ' fixtures/facts
   (canary), then the NUC (server) in `core`, then the rest; agents restart into the new version
   90 seconds after their run.
   Major versions are left to you: read the release notes and upgrade the server first.
-- **Reboot or patch a host**: the host page's actions (`base: upgrade`, `base: reboot`,
+- **Package upgrades**: `schedules/nightly-upgrades.yaml` runs `base: upgrade` on every host at
+  03:00 Europe/Berlin through the normal phases, and reboots only the hosts that need it, one
+  or two at a time. Its runs show on the Schedules page; a failed host pauses that night's
+  rollout like any other.
+- **Reboot or patch a host now**: the host page's actions (`base: upgrade`, `base: reboot`,
   `k3s-agent: reboot`).
 - **Reset k3s**: by hand. It is deliberately not a Buckle removal hook.
 
