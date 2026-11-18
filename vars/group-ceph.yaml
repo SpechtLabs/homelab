@@ -29,6 +29,12 @@ ceph_hosts:
 # away from the host with the active mgr.
 ceph_rgw_hosts: [storagepi-ceph2]
 
+# `ceph mon set <key> <value>`. Tentacle allows only aes256k cephx keys;
+# kernel clients (krbd on the k3s nodes) need aes. aes256k stays preferred,
+# daemons and every other client keep it.
+ceph_mon_settings:
+  auth_allowed_ciphers: aes,aes256k
+
 # mgr modules to enable. prometheus serves the cluster's metrics on :9283
 # (bootstrap --skip-monitoring-stack leaves it off).
 ceph_mgr_modules: [prometheus]
@@ -59,11 +65,15 @@ o11y_local_scrapes:
 # name), created by modules/ceph (files/resources.sh.j2).
 ceph_rbd_pools: [k3s]
 ceph_clients:
-  # ceph-csi on labk3s (k8s-deployment apps/ceph-csi-rbd)
+  # ceph-csi on labk3s (k8s-deployment apps/ceph-csi-rbd). AES-128: it maps
+  # images with the kernel's rbd client, and the k3s nodes' libceph (6.6,
+  # 6.12) can't parse aes256k keys ("Failed to parse secret: -524").
   k3s:
-    mon: profile rbd
-    osd: profile rbd pool=k3s
-    mgr: profile rbd pool=k3s
+    key_type: aes
+    caps:
+      mon: profile rbd
+      osd: profile rbd pool=k3s
+      mgr: profile rbd pool=k3s
 ceph_rgw_users:
   experiments: S3 experiments
 
