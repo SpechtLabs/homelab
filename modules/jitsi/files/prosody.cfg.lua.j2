@@ -1,4 +1,6 @@
+-- We need this for prosody 13.0
 component_admins_as_room_owners = true
+
 plugin_paths = { "/usr/share/jitsi-meet/prosody-plugins/" }
 
 -- domain mapper options, must at least have domain base set to use the mapper
@@ -13,6 +15,7 @@ external_services = {
 
 cross_domain_bosh = false;
 consider_bosh_secure = true;
+consider_websocket_secure = true;
 -- https_ports = { }; -- Remove this line to prevent listening on port 5284
 
 -- by default prosody 0.12 sends cors headers, if you want to disable it uncomment the following (the config is available on 0.12.1)
@@ -36,9 +39,13 @@ unlimited_jids = {
     "jvb@auth.{{ vars.jitsi_domain }}"
 }
 
+-- https://prosody.im/doc/modules/mod_smacks
+smacks_max_unacked_stanzas = 5;
+smacks_hibernation_time = 60;
+smacks_max_old_sessions = 1;
+
 VirtualHost "{{ vars.jitsi_domain }}"
-    -- authentication = "internal_hashed" -- do not delete me
-    authentication = "anonymous"
+    authentication = "jitsi-anonymous" -- do not delete me
     -- Properties below are modified by jitsi-meet-tokens package config
     -- and authentication above is switched to "token"
     --app_id="example_app_id"
@@ -51,32 +58,28 @@ VirtualHost "{{ vars.jitsi_domain }}"
         key = "/etc/prosody/certs/{{ vars.jitsi_domain }}.key";
         certificate = "/etc/prosody/certs/{{ vars.jitsi_domain }}.crt";
     }
-    av_moderation_component = "avmoderation.{{ vars.jitsi_domain }}"
-    speakerstats_component = "speakerstats.{{ vars.jitsi_domain }}"
-    end_conference_component = "endconference.{{ vars.jitsi_domain }}"
     -- we need bosh
     modules_enabled = {
         "bosh";
+        "websocket";
+        "smacks";
         "ping"; -- Enable mod_ping
-        "speakerstats";
         "external_services";
+        "features_identity";
         "conference_duration";
-        "end_conference";
         "muc_lobby_rooms";
         "muc_breakout_rooms";
-        "av_moderation";
-        "room_metadata";
+        -- Keeps client messages on the routes that the rooms control: a client
+        -- can address a message to a MUC or to a component, not to the JID of
+        -- an account.
+        "filter_direct_messages";
     }
     c2s_require_encryption = false
     lobby_muc = "lobby.{{ vars.jitsi_domain }}"
     breakout_rooms_muc = "breakout.{{ vars.jitsi_domain }}"
-    room_metadata_component = "metadata.{{ vars.jitsi_domain }}"
     main_muc = "conference.{{ vars.jitsi_domain }}"
     -- muc_lobby_whitelist = { "recorder.{{ vars.jitsi_domain }}" } -- Here we can whitelist jibri to enter lobby enabled rooms
-
-VirtualHost "guest.{{ vars.jitsi_domain }}"
-    authentication = "anonymous"
-    c2s_require_encryption = false
+    admins = { "focus@auth.{{ vars.jitsi_domain }}" }
 
 Component "conference.{{ vars.jitsi_domain }}" "muc"
     restrict_room_creation = true
@@ -85,7 +88,6 @@ Component "conference.{{ vars.jitsi_domain }}" "muc"
         "muc_hide_all";
         "muc_meeting_id";
         "muc_domain_mapper";
-        "polls";
         --"token_verification";
         "muc_rate_limit";
         "muc_password_whitelist";
@@ -105,7 +107,7 @@ Component "breakout.{{ vars.jitsi_domain }}" "muc"
         "muc_meeting_id";
         "muc_domain_mapper";
         "muc_rate_limit";
-        "polls";
+        --"polls";
     }
     admins = { "focus@auth.{{ vars.jitsi_domain }}" }
     muc_room_locking = false
@@ -116,23 +118,29 @@ Component "internal.auth.{{ vars.jitsi_domain }}" "muc"
     storage = "memory"
     modules_enabled = {
         "muc_hide_all";
+        "muc_filter_access";
         "ping";
     }
+    -- Only accounts on the auth domain (jicofo, jvb, jibri, jigasi) can create or join rooms here.
+    muc_filter_whitelist = { "auth.{{ vars.jitsi_domain }}" }
     admins = { "focus@auth.{{ vars.jitsi_domain }}", "jvb@auth.{{ vars.jitsi_domain }}" }
     muc_room_locking = false
     muc_room_default_public_jids = true
 
 VirtualHost "auth.{{ vars.jitsi_domain }}"
-    ssl = {
-        key = "/etc/prosody/certs/auth.{{ vars.jitsi_domain }}.key";
-        certificate = "/etc/prosody/certs/auth.{{ vars.jitsi_domain }}.crt";
-    }
     modules_enabled = {
         "limits_exception";
         "smacks";
     }
     authentication = "internal_hashed"
     smacks_hibernation_time = 15;
+
+VirtualHost "recorder.{{ vars.jitsi_domain }}"
+    modules_enabled = {
+      "smacks";
+    }
+    authentication = "internal_hashed"
+    smacks_max_old_sessions = 2000;
 
 -- Proxy to jicofo's user JID, so that it doesn't have to register as a component.
 Component "focus.{{ vars.jitsi_domain }}" "client_proxy"
@@ -147,6 +155,9 @@ Component "endconference.{{ vars.jitsi_domain }}" "end_conference"
 Component "avmoderation.{{ vars.jitsi_domain }}" "av_moderation_component"
     muc_component = "conference.{{ vars.jitsi_domain }}"
 
+Component "filesharing.{{ vars.jitsi_domain }}" "filesharing_component"
+    muc_component = "conference.{{ vars.jitsi_domain }}"
+
 Component "lobby.{{ vars.jitsi_domain }}" "muc"
     storage = "memory"
     restrict_room_creation = true
@@ -155,9 +166,10 @@ Component "lobby.{{ vars.jitsi_domain }}" "muc"
     modules_enabled = {
         "muc_hide_all";
         "muc_rate_limit";
-        "polls";
     }
 
 Component "metadata.{{ vars.jitsi_domain }}" "room_metadata_component"
     muc_component = "conference.{{ vars.jitsi_domain }}"
     breakout_rooms_component = "breakout.{{ vars.jitsi_domain }}"
+
+Component "polls.{{ vars.jitsi_domain }}" "polls_component"

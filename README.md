@@ -84,9 +84,21 @@ mise exec -- buckle validate --config . $(printf -- '--facts %s ' fixtures/facts
   adopted as they were, so each change is visible in the plan's diff. Secrets
   (`JITSI_JVB_PASSWORD`, `JITSI_FOCUS_PASSWORD`, `JITSI_TURN_SECRET`) are in the server's secret
   store; the first two must match the `jvb` and `focus` accounts in Prosody.
-- **Upgrade Jitsi**: bump every version in `vars/host-meet.yaml`'s `jitsi_packages` together. An
-  apt pin keeps the nightly upgrade from moving them on its own. New package versions can ship
-  new config templates (`/usr/share/jitsi-meet-*`): diff them against `modules/jitsi/files/`.
+- **Upgrade Jitsi**: bump every version in `vars/host-meet.yaml`'s `jitsi_packages` together; one
+  apt transaction installs the set (an apt pin keeps the nightly upgrade off them). Before that,
+  check what the new packages want from the configs Buckle owns, because their postinsts edit
+  configs on upgrade and Buckle would write the old ones back:
+  1. `apt-get download` the new versions on meet; compare the templates they ship
+     (`/usr/share/jitsi-meet-prosody/prosody.cfg.lua-jvb.example`,
+     `/usr/share/jitsi-meet-web-config/jitsi-meet.example`) with `modules/jitsi/files/`.
+     Prosody's site config and the nginx site are those templates filled in for meet (domain,
+     `focus`, TURN secret; `"polls"` commented out and the colibri websocket proxy enabled, as
+     the postinsts do).
+  2. Upgrade an `ubuntu:24.04` amd64 container from the old to the new versions over the rendered
+     templates (dummy secrets) and diff the configs afterwards; start Prosody there and check
+     its log for module errors, and `nginx -t`.
+  3. `buckle plan` on meet with the working tree, then merge.
+  The `bridge-available` check fails if jicofo can't see the videobridge afterwards.
 - **Reboot or patch a host now**: the host page's actions (`base: upgrade`, `base: reboot`,
   `k3s-agent: reboot`).
 - **Reset k3s**: by hand. It is deliberately not a Buckle removal hook.

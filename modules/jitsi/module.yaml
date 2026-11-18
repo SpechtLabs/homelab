@@ -2,8 +2,9 @@ name: jitsi
 description: Jitsi Meet (Prosody, jicofo, videobridge, nginx, coturn) on meet, adopted from its quick-install.
 when: 'host.groups contains "jitsi"'
 tags: [jitsi]
-# The files are the quick-install's own output, adopted byte for byte on
-# 2026-11-18 (stock, of the Jan/Jul 2025 package versions): edit them here.
+# The files started as the quick-install's own output (adopted 2026-11-18);
+# Prosody's site config and the nginx site are rebased on the package
+# templates of the pinned version (see README: Upgrade Jitsi): edit them here.
 # The three shared secrets live in the server's secret store. TLS stays with
 # the quick-install's acme.sh (root's crontab, /opt/acmesh), whose reload hook
 # restarts nginx and copies the certificate to coturn.
@@ -36,32 +37,38 @@ tasks:
   # together in vars, read the release notes, and check the plan's file diffs.
   - file.template: { src: apt-pin.j2, dest: /etc/apt/preferences.d/buckle-jitsi, mode: "0644" }
     id: jitsi-apt-pin
-  - apt.package: { name: prosody, version: '{{ vars.jitsi_packages["prosody"] }}' }
-    id: pkg-prosody
-    removal: leave
-  - apt.package: { name: jitsi-meet-web-config, version: '{{ vars.jitsi_packages["jitsi-meet-web-config"] }}' }
-    id: pkg-jitsi-meet-web-config
-    removal: leave
-  - apt.package: { name: jitsi-meet-web, version: '{{ vars.jitsi_packages["jitsi-meet-web"] }}' }
-    id: pkg-jitsi-meet-web
-    removal: leave
-  - apt.package: { name: jitsi-meet-prosody, version: '{{ vars.jitsi_packages["jitsi-meet-prosody"] }}' }
-    id: pkg-jitsi-meet-prosody
-    removal: leave
-  - apt.package: { name: jitsi-meet-turnserver, version: '{{ vars.jitsi_packages["jitsi-meet-turnserver"] }}' }
-    id: pkg-jitsi-meet-turnserver
-    removal: leave
-  - apt.package: { name: jicofo, version: '{{ vars.jitsi_packages["jicofo"] }}' }
-    id: pkg-jicofo
-    removal: leave
-  - apt.package: { name: jitsi-videobridge2, version: '{{ vars.jitsi_packages["jitsi-videobridge2"] }}' }
-    id: pkg-jitsi-videobridge2
-    removal: leave
-  - apt.package: { name: jitsi-meet, version: '{{ vars.jitsi_packages["jitsi-meet"] }}' }
-    id: pkg-jitsi-meet
+  # One apt transaction for the whole set: jitsi-meet depends on exact versions
+  # of its parts, so moving them one at a time could make apt remove some.
+  # --no-remove: abort rather than take anything away. Their postinsts migrate
+  # configs; the templates below already hold the result (checked by
+  # upgrading a container over these files), and restart what changed.
+  - command.run:
+      run:
+        - sh
+        - -c
+        - >-
+          apt-get install -y --no-remove -o DPkg::Lock::Timeout=300
+          -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold
+          {% for name, version in vars.jitsi_packages | items %}{{ name }}={{ version }} {% endfor %}
+      unless:
+        - sh
+        - -c
+        - >-
+          {% for name, version in vars.jitsi_packages | items %}[ "$(dpkg-query -W -f='${Version}' {{ name }} 2>/dev/null)" = "{{ version }}" ] && {% endfor %}true
+      env: { DEBIAN_FRONTEND: noninteractive }
+      timeout: 20m
+    id: jitsi-packages
+    retry: { limit: 2, delay: 30s }
     removal: leave
 
-  # Prosody: XMPP for the web clients, jicofo and the bridge.
+  # Prosody: XMPP for the web clients, jicofo and the bridge. The main config is
+  # prosody.im's stock 13.x file plus the conf.d include it lacks: without it
+  # Prosody served only localhost, jicofo and the bridge could never log in,
+  # and no meeting could start (from about July 2025 to 2026-11-18).
+  - file.template: { src: prosody-main.cfg.lua.j2, dest: /etc/prosody/prosody.cfg.lua, owner: root, group: prosody, mode: "0640" }
+    id: prosody-main
+    removal: leave
+    notify: [restart-prosody]
   - file.template:
       src: prosody.cfg.lua.j2
       dest: '/etc/prosody/conf.avail/{{ vars.jitsi_domain }}.cfg.lua'
@@ -160,6 +167,12 @@ health:
     systemd: { unit: jicofo, state: active, min_uptime: 30s }
   - name: videobridge
     http: { url: 'http://127.0.0.1:8080/about/health' }
+  # The whole chain: jicofo is logged in to Prosody and sees the bridge in its
+  # brewery room. This is what was missing for months.
+  - name: bridge-available
+    http:
+      url: 'http://127.0.0.1:8888/stats'
+      expect: { status: 200, body_contains: '"operational_bridge_count":1' }
   - name: coturn
     systemd: { unit: coturn, state: active }
   - name: site
