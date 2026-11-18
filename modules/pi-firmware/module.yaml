@@ -44,15 +44,17 @@ tasks:
     when: 'host.facts.hardware.raspberry_pi.version == 5'
     notify: [reboot]
 
-  # The link speed only matters for NVMe, so only where pi-facts saw an NVMe
-  # controller. (The id is historical: it set Gen 3 before 2026-11-18.)
+  # Every Pi 5, not just where pi-facts sees NVMe: a marginal NVMe link comes
+  # and goes between boots (timepi's), and a fact that flaps would make Buckle
+  # remove the setting again. Gen 2 is the default anyway. (The id is
+  # historical: it set Gen 3 before 2026-11-18.)
   - file.ini:
       path: /boot/firmware/config.txt
       section: all
       settings:
         dtparam=pciex1_gen: '{{ vars.rpi_pciex1_gen }}'
     id: rpi5-pcie-gen3
-    when: 'host.facts.hardware.raspberry_pi.version == 5 && host.facts.script.rpi.nvme == true'
+    when: 'host.facts.hardware.raspberry_pi.version == 5'
     notify: [reboot]
 
   - file.ini:
@@ -76,12 +78,14 @@ tasks:
     notify: [reboot]
 
   # NVMe power-state transitions (APST): WD SN770s and others drop off the Pi's
-  # PCIe bus coming out of a deep power state. Disable them on every NVMe Pi.
+  # PCIe bus coming out of a deep power state. Disable them on every Pi 5 (as
+  # above, whether or not the drive showed up this boot) and on any other Pi
+  # with NVMe (the CM4 blades). A no-op without NVMe.
   - file.tokens:
       path: /boot/firmware/cmdline.txt
       present: [nvme_core.default_ps_max_latency_us=0]
     id: rpi-nvme-no-apst
-    when: 'host.facts.script.rpi.nvme == true'
+    when: 'host.facts.hardware.raspberry_pi.version == 5 || host.facts.script.rpi.nvme == true'
     notify: [reboot]
 
   # The serial console would fight gpsd for the UART.
