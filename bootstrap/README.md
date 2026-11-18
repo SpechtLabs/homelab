@@ -48,7 +48,7 @@ ends. Do it in one rollout (it is: both modules are in the same revision).
 
 ```sh
 # binary (same version as mise.toml)
-curl -fsSL https://github.com/SierraSoftworks/buckle/releases/download/v2.13.0/install.sh | sudo sh -s --
+curl -fsSL https://github.com/SierraSoftworks/buckle/releases/download/v2.15.0/install.sh | sudo sh -s --
 
 # config
 sudo install -d -m 0755 /etc/buckle
@@ -75,7 +75,7 @@ the tailnet node name; pass `--host-id` where the system hostname differs.
 ```sh
 enrol() {  # enrol HOST SSH_USER
   tailscale ssh "$2@$1" -- \
-    'curl -fsSL https://github.com/SierraSoftworks/buckle/releases/download/v2.13.0/install.sh \
+    'curl -fsSL https://github.com/SierraSoftworks/buckle/releases/download/v2.15.0/install.sh \
        | sudo sh -s -- up --server http://nuc.sphinx-map.ts.net:7700 --insecure-plaintext'
 }
 for h in nuc hole meet; do enrol "$h" root; done
