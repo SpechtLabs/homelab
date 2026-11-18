@@ -26,13 +26,15 @@
     },
     {
       "customType": "regex",
-      "description": "Buckle agent version the server rolls out",
+      "description": "The buckle CLI pinned for local use and CI",
       "managerFilePatterns": [
-        "/^bootstrap/server\\.yaml$/"
+        "/^mise\\.toml$/"
       ],
       "matchStrings": [
-        "desired_version: \"(?<currentValue>[^\"]+)\"\\s+# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)"
+        "\"github:SierraSoftworks/buckle\" = \"(?<currentValue>[^\"]+)\""
       ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "SierraSoftworks/buckle",
       "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ],
@@ -46,6 +48,16 @@
       "separateMultipleMinor": true,
       "automerge": false,
       "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\+k3s(?<build>\\d+)$"
+    },
+    {
+      "description": "Buckle: CLI and fleet in one PR; majors by hand (server first, check the release notes)",
+      "matchDepNames": [
+        "SierraSoftworks/buckle"
+      ],
+      "groupName": "buckle",
+      "major": {
+        "enabled": false
+      }
     }
   ]
 }

@@ -39,6 +39,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `k3s-agent` | clusterpi-worker* | k3s workers; *action*: reboot |
 | `ptp-server` | timepi | gpsd + PPS into ntpsec; ptp4l/phc2sys behind `ptp_enabled` |
 | `tsidp` | nuc | tailnet OIDC provider |
+| `buckle` | all | Buckle itself at `buckle_version`; restarts the agent (and the server on the NUC) after the run |
 
 ## Day to day
 
@@ -51,8 +52,10 @@ mise exec -- buckle validate --config . $(printf -- '--facts %s ' fixtures/facts
   rolls it out.
 - **Upgrade k3s / Alloy / rpi_exporter / tsidp**: merge the renovate PR that bumps
   `vars/versions.yaml`. k3s goes server first, then two agents at a time.
-- **Upgrade Buckle**: bump `mise.toml` and `desired_version` in `bootstrap/server.yaml`; update
-  the server binary, then upgrade agents from the UI (canary first).
+- **Upgrade Buckle**: merge renovate's `buckle` PR (`buckle_version` in `vars/versions.yaml` and
+  the CLI in `mise.toml`). The `buckle` module updates every host through the phases, canary
+  first and the NUC (server) last; agents restart into the new version 90 seconds after their run.
+  Major versions are left to you: read the release notes and upgrade the server first.
 - **Reboot or patch a host**: the host page's actions (`base: upgrade`, `base: reboot`,
   `k3s-agent: reboot`).
 - **Reset k3s**: by hand. It is deliberately not a Buckle removal hook.

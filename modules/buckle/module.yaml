@@ -1,0 +1,23 @@
+name: buckle
+description: Keeps Buckle itself at the pinned version; restarts the agent (and on the server host, the server) into it after the run.
+tags: [buckle]
+vars:
+  buckle_bin: /usr/local/bin/buckle
+  buckle_restart_delay: 90      # seconds: lets the current run finish and report first
+tasks:
+  # What the UI's "Upgrade agent" does, but phased like any other change:
+  # `buckle update` fetches the release, verifies GitHub's SHA-256 digest and
+  # renames the new binary into place; the running agent keeps the old one
+  # until the transient unit below restarts it, outside the agent's cgroup.
+  # Agents may be newer than the server within a major version, so the NUC
+  # (server) rolling last is fine. One GitHub API call per host per upgrade.
+  - command.run:
+      run: >-
+        {{ vars.buckle_bin }} update --to {{ vars.buckle_version }} &&
+        systemd-run --quiet --collect --on-active={{ vars.buckle_restart_delay }}
+        --unit=buckle-upgrade-{{ vars.buckle_version | replace(".", "-") }}
+        systemctl restart {{ "buckle-server.service buckle-agent.service" if "buckle-server" in host.groups else "buckle-agent.service" }}
+      unless: '{{ vars.buckle_bin }} --version | grep -qx "buckle {{ vars.buckle_version }}"'
+      timeout: 5m
+    id: buckle-binary
+    removal: leave

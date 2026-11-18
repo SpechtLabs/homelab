@@ -21,6 +21,7 @@ fleet:
     o11y-collector:  'host.facts.tailscale.tags contains "tag:o11y-collector"'
     spechtlabs:      'host.id in ["hole", "meet"]'
     tsidp:           'host.id == "nuc"'
+    buckle-server:   'host.facts.tailscale.tags contains "tag:buckle-server"'
 
     # Power: the NUC proxies the Synology's UPS; Pis shut down early unless
     # they are the ones that should outlive the cluster.
