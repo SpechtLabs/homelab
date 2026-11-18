@@ -46,6 +46,8 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `compute-blade-agent` | blade-pi* | compute-blade-agent: fan curve, LEDs, button, metrics on :9666, bladectl's mTLS API on :8081; renews its certificates |
 | `jitsi` | meet | Jitsi Meet: Prosody, jicofo, videobridge, nginx, coturn configs and pinned package versions |
 | `argocd-seed` | clusterpi-leader | installs Argo CD only on a cluster that has none, from k8s-deployment, with the age key |
+| `ceph-disk` | storagepi-ceph* | split the NVMe into root + OSD partition from the initramfs; *action*: shrink-root |
+| `ceph` | storagepi-ceph* | Ceph via cephadm over the tailnet: host prep, cluster specs, pools/keys/S3 users; *action*: bootstrap. See [docs/ceph.md](docs/ceph.md) |
 
 ## The k3s cluster
 
