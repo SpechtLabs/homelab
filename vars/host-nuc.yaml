@@ -1,2 +1,7 @@
 # You log in as cedi; root keeps its old Ansible-era checkout, unmanaged.
 admin_user: cedi
+
+# The NUC's Celeron 2955U is x86-64-v2 (no AVX/AVX2). Buckle 2.14.0's amd64
+# build dies with SIGILL on it (2026-11-18), taking the server down. Held at
+# the last release that runs here; drop this once an amd64 build supports v2.
+buckle_version: 2.13.0
