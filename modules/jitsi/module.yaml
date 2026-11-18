@@ -28,7 +28,8 @@ tasks:
       uri: https://packages.prosody.im/debian
       suites: ['{{ host.facts.os.codename }}']
       components: [main]
-      signed_by: { url: https://prosody.im/files/prosody-debian-packages.key }
+      # A binary keyring despite the .key name (apt can't read it as .asc).
+      signed_by: { keyring_url: https://prosody.im/files/prosody-debian-packages.key }
     retry: { limit: 3, delay: 30s }
 
   # Versions: pinned (apt preferences) and installed at exactly these. Bump them
