@@ -6,7 +6,11 @@ tags: [base, hardware]
 vars:
   # Fan trip points in millidegrees C: the PoE+ HAT fan and the Pi 5 active cooler.
   rpi_fan_temps: [65000, 70000, 75000, 80000]
-  rpi_pciex1_gen: 3
+  # PCIe link speed for NVMe on the Pi 5. Gen 2 is the certified speed; Gen 3
+  # (what Ansible set) made NVMe drop off the bus under load on 2026-11-18:
+  # clusterpi-leader, storagepi-ceph1 and -ceph3 stopped doing I/O until power
+  # cycled. Raise only per host, and watch it.
+  rpi_pciex1_gen: 2
   # GPS/PPS board wiring (UART, I2C, SPI, PPS on GPIO 18); set per host.
   rpi_gps_pps: false
   rpi_pps_gpio: 18
@@ -40,8 +44,8 @@ tasks:
     when: 'host.facts.hardware.raspberry_pi.version == 5'
     notify: [reboot]
 
-  # PCIe Gen 3 is uncertified on the Pi 5 and only helps NVMe, so only where
-  # pi-facts saw an NVMe controller.
+  # The link speed only matters for NVMe, so only where pi-facts saw an NVMe
+  # controller. (The id is historical: it set Gen 3 before 2026-11-18.)
   - file.ini:
       path: /boot/firmware/config.txt
       section: all
@@ -69,6 +73,15 @@ tasks:
       path: /boot/firmware/cmdline.txt
       present: [cgroup_enable=cpuset, cgroup_memory=1, cgroup_enable=memory]
     id: rpi-cmdline-cgroups
+    notify: [reboot]
+
+  # NVMe power-state transitions (APST): WD SN770s and others drop off the Pi's
+  # PCIe bus coming out of a deep power state. Disable them on every NVMe Pi.
+  - file.tokens:
+      path: /boot/firmware/cmdline.txt
+      present: [nvme_core.default_ps_max_latency_us=0]
+    id: rpi-nvme-no-apst
+    when: 'host.facts.script.rpi.nvme == true'
     notify: [reboot]
 
   # The serial console would fight gpsd for the UART.

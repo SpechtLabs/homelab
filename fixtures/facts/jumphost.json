@@ -39,6 +39,12 @@
     "backend_state": "Running",
     "tailnet": "cedi.github"
   },
-  "script": {},
+  "script": {
+    "rpi": {
+      "hat_product": "",
+      "hat_vendor": "",
+      "nvme": true
+    }
+  },
   "cloud": null
 }
