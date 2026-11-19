@@ -40,6 +40,35 @@ tasks:
     id: ptp4l-service
     when: 'host.groups contains "ptp-client"'
 
+  # ptp4l steps eth0's hardware clock from boot time to TAI once it locks. A
+  # chrony reading the PHC meanwhile can keep a wild error estimate for that
+  # source and never select it (blade-pi4, 2026-11-19: on NTP for 40 min with
+  # ptp4l locked at 130 ns). So chrony starts once ptp4l is SLAVE (90 s at
+  # most: NTP must not wait on a broken PTP), ...
+  - systemd.dropin:
+      unit: chrony.service
+      name: ptp
+      content: |
+        [Unit]
+        After=ptp4l@eth0.service
+
+        [Service]
+        ExecStartPre=-/bin/sh -c 'for i in $$(seq 90); do pmc -u -b 0 "GET PORT_DATA_SET" 2>/dev/null | grep -q "portState.*SLAVE" && exit 0; sleep 1; done'
+        TimeoutStartSec=150
+    id: chrony-after-ptp4l
+    when: 'host.groups contains "ptp-client"'
+    notify: [restart-chrony]
+  # ... and if it still isn't following PTP while ptp4l is locked, the next
+  # run restarts it.
+  - command.run:
+      run: [systemctl, restart, chrony]
+      only_if: >-
+        pmc -u -b 0 'GET PORT_DATA_SET' 2>/dev/null | grep -q 'portState.*SLAVE' &&
+        ! chronyc -n sources | grep -q '^#\* PTP'
+    id: chrony-follow-ptp
+    when: 'host.groups contains "ptp-client"'
+    removal: leave
+
   # A changed unit or drop-in that systemd hasn't loaded: systemd.unit doesn't
   # reload while the unit stays enabled and active, and a restart alone would
   # run the old one.
@@ -51,8 +80,9 @@ tasks:
     removal: leave
 
 handlers:
-  restart-chrony: { systemd.restart: { name: chrony } }
-  restart-ptp4l: { command.run: { run: [sh, -c, 'systemctl daemon-reload && systemctl restart ptp4l@eth0'] } }
+  restart-chrony: { command.run: { run: [sh, -c, 'systemctl daemon-reload && systemctl restart chrony'] } }
+  # chrony restarts behind ptp4l: its drop-in waits for SLAVE (chrony-after-ptp4l).
+  restart-ptp4l: { command.run: { run: [sh, -c, 'systemctl daemon-reload && systemctl restart ptp4l@eth0 && systemctl restart chrony'] } }
 
 health:
   # chrony reports Leap status Normal once it follows a source.
