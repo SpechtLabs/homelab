@@ -1,0 +1,106 @@
+name: headless
+description: The Pis run headless; no desktop, display manager or desktop apps from the Raspberry Pi OS image, and they boot to multi-user.target.
+when: 'host.groups contains "pi"'
+needs: [base]                # dpkg-repair first: a broken dpkg would fail the removal
+tags: [base]
+vars:
+  # apt-get gets its own limit here, not Buckle's 30 minutes for apt tasks:
+  # ~350 packages come off an SD card.
+  headless_autoremove: >-
+    apt-get autoremove --purge -y -o DPkg::Lock::Timeout=600
+    -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold
+tasks:
+  # Before the display manager goes, so a reboot in between boots without one.
+  - command.run:
+      run: [systemctl, set-default, multi-user.target]
+      unless: 'test "$(systemctl get-default)" = multi-user.target'
+    id: default-target
+    removal: leave
+
+  # The full Raspberry Pi OS image's desktop, its apps and the services only
+  # a desktop uses (CUPS, VNC, udisks). Every Pi had all of it, ~400 packages
+  # with their dependencies, and the nightly upgrade spent most of its time on
+  # them: clusterpi-worker2's ran past apt's 30 minutes (2026-11-19).
+  # Simulated on every Pi first (`apt-get -s purge --autoremove`): nothing
+  # another module installs goes with it. Not python3-tk: gpsd-clients
+  # (modules/ptp-server) depends on it, and the two would undo each other.
+  - apt.package:
+      names:
+        - raspberrypi-ui-mods
+        - lightdm
+        - pi-greeter
+        - labwc
+        - wayfire
+        - lxde
+        - lxpanel
+        - lxtask
+        - obconf
+        - openbox
+        - xserver-xorg
+        - xserver-xorg-core
+        - xinit
+        - xcompmgr
+        - squeekboard
+        - chromium
+        - chromium-browser
+        - rpi-chromium-mods
+        - firefox
+        - rpi-firefox-mods
+        - vlc
+        - dillo
+        - eom
+        - evince
+        - geany
+        - mousepad
+        - thonny
+        - alacarte
+        - zenity
+        - piwiz
+        - pprompt
+        - rc-gui
+        - rp-prefapps
+        - piclone
+        - rpi-imager
+        - raindrop
+        - realvnc-vnc-server
+        - rpd-plym-splash
+        - rpd-wallpaper
+        - desktop-base
+        - gnome-icon-theme
+        - gnome-keyring
+        - gnome-themes-extra-data
+        - gtk2-engines
+        - gvfs
+        - gvfs-backends
+        - gvfs-fuse
+        - udisks2
+        - menu-xdg
+        - cups
+        - python3-pygame
+        - python3-pgzero
+        - hunspell-en-gb
+        - hyphen-en-gb
+      state: absent
+      remove_dependents: true      # their panel plugins, video drivers, l10n
+    id: desktop-packages
+    removal: leave
+    notify: [autoremove]
+
+  # Catch-up for the dependencies, if the handler below didn't finish: the
+  # guard reads apt's own plan, so it stops as soon as nothing is left.
+  - command.run:
+      run: '{{ vars.headless_autoremove }}'
+      only_if: 'LC_ALL=C apt-get -s autoremove | grep -q "^Remv "'
+      env: { DEBIAN_FRONTEND: noninteractive }
+      timeout: 60m
+    id: autoremove
+    removal: leave
+
+handlers:
+  # The same run's dependencies (the guard above was checked before the
+  # removal, when there was nothing to remove yet).
+  autoremove:
+    command.run:
+      run: '{{ vars.headless_autoremove }}'
+      env: { DEBIAN_FRONTEND: noninteractive }
+      timeout: 60m

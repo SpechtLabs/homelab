@@ -34,6 +34,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `pi-facts` | Pis | custom fact `host.facts.script.rpi` from the HAT EEPROM |
 | `pi-firmware` | Pis | `config.txt` (PoE+ HAT fan, Pi 5 cooling/PCIe, GPS/PPS wiring), cgroups in `cmdline.txt`; reboots on change |
 | `pi-tools` | Pi 5 | rpi-clone |
+| `headless` | Pis | No desktop: removes the Raspberry Pi OS desktop and its apps, boots to `multi-user.target` |
 | `rpi-exporter` | Pis | cedi/rpi_exporter on :9243 |
 | `nut-server` | nuc | upsd proxying the UPS Tower's NUT server to the Pis |
 | `nut-client` | Pis | upsmon + upssched; early or late shutdown |
