@@ -1,6 +1,6 @@
 [tools]
 "github:SierraSoftworks/buckle" = "2.15.0"
-"github:compute-blade-community/compute-blade-agent" = "0.11.4"
+"github:compute-blade-community/compute-blade-agent" = "0.11.5"
 yq = "4.54.3"
 
 [tasks.validate]
