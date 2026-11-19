@@ -1,5 +1,5 @@
 name: compute-blade-agent
-description: compute-blade-agent on the compute blades (fan curve, LEDs, button, metrics on :9666) and bladectl's mTLS API on :8081.
+description: compute-blade-agent on the compute blades (fan curve, health LEDs, button gestures, power policy, metrics on :9666) and bladectl's mTLS API on :8081, announced via mDNS.
 when: 'host.groups contains "blades"'
 tags: [hardware]
 tasks:
@@ -11,8 +11,9 @@ tasks:
     removal: leave
     notify: [restart]
 
-  # The package default plus: gRPC on TCP :8081 with mTLS (bladectl from
-  # elsewhere), development logging, a three-step fan curve.
+  # Every setting spelled out: gRPC on TCP :8081 with mTLS (bladectl from
+  # elsewhere), a three-step fan curve, health indicators, power policy,
+  # button gestures and mDNS discovery.
   - file.template: { src: config.yaml.j2, dest: /etc/compute-blade-agent/config.yaml, owner: root, group: root, mode: "0644" }
     id: agent-config
     removal: leave
@@ -39,7 +40,20 @@ tasks:
     removal: leave
     notify: [restart]
 
-  - systemd.unit: { name: compute-blade-agent, enabled: true, active: true }
+  # The agent is the package's /usr/bin/compute-blade-agent. Testing a build on
+  # a blade (the agent's docs/how-to/test-on-a-blade.md and its e2e runs)
+  # swaps ExecStart through a drop-in and leaves the binaries in /usr/local;
+  # a rollout puts the packaged agent back.
+  - file.absent: { path: /etc/systemd/system/compute-blade-agent.service.d/dev.conf }
+    removal: leave
+    notify: [restart]
+  - file.absent: { path: /etc/systemd/system/compute-blade-agent.service.d/e2e.conf }
+    removal: leave
+    notify: [restart]
+  - file.absent: { path: /usr/local/lib/cba-e2e }
+    removal: leave
+
+  - systemd.unit: { name: compute-blade-agent, enabled: true, active: true, daemon_reload: true }
 
 handlers:
   restart: { systemd.restart: { name: compute-blade-agent } }

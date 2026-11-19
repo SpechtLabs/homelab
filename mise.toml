@@ -1,6 +1,6 @@
 [tools]
 "github:SierraSoftworks/buckle" = "2.15.0"
-"github:compute-blade-community/compute-blade-agent" = "0.11.2"
+"github:compute-blade-community/compute-blade-agent" = "0.11.4"
 yq = "4.54.3"
 
 [tasks.validate]
@@ -8,18 +8,34 @@ description = "Validate the config and dry-plan every host in fixtures/facts"
 run = "buckle validate --config . $(printf -- '--facts %s ' fixtures/facts/*.json)"
 
 [tasks.bladectl-config]
-description = "Fetch every blade's bladectl client config (mTLS) into ~/.config/bladectl/config.yaml"
+description = "Find the blades via mDNS and fetch each one's bladectl client config (mTLS) into ~/.config/bladectl/config.yaml"
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
 dir="$HOME/.config/bladectl"; mkdir -p "$dir"; chmod 700 "$dir"
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-for b in blade-pi1 blade-pi2 blade-pi3 blade-pi4; do
+# The agents announce themselves via mDNS (modules/compute-blade-agent), which
+# only works on the blades' LAN. Away from it, keep the blades already configured.
+blades=$(bladectl discover --wait 3s 2>/dev/null | awk -F'│' 'NF>6 && $2 !~ /BLADE/ {gsub(/ /,"",$2); print $2}')
+if [ -z "$blades" ] && [ -f "$dir/config.yaml" ]; then
+  echo "no blades announced here (not on their LAN?); refreshing the configured ones"
+  blades=$(yq '.blades[].name' "$dir/config.yaml")
+fi
+[ -n "$blades" ] || { echo "no blades found" >&2; exit 1; }
+# Discovery carries no secrets: the client certificates come over SSH. The
+# server is the bare host name, which resolves on the LAN and over the tailnet.
+for b in $blades; do
   # root's config, written by the agent (modules/compute-blade-agent)
-  ssh -o BatchMode=yes "pi@$b" sudo cat /root/.config/bladectl/config.yaml > "$tmp/$b.yaml"
-  yq -i ".blades[0].name = \"$b\" | .blades[0].blade.server = \"$b:8081\"" "$tmp/$b.yaml"
+  mkdir -p "$tmp/blades"
+  ssh -o BatchMode=yes "pi@$b" sudo cat /root/.config/bladectl/config.yaml > "$tmp/blades/$b.yaml"
+  yq -i ".blades[0].name = \"$b\" | .blades[0].blade.server = \"$b:8081\"" "$tmp/blades/$b.yaml"
 done
-yq ea '. as $b ireduce ({}; .blades += $b.blades) | .["current-blade"] = "blade-pi1"' "$tmp"/blade-pi*.yaml > "$tmp/config.yaml"
+first=$(echo "$blades" | head -1)
+yq ea ". as \$b ireduce ({}; .blades += \$b.blades) | .[\"current-blade\"] = \"$first\"" "$tmp"/blades/*.yaml > "$tmp/config.yaml"
 install -m 0600 "$tmp/config.yaml" "$dir/config.yaml"
-echo "wrote $dir/config.yaml: $(yq '.blades[].name' "$dir/config.yaml" | paste -sd' ' -); try: bladectl -A get fan"
+echo "wrote $dir/config.yaml: $(yq '.blades[].name' "$dir/config.yaml" | paste -sd' ' -)"
+# Every blade should show as configured; on the LAN, --save also fixes an
+# address that no longer reaches its blade.
+bladectl discover --save || true
+echo "try: bladectl -A get fan; bladectl -A events"
 '''

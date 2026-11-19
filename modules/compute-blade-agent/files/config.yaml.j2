@@ -1,53 +1,109 @@
 # {{ buckle_managed }}
-# Default configuration for the compute-blade-agent
+# compute-blade-agent configuration; every key is in the agent's
+# docs/reference/configuration.md. No reload: Buckle restarts the agent.
+# (log.mode does nothing since 0.11.3; `--debug` on the command line does.)
 
-log:
-  mode: development  # production, development
-
-# Listen configuration
+# gRPC on TCP with mTLS so bladectl works from elsewhere; metrics for Alloy.
 listen:
   metrics: ":9666"
   grpc: ":8081"
   authenticated: true
   mode: tcp
 
-# Hardware abstraction layer configuration
 hal:
-  # For the default fan unit, fanspeed measurement is causing a tiny bit of CPU laod.
-  # Sometimes it might not be desired
+  # Tachometer on the standard fan unit (blade-pi4): fan_stall needs it.
   rpm_reporting_standard_fan_unit: true
 
-# Idle LED color, values range from 0-255
-idle_led_color:
-  red: 0
-  green: 16
-  blue: 0
+# LED colors, 0-255 per channel (above 64 is rarely needed).
+idle_led_color:     { red: 0,  green: 16, blue: 0 }
+identify_led_color: { red: 16, green: 0,  blue: 16 }
+critical_led_color: { red: 64, green: 0,  blue: 0 }   # top LED
 
-# Identify LED color
-identify_led_color:
-  red: 16
-  green: 0
-  blue: 16
-
-# Critical LED color
-criticalLedColor:
-  red: 64
-  green: 0
-  blue: 0
-
-# Enable/disable stealth mode; turns off all LEDs on the blade
 stealth_mode: false
 
-
-# Simple fan-speed controls based on the SoC temperature
+# Fan speed by SoC temperature, interpolated between the steps.
 fan_controller:
-  # For now, this is only supporting a two-step configuration.
   steps:
-    - temperature: 45
-      percent: 40
-    - temperature: 55
-      percent: 80
-    - temperature: 60
-      percent: 100
-# Critical temperature threshold
+    - { temperature: 45, percent: 40 }
+    - { temperature: 55, percent: 80 }
+    - { temperature: 60, percent: 100 }
+
+# At the critical temperature (°C) the agent enters critical mode (fan 100%,
+# stealth off, top LED blinking red) until the SoC is 5°C below again.
 critical_temperature_threshold: 60
+
+# Health conditions: each one is a computeblade_state_state{state=...} series,
+# a bladectl event and an LED indicator (below).
+health:
+  fan_stall:                # fan commanded but not spinning
+    enabled: true
+    min_percent: 20         # only judge the fan from this speed up
+    min_rpm: 100            # below this the fan counts as stopped
+    grace_period: 15s       # covers spin-up
+  undervoltage:             # Pi firmware flag, e.g. the PoE budget ran out
+    enabled: true
+    clear_after: 30s
+  throttling:               # Pi firmware flags: capped, throttled, soft limit
+    enabled: true
+    clear_after: 30s
+
+# How the conditions show on the LEDs. Identify (edge) and critical mode (top)
+# always win; otherwise the higher priority on an LED does.
+indicators:
+  fan_stall:
+    led: top
+    pattern: fast-blink
+    priority: 30
+    color: { red: 64, green: 24, blue: 0 }
+  undervoltage:
+    led: top
+    pattern: burst
+    priority: 20
+    color: { red: 64, green: 40, blue: 0 }
+  # Off by default upstream (common under sustained load). These blades have
+  # not throttled once in a week, so it is worth seeing: on the edge LED, so
+  # the top LED stays for the hardware faults.
+  throttled:
+    led: edge
+    pattern: slow-blink
+    priority: 10
+    color: { red: 32, green: 32, blue: 0 }
+
+# Cap the CPU (CM4: 1500 MHz, governors conservative ondemand userspace
+# powersave performance schedutil) while the blade is short on power. The
+# agent restores the originals when the limit ends or it stops.
+power_policy:
+  # Not on 802.3at PoE+ (on 802.3af PoE or USB-C): a CM4 under full load can
+  # draw more than 802.3af delivers.
+  limited_power:
+    governor: ""
+    max_freq_mhz: 1200
+  # During under-voltage: lowest clock until the supply recovers.
+  undervoltage:
+    governor: powersave
+    max_freq_mhz: 0
+
+# Edge button gestures (the fan unit button always toggles identify). Every
+# gesture is also a button_gesture event (`bladectl events`), bound or not.
+button:
+  gesture_window: 400ms
+  single:
+    action: identify-toggle
+  # Unbound: left to tools watching the event stream.
+  double: {}
+  # Hold 5s for a clean shutdown; the edge LED blinks white after 1s.
+  long_press:
+    hold: 5s
+    action: shutdown
+  # Five quick presses: power off at once, for a blade whose shutdown hangs
+  # (no unmount; flushes for up to 2s). It stays off until its PoE port is
+  # power cycled.
+  multi_press:
+    count: 5
+    action: emergency-poweroff
+
+# Announce the API as _compute-blade._tcp through avahi, for `bladectl
+# discover` (and `mise run bladectl-config`).
+discovery:
+  mdns:
+    enabled: true
