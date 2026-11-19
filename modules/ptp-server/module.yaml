@@ -66,6 +66,12 @@ tasks:
 
         [Service]
         ExecStartPre=/bin/sh -c 'until [ "$$(cat /sys/class/net/%i/operstate)" = up ]; do sleep 1; done'
+        # A grandmaster's time properties come from pmc, not ptp4l.conf: without
+        # this it announced currentUtcOffsetValid 0 and timeTraceable 0, which
+        # tells clients to distrust its UTC offset. GPS-traceable, TAI-UTC 37 s,
+        # static like clockClass 6 (ntpsec holds over if GPS goes). Retries until
+        # ptp4l's socket answers; a failure doesn't fail ptp4l.
+        ExecStartPost=-/bin/sh -c 'for i in $$(seq 30); do pmc -u -b 0 "SET GRANDMASTER_SETTINGS_NP clockClass 6 clockAccuracy 0x21 offsetScaledLogVariance 0xffff currentUtcOffset {{ vars.time_tai_utc_offset }} leap61 0 leap59 0 currentUtcOffsetValid 1 ptpTimescale 1 timeTraceable 1 frequencyTraceable 1 timeSource 0x20" 2>/dev/null | grep -q "currentUtcOffsetValid *1" && exit 0; sleep 1; done'
         TimeoutStartSec=120
         Restart=on-failure
         RestartSec=5s
