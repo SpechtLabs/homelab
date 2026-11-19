@@ -50,7 +50,7 @@ tasks:
   - file.absent: { path: /etc/systemd/system/compute-blade-agent.service.d/e2e.conf }
     removal: leave
     notify: [restart]
-  - file.absent: { path: /usr/local/lib/cba-e2e }
+  - file.absent: { path: /usr/local/lib/cba-e2e, recursive: true }
     removal: leave
 
   - systemd.unit: { name: compute-blade-agent, enabled: true, active: true, daemon_reload: true }
