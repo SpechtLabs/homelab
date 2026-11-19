@@ -306,6 +306,34 @@ def collect_ntpsec(out, timeout):
 
 GNSS = {0: "GPS", 1: "SBAS", 2: "Galileo", 3: "BeiDou", 4: "IMES", 5: "QZSS", 6: "GLONASS", 7: "NavIC"}
 
+EARTH_RADIUS_KM = 6371.0
+GEO_KM = 35786.0
+# Orbit altitude per constellation (circular-orbit approximation).
+ORBIT_KM = {"GPS": 20200.0, "Galileo": 23222.0, "GLONASS": 19100.0, "BeiDou": 21528.0,
+            "QZSS": GEO_KM, "SBAS": GEO_KM, "NavIC": GEO_KM}
+# BeiDou's GEO and IGSO satellites (the rest are MEO).
+BEIDOU_HIGH = set(range(1, 6)) | set(range(59, 64)) | {6, 7, 8, 9, 10, 13, 16, 31, 38, 39, 40}
+
+
+def constellation_by_prn(prn):
+    """gpsd's PRN numbering, for when SKY carries no gnssid."""
+    for lo, hi, name in [(1, 32, "GPS"), (33, 64, "SBAS"), (65, 96, "GLONASS"), (120, 158, "SBAS"),
+                         (159, 163, "BeiDou"), (193, 202, "QZSS"), (201, 237, "BeiDou"), (301, 336, "Galileo")]:
+        if lo <= prn <= hi:
+            return name
+    return None
+
+
+def subpoint(lat, lon, az, el, height_km):
+    """Where on the ground a satellite at azimuth/elevation from (lat, lon) is
+    overhead: the central angle to it, then the great-circle destination."""
+    el_r, az_r, lat_r = math.radians(el), math.radians(az), math.radians(lat)
+    psi = math.pi / 2 - el_r - math.asin(EARTH_RADIUS_KM / (EARTH_RADIUS_KM + height_km) * math.cos(el_r))
+    lat2 = math.asin(math.sin(lat_r) * math.cos(psi) + math.cos(lat_r) * math.sin(psi) * math.cos(az_r))
+    lon2 = math.radians(lon) + math.atan2(math.sin(az_r) * math.sin(psi) * math.cos(lat_r),
+                                          math.cos(psi) - math.sin(lat_r) * math.sin(lat2))
+    return math.degrees(lat2), (math.degrees(lon2) + 540) % 360 - 180
+
 
 def collect_gpsd(out, window, pps_device):
     sock = socket.create_connection(("127.0.0.1", 2947), timeout=2)
@@ -369,6 +397,12 @@ def collect_gpsd(out, window, pps_device):
         out.add("gpsd_satellites_used_tpv", tpv.get("sats"), help_="Satellites used, per TPV (ublox).")
         if tpv.get("time"):
             out.add("gpsd_fix_timestamp_seconds", iso_ms_to_unix(tpv["time"]), help_="Time of the last fix.")
+    # The antenna's position (gpsd's fix), for the satellite map.
+    observer = None
+    if tpv and tpv.get("mode", 0) >= 2 and tpv.get("lat") is not None and tpv.get("lon") is not None:
+        observer = (tpv["lat"], tpv["lon"])
+        out.add("gpsd_observer_latitude_degrees", tpv["lat"], help_="Receiver latitude from gpsd's fix.")
+        out.add("gpsd_observer_longitude_degrees", tpv["lon"], help_="Receiver longitude from gpsd's fix.")
 
     out.add("gpsd_sky_seen", 1 if sky else 0, help_="1 if gpsd reported a sky view (SKY) during the sample.")
     if sky:
@@ -387,6 +421,17 @@ def collect_gpsd(out, window, pps_device):
             out.add("gpsd_satellite_elevation_degrees", x.get("el"), lbl, "Elevation.")
             out.add("gpsd_satellite_azimuth_degrees", x.get("az"), lbl, "Azimuth.")
             out.add("gpsd_satellite_used", 1 if x.get("used") else 0, lbl, "1 if used in the fix.")
+            orbit = gnss if gnss != "PRN" else constellation_by_prn(x.get("PRN") or 0)
+            height = ORBIT_KM.get(orbit)
+            if orbit == "BeiDou" and (svid or 0) in BEIDOU_HIGH:
+                height = GEO_KM
+            el, az = x.get("el"), x.get("az")
+            if observer and height and el is not None and az is not None and 0 <= el <= 90:
+                slat, slon = subpoint(observer[0], observer[1], az, el, height)
+                out.add("gpsd_satellite_subpoint_latitude_degrees", slat, lbl,
+                        "Latitude of the point on Earth the satellite is overhead (from azimuth, elevation and orbit height).")
+                out.add("gpsd_satellite_subpoint_longitude_degrees", slon, lbl,
+                        "Longitude of the point on Earth the satellite is overhead.")
             c = per.setdefault(gnss, {"visible": 0, "tracked": 0, "used": 0})
             c["visible"] += 1
             if ss and ss > 0:
