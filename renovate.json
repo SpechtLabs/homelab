@@ -85,14 +85,6 @@
       "platformAutomerge": false
     },
     {
-      "description": "Keep major updates explicit: approve them on the Dependency Dashboard.",
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "automerge": false,
-      "dependencyDashboardApproval": true
-    },
-    {
       "description": "Third-party software the fleet runs only once its release is three days old, so a broken release is usually yanked or fixed before it reaches a host. Not for the user's own projects below.",
       "matchManagers": [
         "custom.regex"
@@ -109,6 +101,16 @@
         "cedi/rpi_exporter"
       ],
       "minimumReleaseAge": null
+    },
+    {
+      "description": "Majors automerge too (nobody approves by hand), but only once the release is a week old: time for a broken major to be fixed or yanked. Buckle majors stay disabled below.",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "minimumReleaseAge": "7 days",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false
     },
     {
       "description": "Group GitHub Actions updates together.",
@@ -132,17 +134,22 @@
       "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\+k3s(?<build>\\d+)$"
     },
     {
+      "description": "k3s minors are cluster upgrades and must not skip a minor. They automerge one at a time: validate.yml fails a PR that moves k3s_version by more than one minor from main (the next minor's PR passes once the previous one merged and Renovate rebased it), and only on Monday mornings, so each upgrade has a week to roll out before the next.",
       "matchDepNames": [
         "k3s-io/k3s"
       ],
       "matchUpdateTypes": [
         "minor"
       ],
-      "automerge": false,
-      "dependencyDashboardApproval": true
+      "schedule": [
+        "before 6am on monday"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false
     },
     {
-      "description": "Buckle: CLI and fleet in one PR, so CI validates with the new binary; validate.yml runs it on an x86-64-v2 CPU like the NUC's, which catches a release the server can't run (2.14.0 crashed it with SIGILL). Majors by hand (server first, check the release notes).",
+      "description": "Buckle: CLI and fleet in one PR, so CI validates with the new binary; validate.yml runs it on an x86-64-v2 CPU like the NUC's, which catches a release the server can't run (2.14.0 crashed it with SIGILL). Majors stay off: the canary blades' agents would upgrade before the server, and a protocol break there takes the control plane down.",
       "matchDepNames": [
         "SierraSoftworks/buckle"
       ],

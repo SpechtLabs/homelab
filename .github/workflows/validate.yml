@@ -6,6 +6,28 @@ on:
     branches: [main]
 
 jobs:
+  # k3s must move one minor at a time (Kubernetes doesn't support skipping
+  # one), and Renovate opens a PR per minor and automerges them. Fail a PR
+  # that moves k3s_version more than one minor from main: the next minor's PR
+  # passes once the previous one merged and Renovate rebased it.
+  k3s-one-minor:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: k3s_version moves at most one minor
+        run: |
+          minor() { sed -n 's/^k3s_version: v1\.\([0-9]*\)\..*/\1/p'; }
+          base=$(git show "origin/${{ github.base_ref }}:vars/versions.yaml" | minor)
+          head=$(minor < vars/versions.yaml)
+          echo "k3s minor: main $base, this PR $head"
+          if [ "$head" -gt $((base + 1)) ]; then
+            echo "::error::k3s_version jumps from 1.$base to 1.$head; upgrade one minor at a time"
+            exit 1
+          fi
+
   buckle:
     runs-on: ubuntu-latest
     steps:
