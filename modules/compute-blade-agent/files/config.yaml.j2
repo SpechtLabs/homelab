@@ -11,7 +11,9 @@ listen:
   mode: tcp
 
 hal:
-  # Tachometer on the standard fan unit (blade-pi4): fan_stall needs it.
+  # Tachometer of a standard fan unit, which fan_stall needs. All four blades
+  # have the smart fan unit (it reports its speed over UART), but a blade that
+  # misses it at startup falls back to the standard one.
   rpm_reporting_standard_fan_unit: true
 
 # LED colors, 0-255 per channel (above 64 is rarely needed).
