@@ -1,6 +1,7 @@
 name: time-sync
 description: chrony on every Pi and the NUC follows timepi; Pi 5s and the CM4 blades by PTP with hardware timestamps (ptp4l), the rest by NTP. The public pool is the fallback.
 when: 'host.groups contains "ntp-client"'
+needs: [alloy]               # the textfile directory time-client-metrics writes to
 tags: [time]
 tasks:
   # chrony replaces systemd-timesyncd: an SNTP client polling every 34 min
@@ -69,6 +70,25 @@ tasks:
     when: 'host.groups contains "ptp-client"'
     removal: leave
 
+  # ── Metrics ──
+  # chrony's tracking (offset, rms, frequency, error bounds, source) and
+  # ptp4l's offset and path delay to timepi, every 30 s, for node_exporter's
+  # textfile collector: how close each host really is, on the Stratum 1
+  # dashboard. Read-only queries.
+  - file.copy: { src: time-client-metrics, dest: /usr/local/sbin/time-client-metrics, mode: "0755" }
+    when: 'vars.o11y_textfile_dir != ""'
+  - file.template:
+      src: time-client-metrics.service.j2
+      dest: /etc/systemd/system/time-client-metrics.service
+      mode: "0644"
+    when: 'vars.o11y_textfile_dir != ""'
+    notify: [daemon-reload]
+  - file.copy: { src: time-client-metrics.timer, dest: /etc/systemd/system/time-client-metrics.timer, mode: "0644" }
+    when: 'vars.o11y_textfile_dir != ""'
+    notify: [daemon-reload]
+  - systemd.unit: { name: time-client-metrics.timer, enabled: true, active: true, daemon_reload: true }
+    when: 'vars.o11y_textfile_dir != ""'
+
   # A changed unit or drop-in that systemd hasn't loaded: systemd.unit doesn't
   # reload while the unit stays enabled and active, and a restart alone would
   # run the old one.
@@ -80,6 +100,7 @@ tasks:
     removal: leave
 
 handlers:
+  daemon-reload: { systemd.daemon_reload: {} }
   restart-chrony: { command.run: { run: [sh, -c, 'systemctl daemon-reload && systemctl restart chrony'] } }
   # chrony restarts behind ptp4l: its drop-in waits for SLAVE (chrony-after-ptp4l).
   restart-ptp4l: { command.run: { run: [sh, -c, 'systemctl daemon-reload && systemctl restart ptp4l@eth0 && systemctl restart chrony'] } }

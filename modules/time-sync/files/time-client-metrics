@@ -1,0 +1,62 @@
+#!/bin/sh
+# Time client metrics for node_exporter's textfile collector (modules/time-sync):
+# chrony's tracking and, on PTP clients, ptp4l's view of timepi. Read-only
+# queries with short timeouts; written atomically. Usage: time-client-metrics DIR
+set -u
+dir=${1:?usage: time-client-metrics DIR}
+out="$dir/time_client.prom"
+tmp="$out.$$"
+trap 'rm -f "$tmp"' EXIT
+
+{
+# chronyc -c tracking: refid, reference, stratum, ref time, system offset,
+# last offset, rms offset, frequency, residual frequency, skew, root delay,
+# root dispersion, update interval, leap status.
+if t=$(timeout 5 chronyc -n -c tracking 2>/dev/null) && [ -n "$t" ]; then
+  echo "$t" | awk -F, '
+    function g(n,h,t,v) { printf "# HELP %s %s\n# TYPE %s gauge\n%s %s\n", n, h, n, n, v }
+    {
+      ref = $2; if (ref == "" || ref == "0.0.0.0") ref = "none"
+      if ($1 == "50545000") ref = "PTP"
+      printf "# HELP chrony_tracking_info Source chrony follows (PTP: the hardware clock ptp4l steers).\n# TYPE chrony_tracking_info gauge\nchrony_tracking_info{reference=\"%s\",refid=\"%s\"} 1\n", ref, $1
+      g("chrony_tracking_stratum", "Stratum of this host.", "", $3)
+      g("chrony_tracking_system_offset_seconds", "System clock minus true time as chrony estimates it (positive: fast).", "", $5)
+      g("chrony_tracking_last_offset_seconds", "Offset measured at the last clock update.", "", $6)
+      g("chrony_tracking_rms_offset_seconds", "Long-term average of the measured offsets.", "", $7)
+      g("chrony_tracking_frequency_ppm", "Frequency correction applied to the system clock (positive: slow).", "", $8)
+      g("chrony_tracking_residual_frequency_ppm", "Remaining frequency error of the selected source.", "", $9)
+      g("chrony_tracking_skew_ppm", "Estimated error bound on the frequency.", "", $10)
+      g("chrony_tracking_root_delay_seconds", "Network path delay to the stratum 1 source.", "", $11)
+      g("chrony_tracking_root_dispersion_seconds", "Error accumulated on the way from the stratum 1 source.", "", $12)
+      g("chrony_tracking_update_interval_seconds", "Interval between the last two clock updates.", "", $13)
+      g("chrony_tracking_leap_normal", "1 while chrony is synchronised with no leap second pending.", "", ($14 == "Normal") ? 1 : 0)
+    }'
+  up_chrony=1
+else
+  up_chrony=0
+fi
+
+up_ptp=""
+if systemctl is-active -q ptp4l@eth0 2>/dev/null; then
+  st=$(timeout 5 pmc -u -b 0 'GET TIME_STATUS_NP' 'GET CURRENT_DATA_SET' 'GET PORT_DATA_SET' 2>/dev/null)
+  echo "$st" | awk '
+    /master_offset/ { o = $2 } /meanPathDelay/ { d = $2 } /portState/ { s = $2 } /gmPresent/ { gm = ($2 == "true") ? 1 : 0 }
+    END {
+      printf "# HELP ptp4l_master_offset_seconds Hardware clock minus the grandmaster, as ptp4l last measured it.\n# TYPE ptp4l_master_offset_seconds gauge\n"
+      if (o != "") printf "ptp4l_master_offset_seconds %.9f\n", o / 1e9
+      printf "# HELP ptp4l_mean_path_delay_seconds Mean one-way delay to the grandmaster.\n# TYPE ptp4l_mean_path_delay_seconds gauge\n"
+      if (d != "") printf "ptp4l_mean_path_delay_seconds %.9f\n", d / 1e9
+      printf "# HELP ptp4l_port_slave 1 while the port is SLAVE (locked to the grandmaster).\n# TYPE ptp4l_port_slave gauge\nptp4l_port_slave %d\n", (s == "SLAVE") ? 1 : 0
+      printf "# HELP ptp4l_gm_present 1 while ptp4l sees a grandmaster.\n# TYPE ptp4l_gm_present gauge\nptp4l_gm_present %d\n", gm + 0
+    }'
+  if [ -n "$st" ]; then up_ptp=1; else up_ptp=0; fi
+fi
+
+# One family, all its samples together (the text format requires it).
+printf '# HELP time_client_metrics_up 1 if the daemon answered.\n# TYPE time_client_metrics_up gauge\n'
+printf 'time_client_metrics_up{source="chrony"} %s\n' "$up_chrony"
+[ -n "$up_ptp" ] && printf 'time_client_metrics_up{source="ptp4l"} %s\n' "$up_ptp"
+} > "$tmp"
+chmod 0644 "$tmp"
+mv "$tmp" "$out"
+trap - EXIT

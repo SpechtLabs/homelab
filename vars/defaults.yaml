@@ -19,8 +19,10 @@ o11y_local_scrapes: []
 # Collector only: other machines' exporters: {name, job, targets[, path, params]}
 o11y_remote_scrapes: []
 o11y_otlp_receiver: false
-# node_exporter textfile directory (*.prom); empty: no textfile collector.
-o11y_textfile_dir: ""
+# node_exporter textfile directory (*.prom; Debian's usual one); empty: no
+# textfile collector. time-sync's chrony/ptp4l metrics on every ntp-client,
+# ptp-server's on timepi.
+o11y_textfile_dir: /var/lib/prometheus/node-exporter
 alloy_custom_args: ""
 
 # NUT

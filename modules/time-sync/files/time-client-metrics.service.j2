@@ -1,0 +1,22 @@
+# {{ buckle_managed }}
+[Unit]
+Description=Time client metrics (chrony{% if "ptp-client" in host.groups %}, ptp4l{% endif %}) for node_exporter's textfile collector
+After=chrony.service
+
+[Service]
+Type=oneshot
+# Root for chronyc (chrony.conf: cmdport 0, the local socket only) and pmc.
+ExecStart=/usr/local/sbin/time-client-metrics {{ vars.o11y_textfile_dir }}
+TimeoutStartSec=20s
+ReadWritePaths={{ vars.o11y_textfile_dir }} /run
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryMax=64M
+Nice=10
+IOSchedulingClass=idle
