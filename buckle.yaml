@@ -129,7 +129,7 @@ rollout:
     - name: core
       select: 'host.id in ["nuc", "timepi", "jumphost"] || host.groups contains "k3s-server"'
       parallel: 2
-      approval: if_destructive
+      approval: auto
     # Every other host: the k3s agents and meet. 2 is the limit the agents set:
     # half the workers at a time, the other two carry the load. Hosts only: a
     # selector that reads host.* is false for a cluster as a whole (an added
@@ -137,7 +137,7 @@ rollout:
     - name: fast
       select: 'host.groups contains "debian" && !(host.groups contains "ceph")'
       parallel: 2
-      approval: if_destructive
+      approval: auto
     # One at a time: the Ceph hosts (each takes a mon and an OSD down, and the
     # ceph module's health check holds the next one until the cluster has
     # recovered), labk3s (its one workload, the root Argo CD Application), and
@@ -145,4 +145,4 @@ rollout:
     - name: slow
       select: 'true'
       parallel: 1
-      approval: if_destructive
+      approval: auto

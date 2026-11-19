@@ -8,7 +8,7 @@ domainNumber		0
 network_transport	UDPv4
 delay_mechanism		E2E
 time_stamping		hardware
-{% if host.facts.hardware.raspberry_pi.version == 5 %}
+{% if "pi5" in host.groups %}
 # The Pi 5's Ethernet (macb) can only timestamp all received packets or none.
 hwts_filter		full
 {% endif %}

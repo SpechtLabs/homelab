@@ -12,7 +12,7 @@ server {{ vars.ntp_server }} iburst minpoll 1 maxpoll 3
 server {{ vars.ntp_server }} iburst minpoll 1 maxpoll 3 prefer
 {% endif %}
 pool {{ vars.ntp_pool }} iburst maxsources 3
-{% if host.facts.hardware.raspberry_pi.version == 5 and "ptp-client" not in host.groups %}
+{% if "pi5" in host.groups and "ptp-client" not in host.groups %}
 
 # The Pi 5's Ethernet timestamps every packet in hardware (rx filter "all"):
 # NTP gets hardware timestamps on this side. (Not on PTP clients: ptp4l owns
