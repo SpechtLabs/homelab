@@ -47,7 +47,7 @@ tasks:
   # most: NTP must not wait on a broken PTP), ...
   - systemd.dropin:
       unit: chrony.service
-      name: ptp
+      name: ptp.conf
       content: |
         [Unit]
         After=ptp4l@eth0.service
