@@ -19,6 +19,8 @@ o11y_local_scrapes: []
 # Collector only: other machines' exporters: {name, job, targets[, path, params]}
 o11y_remote_scrapes: []
 o11y_otlp_receiver: false
+# node_exporter textfile directory (*.prom); empty: no textfile collector.
+o11y_textfile_dir: ""
 alloy_custom_args: ""
 
 # NUT

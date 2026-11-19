@@ -42,6 +42,11 @@ tasks:
 
   - systemd.unit: { name: alloy, enabled: true, active: true }
 
+  # For metrics that come from scripts rather than exporters; read by the
+  # embedded node_exporter's textfile collector (config.alloy.j2).
+  - file.directory: { path: '{{ vars.o11y_textfile_dir }}', mode: "0755" }
+    when: 'vars.o11y_textfile_dir != ""'
+
   # Alloy embeds node_exporter (prometheus.exporter.unix), so the standalone
   # one geerlingguy.node_exporter installed goes. Series keep job="node_exporter"
   # and instance="<host>:9100" (see config.alloy.j2), so dashboards don't notice.

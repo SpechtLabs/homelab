@@ -71,7 +71,17 @@ prometheus.remote_write "mimir" {
 }
 
 // The embedded node_exporter, labelled like the standalone one it replaces.
+{%- if vars.o11y_textfile_dir %}
+// Its textfile collector picks up what other modules write as .prom files
+// (ptp-server's time-metrics).
+prometheus.exporter.unix "node" {
+  textfile {
+    directory = "{{ vars.o11y_textfile_dir }}"
+  }
+}
+{%- else %}
 prometheus.exporter.unix "node" { }
+{%- endif %}
 
 discovery.relabel "node" {
   targets = prometheus.exporter.unix.node.targets

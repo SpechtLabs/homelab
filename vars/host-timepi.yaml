@@ -1,3 +1,6 @@
 # GPS/PPS board: UART, I2C, I2S, SPI and the PPS GPIO overlay (modules/pi-firmware).
 admin_user: cedi
 rpi_gps_pps: true
+# ptp-server's time-metrics writes ntpsec/gpsd/PPS/PTP metrics here (Debian's
+# usual textfile directory).
+o11y_textfile_dir: /var/lib/prometheus/node-exporter

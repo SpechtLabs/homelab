@@ -1,0 +1,26 @@
+# {{ buckle_managed }}
+[Unit]
+Description=Time server metrics (ntpsec, gpsd, PPS{% if vars.ptp_enabled %}, PTP{% endif %}) for node_exporter's textfile collector
+After=ntpsec.service gpsd.service
+
+[Service]
+Type=oneshot
+# Read-only queries, each with its own short timeout (see the script).
+ExecStart=/usr/local/sbin/time-metrics --dir {{ vars.o11y_textfile_dir }} --pps-device {{ vars.ptp_pps_device }}{% if vars.ptp_enabled %} --ptp-interface {{ vars.ptp_interface }}{% endif %}
+TimeoutStartSec=30s
+# Root only for pmc (ptp4l's socket is root's, and pmc binds its own in /run)
+# and phc2sys's journal; no capabilities, no writes outside these paths.
+ReadWritePaths={{ vars.o11y_textfile_dir }} /run
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+MemoryMax=128M
+# Out of the way of gpsd and ntpd.
+Nice=10
+IOSchedulingClass=idle

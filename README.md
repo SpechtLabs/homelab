@@ -41,7 +41,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `k3s-server` | clusterpi-leader | k3s control plane |
 | `k3s-agent` | clusterpi-worker* | k3s workers; *action*: reboot |
 | `time-sync` | Pis, nuc | systemd-timesyncd from timepi over the LAN, public pools as fallback |
-| `ptp-server` | timepi | GPS + PPS discipline ntpsec (NTP); phc2sys copies the clock to eth0's PHC and ptp4l serves PTP from it |
+| `ptp-server` | timepi | GPS + PPS discipline ntpsec (NTP); phc2sys copies the clock to eth0's PHC and ptp4l serves PTP from it; `time-metrics` exports ntpsec, gpsd, PPS and PTP state as node_exporter textfiles |
 | `tsidp` | nuc | tailnet OIDC provider |
 | `buckle` | all | Buckle itself at `buckle_version`; restarts the agent (and the server on the NUC) after the run |
 | `compute-blade-agent` | blade-pi* | compute-blade-agent: fan curve, health LEDs (fan stall, under-voltage, throttling), power policy, button gestures (hold 5s: shutdown, 5 presses: power off), metrics on :9666, bladectl's mTLS API on :8081 announced via mDNS; renews its certificates |
