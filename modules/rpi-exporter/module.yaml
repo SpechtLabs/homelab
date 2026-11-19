@@ -6,18 +6,38 @@ vars:
   rpi_exporter_port: 9243
   rpi_exporter_vcgencmd: /usr/bin/vcgencmd
 tasks:
-  - github.release:
-      repo: cedi/rpi_exporter
-      version: '{{ vars.rpi_exporter_version }}'
-      asset: 'rpi_exporter_{version}_linux_{arch}.tar.gz'
-      checksum_asset: checksums.txt
-      extract: rpi_exporter
-      dest: /usr/local/bin/rpi_exporter
-      mode: "0755"
-      probe: [/usr/local/bin/rpi_exporter, --version]
-      probe_regex: 'version (\S+)'
+  # Release assets, not the GitHub API (as modules/tsidp): the API allows 60
+  # calls an hour per IP, shared by every host at home, and github.release
+  # spent one per Pi per plan. The 1.0.11 bump (Renovate) used up the hour on
+  # the first phases and the Ceph Pis failed to plan. Every Pi is aarch64.
+  - file.directory: { path: /var/cache/buckle-releases, mode: "0755" }
+  - file.download:
+      url: 'https://github.com/cedi/rpi_exporter/releases/download/v{{ vars.rpi_exporter_version }}/rpi_exporter_{{ vars.rpi_exporter_version }}_linux_arm64.tar.gz'
+      dest: '/var/cache/buckle-releases/rpi_exporter_{{ vars.rpi_exporter_version }}.tar.gz'
+      checksum: 'https://github.com/cedi/rpi_exporter/releases/download/v{{ vars.rpi_exporter_version }}/checksums.txt'
+      mode: "0644"
     tags: [network]
-    notify: [restart]
+  - archive.extract:
+      src: '/var/cache/buckle-releases/rpi_exporter_{{ vars.rpi_exporter_version }}.tar.gz'
+      dest: '/opt/rpi_exporter/{{ vars.rpi_exporter_version }}'
+      include: [rpi_exporter]
+      creates: rpi_exporter
+  # The unit runs the binary from its versioned directory, so nothing claims
+  # /usr/local/bin/rpi_exporter: the github.release task this replaces deletes
+  # the binary it put there (removal: cleanup), and that's fine.
+
+  # Older versions and their tarballs, once the pinned one is in place (the
+  # running process keeps its binary's inode until the restart).
+  - command.run:
+      run: >-
+        find /opt/rpi_exporter -mindepth 1 -maxdepth 1 ! -name '{{ vars.rpi_exporter_version }}' -exec rm -rf {} + ;
+        find /var/cache/buckle-releases -maxdepth 1 -name 'rpi_exporter_*.tar.gz' ! -name 'rpi_exporter_{{ vars.rpi_exporter_version }}.tar.gz' -delete
+      only_if: >-
+        test -x '/opt/rpi_exporter/{{ vars.rpi_exporter_version }}/rpi_exporter' &&
+        { find /opt/rpi_exporter -mindepth 1 -maxdepth 1 ! -name '{{ vars.rpi_exporter_version }}';
+        find /var/cache/buckle-releases -maxdepth 1 -name 'rpi_exporter_*.tar.gz' ! -name 'rpi_exporter_{{ vars.rpi_exporter_version }}.tar.gz'; } | grep -q .
+    id: rpi-exporter-old-versions
+    removal: leave
 
   - user.account:
       name: rpi_exporter

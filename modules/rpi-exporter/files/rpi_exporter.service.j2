@@ -7,7 +7,8 @@ Wants=network-online.target
 
 [Service]
 User=rpi_exporter
-ExecStart=/usr/local/bin/rpi_exporter --web.listen-address=:{{ vars.rpi_exporter_port }} --vcgencmd={{ vars.rpi_exporter_vcgencmd }}
+# The versioned path: a version bump changes this unit, which restarts it.
+ExecStart=/opt/rpi_exporter/{{ vars.rpi_exporter_version }}/rpi_exporter --web.listen-address=:{{ vars.rpi_exporter_port }} --vcgencmd={{ vars.rpi_exporter_vcgencmd }}
 Restart=on-failure
 TimeoutStopSec=20s
 
