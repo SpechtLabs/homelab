@@ -1,8 +1,8 @@
 # Every night: apt upgrade on every Debian host (modules/base, action `upgrade`),
 # rebooting only the hosts that need it (/run/reboot-required). It runs through
-# the normal phases, so reboots go one or two at a time: blades first, then
-# core (NUC, timepi, jumphost, k3s server) one by one, then the k3s agents and
-# meet two at a time, then the Ceph nodes one by one, each phase gated on health.
+# the normal phases: the four blades together, then core (NUC, timepi,
+# jumphost, k3s server) two at a time, then the k3s agents and meet two at a
+# time, then the Ceph nodes one by one, each phase gated on health.
 description: Upgrade packages on every host, rebooting where the upgrade needs it.
 cron: "0 3 * * *"
 timezone: Europe/Berlin

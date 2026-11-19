@@ -78,8 +78,8 @@ mise exec -- buckle validate --config . $(printf -- '--facts %s ' fixtures/facts
   `vars/versions.yaml`. k3s goes server first, then two agents at a time.
 - **Upgrade Buckle**: merge renovate's `buckle` PR (`buckle_version` in `vars/versions.yaml` and
   the CLI in `mise.toml`). The `buckle` module updates every host through the phases: the blades
-  (`canary`), then the NUC (server) first in `core`, then `fast` (two at a time) and `slow` (one at
-  a time: the Ceph hosts); agents restart into the new version
+  (`canary`, all four), then the NUC (server) with the rest of `core` (two at a time), then `fast`
+  (two at a time) and `slow` (one at a time: the Ceph hosts); agents restart into the new version
   90 seconds after their run.
   Major versions are left to you: read the release notes and upgrade the server first.
 - **Package upgrades**: `schedules/nightly-upgrades.yaml` runs `base: upgrade` on every host at
