@@ -1,0 +1,21 @@
+#!/bin/sh
+# Buckle (modules/ceph): health check `cluster`. Prints "ok", or the health
+# status and the checks that block a rollout (exit 1).
+set -u
+if [ ! -e /etc/ceph/ceph.client.admin.keyring ]; then
+	echo "ok (no cluster yet)"
+	exit 0
+fi
+out=$(/usr/local/sbin/cephadm shell -- ceph health -f json 2>/dev/null) || { echo "ceph health failed"; exit 1; }
+echo "$out" | python3 -c '
+import json, sys
+# Data at risk or a daemon missing: wait for recovery before the next host.
+blocking = {"OSD_DOWN", "OSD_HOST_DOWN", "OSD_ROOT_DOWN", "MON_DOWN", "PG_DEGRADED",
+            "PG_AVAILABILITY", "PG_DAMAGED", "OSD_FULL", "POOL_FULL", "SLOW_OPS"}
+h = json.load(sys.stdin)
+codes = sorted(set(h.get("checks", {})) & blocking)
+if h.get("status") == "HEALTH_ERR" or codes:
+    print(h.get("status"), " ".join(codes))
+    sys.exit(1)
+print("ok", h.get("status"))
+'

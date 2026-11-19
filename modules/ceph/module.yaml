@@ -107,6 +107,12 @@ tasks:
   # if the cluster didn't exist yet. (Guards are checked when the plan is made,
   # before the template is written, so they alone would lag one run.)
   - file.copy:
+      src: ceph-buckle-health
+      dest: /usr/local/sbin/ceph-buckle-health
+      mode: "0755"
+      owner: root
+      group: root
+  - file.copy:
       src: ceph-buckle-apply
       dest: /usr/local/sbin/ceph-buckle-apply
       mode: "0755"
@@ -165,11 +171,14 @@ health:
     command:
       run: 'ip route show table main dev tailscale0 | grep -q "scope link src 100\\."'
       expect: { exit: 0 }
-  # Until the cluster exists there is nothing to check. HEALTH_WARN passes
-  # (a node down, a pool without an application); HEALTH_ERR fails.
+  # The gate for rollouts and the nightly upgrades, which reboot the Ceph hosts
+  # one at a time: a host counts as healthy only once the cluster has every
+  # OSD and mon back and no degraded or unavailable data. Otherwise the next
+  # reboot could leave PGs with one copy, below min_size 2, and block I/O; if
+  # recovery outlasts the settle time the rollout pauses instead. Other
+  # warnings pass (muted ones aren't reported); HEALTH_ERR fails. Until the
+  # cluster exists there is nothing to check.
   - name: cluster
     command:
-      run: |
-        test -e /etc/ceph/ceph.client.admin.keyring || { echo HEALTH_OK; exit 0; }
-        /usr/local/sbin/cephadm shell -- ceph health 2>/dev/null
-      expect: { exit: 0, stdout_matches: '^HEALTH_(OK|WARN)' }
+      run: [/usr/local/sbin/ceph-buckle-health]
+      expect: { exit: 0, stdout_matches: '^ok' }
