@@ -1,27 +1,69 @@
 name: time-sync
-description: systemd-timesyncd on every Pi and the NUC syncs from timepi over the LAN, with the public pools as fallback.
+description: chrony on every Pi and the NUC follows timepi; Pi 5s and the CM4 blades by PTP with hardware timestamps (ptp4l), the rest by NTP. The public pool is the fallback.
 when: 'host.groups contains "ntp-client"'
 tags: [time]
 tasks:
-  - file.template:
-      src: timesyncd.conf.j2
-      dest: /etc/systemd/timesyncd.conf.d/buckle.conf
-      mode: "0644"
-    notify: [restart]
-  - systemd.unit: { name: systemd-timesyncd, enabled: true, active: true }
+  # chrony replaces systemd-timesyncd: an SNTP client polling every 34 min
+  # that kept the Pis 100-700 us off timepi. Both provide time-daemon, so apt
+  # removes timesyncd when chrony comes in.
+  - apt.package: { name: chrony }
+  - file.template: { src: chrony.conf.j2, dest: /etc/chrony/chrony.conf, mode: "0644" }
+    notify: [restart-chrony]
+  - systemd.unit: { name: chrony, enabled: true, active: true }
+
+  # ── PTP (ptp-client group, buckle.yaml) ──
+  # ptp4l keeps eth0's hardware clock on timepi's grandmaster; chrony reads
+  # it (refclock PHC). No phc2sys: chrony owns the system clock.
+  - apt.package: { name: linuxptp }
+    when: 'host.groups contains "ptp-client"'
+  - file.template: { src: ptp4l-client.conf.j2, dest: /etc/linuxptp/ptp4l.conf, mode: "0644" }
+    when: 'host.groups contains "ptp-client"'
+    notify: [restart-ptp4l]
+  # eth0's hardware clock appears only once the link is up; a ptp4l started
+  # earlier stays FAULTY for good (as on timepi, modules/ptp-server).
+  - systemd.dropin:
+      unit: ptp4l@eth0.service
+      content: |
+        [Unit]
+        Wants=network-online.target
+        After=network-online.target
+
+        [Service]
+        ExecStartPre=/bin/sh -c 'until [ "$$(cat /sys/class/net/%i/operstate)" = up ]; do sleep 1; done'
+        TimeoutStartSec=120
+        Restart=on-failure
+        RestartSec=5s
+    id: ptp4l-dropin
+    when: 'host.groups contains "ptp-client"'
+    notify: [restart-ptp4l]
+  - systemd.unit: { name: ptp4l@eth0, enabled: true, active: true }
+    id: ptp4l-service
+    when: 'host.groups contains "ptp-client"'
+
+  # A changed unit or drop-in that systemd hasn't loaded: systemd.unit doesn't
+  # reload while the unit stays enabled and active, and a restart alone would
+  # run the old one.
+  - command.run:
+      run: [sh, -c, 'systemctl daemon-reload && systemctl restart ptp4l@eth0']
+      only_if: 'test "$(systemctl show -p NeedDaemonReload --value ptp4l@eth0)" = yes'
+    id: ptp4l-stale-unit
+    when: 'host.groups contains "ptp-client"'
+    removal: leave
 
 handlers:
-  restart: { systemd.restart: { name: systemd-timesyncd } }
+  restart-chrony: { systemd.restart: { name: chrony } }
+  restart-ptp4l: { command.run: { run: [sh, -c, 'systemctl daemon-reload && systemctl restart ptp4l@eth0'] } }
 
 health:
+  # chrony reports Leap status Normal once it follows a source.
   - name: synchronized
     command:
-      run: [timedatectl, show, -p, NTPSynchronized, --value]
-      expect: { stdout_matches: '^yes' }
-  # Informational: if timepi is down the host falls back to the pools, and
-  # that must not stop every rollout on every host.
-  - name: source-timepi
+      run: [chronyc, -n, tracking]
+      expect: { stdout_matches: 'Leap status\s+: Normal' }
+  # Informational: a host on the pool (timepi down) or on NTP (PTP not locked
+  # yet) still keeps time and mustn't stop every rollout.
+  - name: source
     command:
-      run: [timedatectl, show-timesync, -p, ServerAddress, --value]
-      expect: { stdout_matches: '(?m)^{{ vars.ntp_server }}$' }
+      run: [chronyc, -n, sources]
+      expect: { stdout_matches: '{{ "(?m)^#\* PTP" if "ptp-client" in host.groups else "(?m)^\^\* " ~ vars.ntp_server }}' }
     required: false

@@ -14,6 +14,9 @@ pool 2.pool.ntp.org iburst
 
 # Serve time to everyone, allow no configuration.
 restrict default kod nomodify nopeer noquery limited
+# The LAN's chrony clients poll every 2-8 s (modules/time-sync): no rate limit
+# (`limited` would answer them with kiss-o'-death packets).
+restrict 192.168.0.0 mask 255.255.255.0 nomodify nopeer noquery
 restrict 127.0.0.1
 restrict ::1
 

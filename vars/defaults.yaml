@@ -30,4 +30,9 @@ nut_ups_name: ups
 # Time (modules/time-sync): timepi's LAN address (keep its DHCP lease fixed;
 # the tailnet name would make time depend on Tailscale coming up first).
 ntp_server: 192.168.0.109
-ntp_fallback: 0.debian.pool.ntp.org 1.debian.pool.ntp.org 2.debian.pool.ntp.org 3.debian.pool.ntp.org
+# Public fallback (chrony pool directive) if timepi doesn't answer.
+ntp_pool: 2.debian.pool.ntp.org
+# TAI - UTC in seconds. PTP clocks run on TAI and chrony's `tai` option needs
+# a right/UTC zone with leap seconds, which Debian's tzdata no longer ships;
+# none is scheduled (leap seconds end by 2035), so it's a constant here.
+time_tai_utc_offset: 37

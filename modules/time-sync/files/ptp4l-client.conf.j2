@@ -1,0 +1,26 @@
+# {{ buckle_managed }}
+# ptp4l as a slave of timepi's grandmaster (modules/ptp-server). It only
+# steers eth0's hardware clock; chrony disciplines the system clock from it
+# (refclock PHC in chrony.conf).
+[global]
+slaveOnly		1
+domainNumber		0
+network_transport	UDPv4
+delay_mechanism		E2E
+time_stamping		hardware
+{% if host.facts.hardware.raspberry_pi.version == 5 %}
+# The Pi 5's Ethernet (macb) can only timestamp all received packets or none.
+hwts_filter		full
+{% endif %}
+# The CM4's PHY delivers transmit timestamps slower than ptp4l's 1 ms default.
+tx_timestamp_timeout	50
+tsproc_mode		filter
+delay_filter		moving_median
+delay_filter_length	10
+clock_servo		pi
+# Only the PHC steps (on start or after a long outage); the system clock is chrony's.
+step_threshold		1.0
+logging_level		6
+use_syslog		1
+verbose			0
+summary_interval	6

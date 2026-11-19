@@ -1,0 +1,31 @@
+# {{ buckle_managed }}
+# chrony (modules/time-sync). timepi (GPS + PPS, stratum 1) is the source;
+# the public pool only counts when timepi is unusable.
+{% if "ptp-client" in host.groups %}
+# eth0's hardware clock, which ptp4l keeps on timepi's PTP grandmaster with
+# hardware timestamps on both ends (~100-200 ns). It runs on TAI, hence the
+# offset. `prefer`: chrony ignores the NTP sources below while it's usable.
+refclock PHC /dev/ptp0 poll 0 dpoll -2 offset -{{ vars.time_tai_utc_offset }} refid PTP prefer
+server {{ vars.ntp_server }} iburst minpoll 1 maxpoll 3
+{% else %}
+# timepi over NTP every 2-8 s (ntpsec doesn't rate-limit the LAN).
+server {{ vars.ntp_server }} iburst minpoll 1 maxpoll 3 prefer
+{% endif %}
+pool {{ vars.ntp_pool }} iburst maxsources 3
+{% if host.facts.hardware.raspberry_pi.version == 5 and "ptp-client" not in host.groups %}
+
+# The Pi 5's Ethernet timestamps every packet in hardware (rx filter "all"):
+# NTP gets hardware timestamps on this side. (Not on PTP clients: ptp4l owns
+# the NIC's timestamping there.)
+hwtimestamp eth0 rxfilter all
+{% endif %}
+
+# Step only right after boot; slew everything else.
+makestep 1 3
+driftfile /var/lib/chrony/chrony.drift
+# Keep the Pi 5's RTC (and the kernel's 11-minute mode) in step.
+rtcsync
+maxupdateskew 100.0
+# Serve nobody; chronyc talks over the local socket only.
+port 0
+cmdport 0

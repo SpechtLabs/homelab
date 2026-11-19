@@ -3,7 +3,7 @@
     "codename": "bookworm",
     "family": "debian",
     "id": "debian",
-    "kernel": "6.12.34+rpt-rpi-2712",
+    "kernel": "6.12.115+rpt-rpi-2712",
     "pretty_name": "Debian GNU/Linux 12 (bookworm)",
     "version": "12"
   },
