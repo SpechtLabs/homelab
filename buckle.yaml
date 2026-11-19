@@ -21,10 +21,12 @@ fleet:
     # Everything at home that keeps its own clock syncs from timepi over the LAN.
     ntp-client:      '(host.facts.hardware.raspberry_pi.version != null || host.id == "nuc") && host.id != "timepi"'
     # Clients whose NIC timestamps PTP in hardware and has an adjustable clock:
-    # the Pi 5s (macb) and the CM4 blades (BCM54210PE PHY). Kernel 6.12.34's
-    # PHCs refuse every adjustment, so a host on it stays on NTP until its
-    # kernel moves on (the Ceph Pis, 2026-11-19).
-    ptp-client:      '(host.facts.hardware.raspberry_pi.version == 5 || host.id like "blade-pi*") && host.id != "timepi" && !(host.facts.os.kernel like "6.12.34*")'
+    # the Pi 5s (macb) and the CM4 blades (BCM54210PE PHY). Needs a kernel past
+    # 6.12.34 (its PHCs refuse every adjustment); every Pi runs 6.12.115 since
+    # 2026-11-19 and the nightly upgrades keep it that way. Not a kernel fact
+    # here: the agent reported its pre-reboot kernel for a while after the
+    # upgrade, which kept the Ceph Pis on NTP.
+    ptp-client:      '(host.facts.hardware.raspberry_pi.version == 5 || host.id like "blade-pi*") && host.id != "timepi"'
     o11y-collector:  'host.facts.tailscale.tags contains "tag:o11y-collector"'
     spechtlabs:      'host.id in ["hole", "meet"]'
     jitsi:           'host.id == "meet"'
