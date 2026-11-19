@@ -18,3 +18,14 @@ jobs:
           args=()
           for f in fixtures/facts/*.json; do args+=(--facts "$f"); done
           mise exec -- buckle validate --config . "${args[@]}"
+      # The Buckle server runs on the NUC, an x86-64-v2 CPU without AVX; 2.14.0
+      # was built for newer CPUs and crashed it with SIGILL. Run the same
+      # validate with the pinned linux-amd64 binary on an emulated Nehalem (the
+      # NUC's feature level), so Renovate never automerges a Buckle the server
+      # can't run.
+      - name: buckle validate on the NUC's CPU (x86-64-v2, no AVX)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq qemu-user
+          args=()
+          for f in fixtures/facts/*.json; do args+=(--facts "$f"); done
+          qemu-x86_64 -cpu Nehalem "$(mise which buckle)" validate --config . "${args[@]}"

@@ -1,0 +1,21 @@
+name: renovate config
+
+# Renovate merges dependency updates on its own (renovate.json), so a broken
+# config would quietly stop all updates: validate it with Renovate's own checker.
+on:
+  pull_request:
+    paths: ["renovate.json", ".github/workflows/renovate-config.yaml"]
+  push:
+    branches: [main]
+    paths: ["renovate.json", ".github/workflows/renovate-config.yaml"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+      - name: renovate-config-validator
+        run: npx --yes --package renovate -- renovate-config-validator --strict renovate.json

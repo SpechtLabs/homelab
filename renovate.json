@@ -1,8 +1,28 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    ":semanticCommits",
+    "helpers:pinGitHubActionDigests",
+    "customManagers:githubActionsVersions"
   ],
+  "timezone": "Europe/Berlin",
+  "dependencyDashboard": true,
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 8,
+  "rebaseWhen": "behind-base-branch",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "labels": [
+    "dependencies"
+  ],
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "labels": [
+      "dependencies",
+      "security"
+    ]
+  },
   "customManagers": [
     {
       "customType": "regex",
@@ -53,17 +73,77 @@
   ],
   "packageRules": [
     {
-      "description": "k3s: one minor at a time, never automerge",
+      "description": "Automerge digest, pin, patch and minor updates. A merge to main is a deploy: Buckle rolls it out to the fleet, canary first, and pauses on the first failed health check. Renovate merges itself (platformAutomerge off) because main has no required checks, so GitHub's automerge would not wait; Renovate waits for every check on the PR, buckle validate included.",
+      "matchUpdateTypes": [
+        "digest",
+        "pin",
+        "pinDigest",
+        "patch",
+        "minor"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false
+    },
+    {
+      "description": "Keep major updates explicit: approve them on the Dependency Dashboard.",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Third-party software the fleet runs only once its release is three days old, so a broken release is usually yanked or fixed before it reaches a host. Not for the user's own projects below.",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDatasources": [
+        "github-releases"
+      ],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Own projects (released on purpose, wanted right away): no waiting.",
+      "matchDepNames": [
+        "compute-blade-community/compute-blade-agent",
+        "cedi/rpi_exporter"
+      ],
+      "minimumReleaseAge": null
+    },
+    {
+      "description": "Group GitHub Actions updates together.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "GitHub Actions",
+      "groupSlug": "github-actions",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false,
+      "dependencyDashboardApproval": false
+    },
+    {
+      "description": "k3s: one minor at a time (Kubernetes can't skip minors), and a minor is a cluster upgrade that can drop APIs the Argo CD apps use, so approve those on the Dependency Dashboard. Patches (and +k3sN rebuilds) automerge.",
       "matchDepNames": [
         "k3s-io/k3s"
       ],
       "separateMinorPatch": true,
       "separateMultipleMinor": true,
-      "automerge": false,
       "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\+k3s(?<build>\\d+)$"
     },
     {
-      "description": "Buckle: CLI and fleet in one PR; majors by hand (server first, check the release notes)",
+      "matchDepNames": [
+        "k3s-io/k3s"
+      ],
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "automerge": false,
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Buckle: CLI and fleet in one PR, so CI validates with the new binary; validate.yml runs it on an x86-64-v2 CPU like the NUC's, which catches a release the server can't run (2.14.0 crashed it with SIGILL). Majors by hand (server first, check the release notes).",
       "matchDepNames": [
         "SierraSoftworks/buckle"
       ],
