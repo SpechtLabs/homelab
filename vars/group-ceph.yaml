@@ -67,7 +67,10 @@ ceph_config:
 # dashboards select on. Replaces vars/hw-pi.yaml's list, so rpi_exporter again.
 o11y_local_scrapes:
   - { job: rpi_exporter, port: 9243 }
-  - { job: ceph_mgr, port: 9283, labels: { cluster: homelab-ceph } }
+  # honor_labels: the mgr labels per-daemon series with the daemon's host as
+  # `instance` (ceph_disk_occupation_human, which the host dashboards join
+  # with node_disk_* on); cephadm's own Prometheus scrapes it the same way.
+  - { job: ceph_mgr, port: 9283, labels: { cluster: homelab-ceph }, honor_labels: true }
   - { job: ceph_exporter, port: 9926, labels: { cluster: homelab-ceph } }
 
 # RBD pools, client keys (name: {daemon: caps}) and S3 users (uid: display

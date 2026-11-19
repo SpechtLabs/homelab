@@ -14,7 +14,7 @@ o11y_mimir_url: http://homelab-mimir.k8s.specht-labs.de/api/v1/push
 o11y_tempo_url: http://homelab-tempo.k8s.specht-labs.de
 o11y_log_paths: ["/var/log/*.log"]
 o11y_external_labels: {}
-# Exporters on this host, scraped over localhost: {job, port[, path, labels]}
+# Exporters on this host, scraped over localhost: {job, port[, path, labels, honor_labels]}
 o11y_local_scrapes: []
 # Collector only: other machines' exporters: {name, job, targets[, path, params]}
 o11y_remote_scrapes: []

@@ -97,6 +97,9 @@ prometheus.scrape "{{ scrape.job }}" {
 {%- if scrape.path is defined %}
   metrics_path = "{{ scrape.path }}"
 {%- endif %}
+{%- if scrape.honor_labels is defined and scrape.honor_labels %}
+  honor_labels = true
+{%- endif %}
   forward_to = [prometheus.remote_write.mimir.receiver]
 }
 {% endfor %}
