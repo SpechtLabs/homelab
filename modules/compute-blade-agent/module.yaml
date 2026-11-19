@@ -55,12 +55,29 @@ tasks:
 
   - systemd.unit: { name: compute-blade-agent, enabled: true, active: true, daemon_reload: true }
 
+  # The restart handler alone isn't enough: a run that stops after removing a
+  # drop-in never restarts, and the package's postinst restarts the agent
+  # with whatever ExecStart systemd has loaded. So whenever the running agent
+  # isn't the packaged binary (e.g. "/usr/local/... (deleted)"), reload
+  # systemd and restart it.
+  - command.run:
+      run: [sh, -c, 'systemctl daemon-reload && systemctl restart compute-blade-agent']
+      only_if: >-
+        pid=$(systemctl show -p MainPID --value compute-blade-agent) &&
+        [ "$pid" != 0 ] && [ "$(readlink /proc/$pid/exe)" != /usr/bin/compute-blade-agent ]
+    id: packaged-agent
+    removal: leave
+
 handlers:
   restart: { systemd.restart: { name: compute-blade-agent } }
 
 health:
   - name: agent
     systemd: { unit: compute-blade-agent, state: active, min_uptime: 30s }
+  - name: packaged-binary
+    command:
+      run: [sh, -c, 'test "$(readlink /proc/$(systemctl show -p MainPID --value compute-blade-agent)/exe)" = /usr/bin/compute-blade-agent']
+      expect: { exit: 0 }
   - name: metrics
     http: { url: 'http://127.0.0.1:9666/metrics' }
   - name: api-certificate
