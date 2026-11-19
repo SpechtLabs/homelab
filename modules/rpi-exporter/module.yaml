@@ -50,10 +50,21 @@ tasks:
       mode: "0644"
     notify: [restart]
 
+  # systemd.unit's daemon_reload doesn't cover a unit file that changed while
+  # the service stays enabled and active, and a restart without a reload runs
+  # the old ExecStart (the 1.0.11 move to /opt failed on the canary that way).
+  # Reload and restart whenever systemd reports the loaded unit stale.
+  - command.run:
+      run: [sh, -c, 'systemctl daemon-reload && systemctl restart rpi_exporter']
+      only_if: 'test "$(systemctl show -p NeedDaemonReload --value rpi_exporter)" = yes'
+    id: rpi-exporter-stale-unit
+    removal: leave
+
   - systemd.unit: { name: rpi_exporter, enabled: true, active: true, daemon_reload: true }
 
 handlers:
-  restart: { systemd.restart: { name: rpi_exporter } }
+  # Reload first: the unit file carries the binary's versioned path.
+  restart: { command.run: { run: [sh, -c, 'systemctl daemon-reload && systemctl restart rpi_exporter'] } }
 
 health:
   - name: metrics
