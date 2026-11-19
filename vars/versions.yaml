@@ -12,7 +12,7 @@ k3s_version: v1.31.1+k3s1
 # renovate: datasource=github-releases depName=grafana/alloy extractVersion=^v(?<version>.*)$
 alloy_version: 1.22.0
 # renovate: datasource=github-releases depName=cedi/rpi_exporter extractVersion=^v(?<version>.*)$
-rpi_exporter_version: 1.0.10
+rpi_exporter_version: 1.0.11
 # renovate: datasource=github-releases depName=tailscale/tsidp extractVersion=^v(?<version>.*)$
 tsidp_version: 0.0.20
 
