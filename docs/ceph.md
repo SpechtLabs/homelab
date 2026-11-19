@@ -44,7 +44,9 @@ the cluster; `ceph orch rm` or `ceph … rm` do.
 - **`client.k3s` has an AES-128 key.** Tentacle issues `aes256k` keys; the k3s nodes' kernel rbd
   (6.6 and 6.12) can't parse them (`libceph: Failed to parse secret: -524`). `aes` is allowed in
   the monmap next to `aes256k` (still preferred), and the three warnings about it are muted
-  (`ceph_health_mutes`). A second `aes` client would go unnoticed.
+  (`ceph_health_mutes`). A second `aes` client would go unnoticed. Buckle creates a client's key
+  with its `key_type` but never rotates one: a key of the wrong type fails the `resources` step,
+  which prints the `ceph auth rotate` command to run by hand once ceph-csi's secret can follow.
 - **ceph-csi lists the mons by IP.** labk3s's CoreDNS sends `*.ts.net` to the Tailscale
   operator's nameserver, which doesn't know the storage Pis. Pods reach the tailnet through the
   node.

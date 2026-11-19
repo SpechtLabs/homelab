@@ -42,16 +42,27 @@ tasks:
     tags: [network]
 
   # ── Disk: one LV over the OSD partition. ceph-volume takes LVs, not
-  #    partitions. Only on a blank partition, and never undone.
+  #    partitions. Only on a blank partition, and never undone. Each step
+  #    checks first, so a run that stopped halfway (PV made, VG not) resumes;
+  #    a partition with any other signature, or in another VG, is refused.
   - command.run:
       run: |
         set -eu
         dev={{ vars.ceph_osd_partition }}
-        sig=$(blkid -p -o value -s TYPE "$dev" || true)
-        if [ -n "$sig" ]; then echo "$dev holds $sig, not touching it" >&2; exit 1; fi
-        pvcreate "$dev"
-        vgcreate {{ vars.ceph_osd_vg }} "$dev"
-        lvcreate -l 100%FREE -n {{ vars.ceph_osd_lv }} {{ vars.ceph_osd_vg }}
+        vg={{ vars.ceph_osd_vg }}
+        if ! pvs "$dev" >/dev/null 2>&1; then
+          sig=$(blkid -p -o value -s TYPE "$dev" || true)
+          if [ -n "$sig" ]; then echo "$dev holds $sig, not touching it" >&2; exit 1; fi
+          pvcreate "$dev"
+        fi
+        in=$(pvs --noheadings -o vg_name "$dev" | tr -d ' ')
+        if [ -z "$in" ]; then
+          vgcreate "$vg" "$dev"
+        elif [ "$in" != "$vg" ]; then
+          echo "$dev is in VG $in, not $vg; not touching it" >&2; exit 1
+        fi
+        lvs "$vg/{{ vars.ceph_osd_lv }}" >/dev/null 2>&1 ||
+          lvcreate -l 100%FREE -n {{ vars.ceph_osd_lv }} "$vg"
       unless: 'lvs {{ vars.ceph_osd_vg }}/{{ vars.ceph_osd_lv }}'
       only_if: 'test -b {{ vars.ceph_osd_partition }}'
     id: osd-lv

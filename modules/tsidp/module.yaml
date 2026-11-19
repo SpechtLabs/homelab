@@ -34,6 +34,18 @@ tasks:
       force: true
     id: tsidp-binary
     notify: [restart]
+  # Older versions and their tarballs, once the pinned one is in place (the
+  # running process keeps its binary's inode until the restart).
+  - command.run:
+      run: >-
+        find /opt/tsidp -mindepth 1 -maxdepth 1 ! -name '{{ vars.tsidp_version }}' -exec rm -rf {} + ;
+        find /var/cache/buckle-releases -maxdepth 1 -name 'tsidp_*.tar.gz' ! -name 'tsidp_{{ vars.tsidp_version }}.tar.gz' -delete
+      only_if: >-
+        test -x '/opt/tsidp/{{ vars.tsidp_version }}/tsidp' &&
+        { find /opt/tsidp -mindepth 1 -maxdepth 1 ! -name '{{ vars.tsidp_version }}';
+        find /var/cache/buckle-releases -maxdepth 1 -name 'tsidp_*.tar.gz' ! -name 'tsidp_{{ vars.tsidp_version }}.tar.gz'; } | grep -q .
+    id: tsidp-old-versions
+    removal: leave
 
   # Already holds the node key from the Ansible days; never removed.
   - file.directory: { path: '{{ vars.tsidp_state_dir }}', mode: "0700" }

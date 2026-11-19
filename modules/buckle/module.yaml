@@ -4,21 +4,42 @@ tags: [buckle]
 vars:
   buckle_bin: /usr/local/bin/buckle
   buckle_restart_delay: 90      # seconds: lets the current run finish and report first
+  buckle_units: '{{ "buckle-server.service buckle-agent.service" if "buckle-server" in host.groups else "buckle-agent.service" }}'
+  # Restart the units into the binary on disk from a transient unit outside
+  # the agent's cgroup, once: a timer already waiting means it's on its way.
+  buckle_restart: >-
+    u=buckle-upgrade-{{ vars.buckle_version | replace(".", "-") }};
+    systemctl is-active --quiet "$u.timer" ||
+    systemd-run --quiet --collect --on-active={{ vars.buckle_restart_delay }}
+    --unit="$u" systemctl restart {{ vars.buckle_units }}
 tasks:
   # What the UI's "Upgrade agent" does, but phased like any other change:
   # `buckle update` fetches the release, verifies GitHub's SHA-256 digest and
   # renames the new binary into place; the running agent keeps the old one
-  # until the transient unit below restarts it, outside the agent's cgroup.
-  # The NUC (server) is in the core phase right after the canary, so the
-  # server upgrades before most agents, as Buckle recommends. One GitHub API
-  # call per host per upgrade.
+  # until the restart handler moves it over. The NUC (server) is in the core
+  # phase right after the canary, so the server upgrades before most agents,
+  # as Buckle recommends. One GitHub API call per host per upgrade.
   - command.run:
-      run: >-
-        {{ vars.buckle_bin }} update --to {{ vars.buckle_version }} &&
-        systemd-run --quiet --collect --on-active={{ vars.buckle_restart_delay }}
-        --unit=buckle-upgrade-{{ vars.buckle_version | replace(".", "-") }}
-        systemctl restart {{ "buckle-server.service buckle-agent.service" if "buckle-server" in host.groups else "buckle-agent.service" }}
+      run: [ '{{ vars.buckle_bin }}', update, --to, '{{ vars.buckle_version }}' ]
       unless: '{{ vars.buckle_bin }} --version | grep -qx "buckle {{ vars.buckle_version }}"'
       timeout: 5m
     id: buckle-binary
     removal: leave
+    notify: [restart]
+
+  # Catch-up: the binary is current but a unit still runs the one it replaced
+  # (the restart above failed or never ran). The rename leaves the old inode
+  # behind, so its process's exe reads "... (deleted)".
+  - command.run:
+      run: '{{ vars.buckle_restart }}'
+      only_if: >-
+        for u in {{ vars.buckle_units }}; do
+        p=$(systemctl show -p MainPID --value "$u");
+        [ "${p:-0}" -gt 0 ] && readlink "/proc/$p/exe" | grep -q ' (deleted)$' && exit 0;
+        done; exit 1
+    id: buckle-restart-stale
+    removal: leave
+
+handlers:
+  restart:
+    command.run: { run: '{{ vars.buckle_restart }}' }

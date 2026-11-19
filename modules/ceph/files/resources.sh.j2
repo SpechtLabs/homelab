@@ -1,8 +1,10 @@
 # Buckle (modules/ceph): mon settings, health mutes, mgr modules, config settings, pools, client keys and S3 users from
 # vars/group-ceph.yaml; runs in `cephadm shell` whenever this file changes.
 # Each step checks first, so it only ever creates or sets: removing an entry
-# here removes nothing from the cluster.
+# here removes nothing from the cluster. It never rotates a key: a client key
+# of the wrong type fails the run (after every other step) instead.
 set -eu
+rc=0
 {% for key, value in vars.ceph_mon_settings | items %}
 ceph mon set '{{ key }}' '{{ value }}'
 {%- endfor %}
@@ -24,13 +26,19 @@ ceph osd pool application get '{{ pool }}' rbd >/dev/null 2>&1 || timeout 300 rb
 {% endfor %}
 {%- for name, client in vars.ceph_clients | items %}
 {%- set prefix = "AQ" if client.key_type == "aes" else "Ag" %}
-# client.{{ name }}, {{ client.key_type }} key (ceph auth get-key client.{{ name }});
-# a key of another type (AQ... aes, Ag... aes256k) is rotated to this one.
-key=$(ceph auth get-key 'client.{{ name }}' 2>/dev/null || true)
-if [ -z "$key" ]; then
+# client.{{ name }}, {{ client.key_type }} key (ceph auth get-key client.{{ name }}).
+# A key of another type (AQ... aes, Ag... aes256k) is left alone and reported:
+# rotating it breaks every client holding the old key (ceph-csi's secret in
+# k8s-deployment), so that is a step for a person, with the secret in hand.
+if ! ceph auth get 'client.{{ name }}' >/dev/null 2>&1; then
 	ceph auth get-or-create 'client.{{ name }}' --key_type '{{ client.key_type }}' >/dev/null
-elif [ "${key#{{ prefix }}}" = "$key" ]; then
-	ceph auth rotate 'client.{{ name }}' --key_type '{{ client.key_type }}' >/dev/null
+fi
+key=$(ceph auth get-key 'client.{{ name }}')
+if [ "${key#{{ prefix }}}" = "$key" ]; then
+	echo "client.{{ name }} has a key of another type than {{ client.key_type }}. To rotate it:" >&2
+	echo "  cephadm shell -- ceph auth rotate client.{{ name }} --key_type {{ client.key_type }}" >&2
+	echo "  then update every client's copy (ceph-csi: k8s-deployment apps/ceph-csi-rbd)" >&2
+	rc=1
 fi
 ceph auth caps 'client.{{ name }}'{% for svc, cap in client.caps | items %} {{ svc }} '{{ cap }}'{% endfor %}
 {% endfor %}
@@ -39,3 +47,4 @@ ceph auth caps 'client.{{ name }}'{% for svc, cap in client.caps | items %} {{ s
 radosgw-admin user info --uid='{{ uid }}' >/dev/null 2>&1 ||
 	radosgw-admin user create --uid='{{ uid }}' --display-name='{{ display }}' >/dev/null
 {% endfor %}
+exit $rc

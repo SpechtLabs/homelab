@@ -23,15 +23,18 @@ tasks:
   # missing (its CA lasts ten). Delete them 30 days before either expires and
   # the restart makes new ones under the same CA. Afterwards, refresh your
   # bladectl config: `mise run bladectl-config`.
+  # Only a certificate that exists and is about to expire counts: a missing
+  # file or tool must not delete and restart on every run. (A missing server
+  # certificate fails the api-certificate health check instead.)
+  - apt.package: { name: openssl }
+    removal: leave                  # the system's openssl: never uninstall it
   - command.run:
       run: [rm, -f, /etc/compute-blade-agent/server.pem, /etc/compute-blade-agent/server-key.pem, /root/.config/bladectl/config.yaml]
-      unless:
-        - sh
-        - -c
-        - >-
-          openssl x509 -checkend 2592000 -noout -in /etc/compute-blade-agent/server.pem &&
-          grep client-certificate-data /root/.config/bladectl/config.yaml | awk '{print $2}' | base64 -d |
-          openssl x509 -checkend 2592000 -noout
+      only_if: >-
+        { test -f /etc/compute-blade-agent/server.pem &&
+        ! openssl x509 -checkend 2592000 -noout -in /etc/compute-blade-agent/server.pem; } ||
+        { c=$(grep -m1 client-certificate-data /root/.config/bladectl/config.yaml 2>/dev/null | awk '{print $2}') &&
+        test -n "$c" && ! echo "$c" | base64 -d | openssl x509 -checkend 2592000 -noout; }
     id: agent-certificates
     removal: leave
     notify: [restart]

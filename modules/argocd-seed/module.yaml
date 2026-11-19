@@ -9,6 +9,16 @@ vars:
   argocd_seed_overlay: apps/argocd/cluster/labk3s
   argocd_seed_dir: /var/lib/argocd-seed
   argocd_seed_arch: '{{ "arm64" if host.facts.hardware.arch == "aarch64" else "amd64" }}'
+  # Lists every per-version path under the seed dir that isn't a pinned one.
+  argocd_seed_stale: >-
+    cd '{{ vars.argocd_seed_dir }}' && for p in dl/* tools/* plugin-*; do
+    [ -e "$p" ] || continue;
+    case "$p" in
+    dl/kustomize_v{{ vars.argocd_seed_kustomize_version }}.tar.gz|tools/kustomize-{{ vars.argocd_seed_kustomize_version }}) ;;
+    dl/helm-v{{ vars.argocd_seed_helm_version }}.tar.gz|tools/helm-{{ vars.argocd_seed_helm_version }}) ;;
+    dl/ksops_{{ vars.argocd_seed_ksops_version }}.tar.gz|plugin-{{ vars.argocd_seed_ksops_version }}) ;;
+    *) echo "$p" ;;
+    esac; done
 tasks:
   # ── Tools, pinned to k8s-deployment's .mise.toml; release downloads (no
   #    GitHub API), checksummed, one directory per version.
@@ -53,6 +63,13 @@ tasks:
       include: [ksops]
       creates: ksops
 
+  # Tool versions a bump replaced: downloads, unpacked tools and plugins.
+  - command.run:
+      run: '{{ vars.argocd_seed_stale }} | xargs -r rm -rf --'
+      only_if: '{{ vars.argocd_seed_stale }} | grep -q .'
+    id: seed-old-tools
+    removal: leave
+
   # ── What to render, and the key to decrypt it with.
   - git.repository:
       repo: '{{ vars.argocd_seed_repo }}'
@@ -86,7 +103,14 @@ tasks:
           # Rendered secrets go straight into the cluster, never to disk.
           kustomize build --enable-alpha-plugins --enable-helm '{{ vars.argocd_seed_overlay }}' |
             k3s kubectl apply --server-side --force-conflicts --field-manager=argocd-seed -f -
-      unless: k3s kubectl -n argocd get deployment argocd-server
+      # Seed only when the API server answers that argocd-server is missing.
+      # A failed or timed-out query (k3s restarting, API slow) must count as
+      # "leave it": seeding re-applies this checkout, frozen at its first clone
+      # (update: false), with --force-conflicts over a live Argo CD.
+      unless: >-
+        out=$(k3s kubectl -n argocd get deployment argocd-server
+        --ignore-not-found -o name --request-timeout=30s) || exit 0;
+        test -n "$out"
       timeout: 20m
     id: argocd-seed
     removal: leave

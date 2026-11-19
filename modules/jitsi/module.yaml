@@ -131,12 +131,18 @@ tasks:
           ln -sfn /var/lib/prosody/$h.crt /usr/local/share/ca-certificates/$h.crt;
           done;
           update-ca-certificates --fresh >/dev/null
+      # Both certificates. No keytool means no Java, so nothing to trust them
+      # for: skip rather than rebuild the store and restart on every run.
       unless:
         - sh
         - -c
         - >-
-          fp=$(openssl x509 -noout -fingerprint -sha256 -in /var/lib/prosody/auth.{{ vars.jitsi_domain }}.crt | cut -d= -f2) &&
-          keytool -list -cacerts -storepass changeit 2>/dev/null | grep -q "$fp"
+          command -v keytool >/dev/null || exit 0;
+          store=$(keytool -list -cacerts -storepass changeit 2>/dev/null) || exit 1;
+          for h in {{ vars.jitsi_domain }} auth.{{ vars.jitsi_domain }}; do
+          fp=$(openssl x509 -noout -fingerprint -sha256 -in /var/lib/prosody/$h.crt | cut -d= -f2) &&
+          test -n "$fp" && echo "$store" | grep -q "$fp" || exit 1;
+          done
       timeout: 5m
     id: prosody-internal-certs-trusted
     removal: leave

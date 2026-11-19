@@ -7,6 +7,22 @@ vars:
 tasks:
   - hostname.set: { name: '{{ host.id }}' }
 
+  # Buckle gives every apt-get call 30 minutes (APT_TIMEOUT, not configurable)
+  # and kills it after that. A dist-upgrade killed mid-configure leaves dpkg
+  # half-done, and every apt step after it fails: clusterpi-worker2's nightly
+  # upgrade (361 packages on an SD card) on 2026-11-19. Finish the interrupted
+  # configure first. Only for states `--configure -a` can fix (not
+  # half-installed, which needs a reinstall), so the step can't repeat forever.
+  - command.run:
+      run: [dpkg, --configure, -a, --force-confdef, --force-confold]
+      only_if: >-
+        dpkg-query -W -f='${db:Status-Status}\n' |
+        grep -qxE 'unpacked|half-configured|triggers-(awaited|pending)'
+      env: { DEBIAN_FRONTEND: noninteractive }
+      timeout: 60m
+    id: dpkg-repair
+    removal: leave
+
   - apt.update: { max_age: 6h }
   - apt.package:
       names: [git, curl, sudo, locales]

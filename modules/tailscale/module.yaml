@@ -27,11 +27,12 @@ tasks:
   - systemd.unit: { name: tailscaled, enabled: true, active: true }
 
   # `tailscale set` changes prefs without re-authenticating, unlike `tailscale up`.
+  # Always present and set to the var either way, so `tailscale_ssh: false`
+  # turns SSH off; dropping the task (removal: leave) still changes nothing.
   - command.run:
-      run: [tailscale, set, --ssh]
-      unless: "tailscale debug prefs | grep -Eq '\"RunSSH\": *true'"
+      run: [tailscale, set, '--ssh={{ "true" if vars.tailscale_ssh == true else "false" }}']
+      unless: "tailscale debug prefs | grep -Eq '\"RunSSH\": *{{ \"true\" if vars.tailscale_ssh == true else \"false\" }}'"
     id: tailscale-ssh
-    when: 'vars.tailscale_ssh == true'
     removal: leave
 
   - command.run:

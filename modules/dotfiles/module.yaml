@@ -27,10 +27,13 @@ tasks:
   # Install once per pinned commit, before fish becomes the login shell: the
   # fish config expects the tools the installer provides (mise and friends).
   # The marker makes it idempotent and catches hosts whose checkout was already
-  # at the pin but never installed for this account.
+  # at the pin but never installed for this account. The guard resolves the
+  # ref (a commit, or a branch via origin/) so a branch default works too.
   - command.run:
       run: >-
-        test "$(git rev-parse HEAD)" = "{{ vars.dotfiles_ref }}" &&
+        want=$(git rev-parse --verify -q "origin/{{ vars.dotfiles_ref }}^{commit}" ||
+        git rev-parse --verify "{{ vars.dotfiles_ref }}^{commit}") &&
+        test "$(git rev-parse HEAD)" = "$want" &&
         bash install_linux.sh --yes --preset {{ vars.dotfiles_preset }} &&
         mkdir -p "$HOME/.local/state" &&
         echo "{{ vars.dotfiles_ref }}" > "$HOME/.local/state/buckle-dotfiles"
