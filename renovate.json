@@ -7,7 +7,6 @@
     "customManagers:githubActionsVersions"
   ],
   "timezone": "Europe/Berlin",
-  "dependencyDashboard": true,
   "prHourlyLimit": 2,
   "prConcurrentLimit": 8,
   "rebaseWhen": "behind-base-branch",
