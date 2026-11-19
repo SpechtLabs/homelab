@@ -58,16 +58,21 @@ actions:
     system.reboot: { delay: 5s, timeout: 10m }
     confirm: true
     description: Reboot this host now
-
-handlers:
-  locale-gen:
-    command.run: { run: [locale-gen] }
-  # Debian and Raspberry Pi OS kernels don't create /run/reboot-required (only
-  # Ubuntu's update-notifier does), so also reboot when a newer kernel of the
-  # running flavour (2712, v8, generic, ...) is installed than the one running.
+  # `upgrade` only reboots when its own run changed something, so a kernel an
+  # earlier run installed without rebooting stayed pending for good: three k3s
+  # workers sat on 6.12.34 with 6.12.115 installed (2026-11-19). This reboots
+  # whenever one is pending; it runs nightly after the upgrades
+  # (schedules/nightly-kernel-reboots.yaml).
   reboot-if-required:
+    name: Reboot for a pending kernel
+    description: Reboot only if a newer kernel is installed than the one running (or /run/reboot-required exists)
     system.reboot:
-      only_if:
+      delay: 5s
+      timeout: 10m
+      # Debian and Raspberry Pi OS kernels don't create /run/reboot-required
+      # (only Ubuntu's update-notifier does), so also reboot when a newer
+      # kernel of the running flavour (2712, v8, generic, ...) is installed.
+      only_if: &reboot-check
         - sh
         - -c
         - |
@@ -75,3 +80,12 @@ handlers:
           r=$(uname -r)
           newest=$(ls /boot/vmlinuz-*-"${r##*-}" 2>/dev/null | sed 's|^/boot/vmlinuz-||' | sort -V | tail -n1)
           test -n "$newest" && test "$newest" != "$r"
+
+handlers:
+  locale-gen:
+    command.run: { run: [locale-gen] }
+  # The same check as the reboot-if-required action, after an upgrade that
+  # changed something.
+  reboot-if-required:
+    system.reboot:
+      only_if: *reboot-check
