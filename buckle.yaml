@@ -105,8 +105,8 @@ rollout:
     parallel: 1
     approval: auto
   # A host belongs to the first phase that selects it. Order: the blades prove
-  # a revision, then core (Buckle server first, then the hosts you log in
-  # through), then the cluster, storage and everything else.
+  # a revision, then core one host at a time (everything else leans on these),
+  # then whatever may go in parallel, then whatever must go one by one.
   phases:
     # No approval: the canary bake and health checks are the gate. A failure
     # pauses the rollout (on_failure: pause) before any other host.
@@ -115,25 +115,25 @@ rollout:
       parallel: 2
       approval: auto
       bake: 10m
-    # The NUC runs the Buckle server, NUT proxy, tsidp and the o11y collector;
-    # Buckle upgrades the server before its agents this way.
+    # The NUC runs the Buckle server, NUT proxy, tsidp and the o11y collector
+    # (Buckle upgrades the server before its agents this way); timepi serves
+    # the LAN's time, jumphost is the way in, clusterpi-leader is the k3s
+    # control plane (single server: it goes alone, and before its agents).
     - name: core
-      select: 'host.id in ["nuc", "timepi", "jumphost"]'
+      select: 'host.id in ["nuc", "timepi", "jumphost"] || host.groups contains "k3s-server"'
       parallel: 1
       approval: if_destructive
-    - name: k3s-server
-      select: 'host.groups contains "k3s-server"'
+    # Everything that tolerates company: the k3s agents, meet, and labk3s's
+    # workloads (a placement matches only the cluster.* term). 2 is the limit
+    # the agents set: half the workers at a time, the other two carry the load.
+    - name: fast
+      select: '(host.groups contains "debian" && !(host.groups contains "ceph")) || cluster.kind == "kubernetes"'
+      parallel: 2
       approval: if_destructive
-      bake: 5m
-    - name: k3s-agents
-      select: 'host.groups contains "k3s-agent"'
-      parallel: 2              # half the workers at a time; the other two carry the load
-      approval: if_destructive
-    - name: ceph
-      select: 'host.groups contains "ceph"'
-      parallel: 1
-      approval: if_destructive
-    - name: rest
+    # One at a time: the Ceph hosts (each takes a mon and an OSD down, and the
+    # ceph module's health check holds the next one until the cluster has
+    # recovered), and anything no earlier phase claims, to be safe.
+    - name: slow
       select: 'true'
-      parallel: 3
+      parallel: 1
       approval: if_destructive
