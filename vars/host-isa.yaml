@@ -1,0 +1,4 @@
+# isa: HP EliteDesk 800 G6 Mini (i5-10500) on Ubuntu 26.04, at home; takes over from the NUC. Until the
+# NUC's roles move over (Buckle server, tsidp, NUT proxy, o11y collector) it's
+# a plain host. You log in as cedi.
+admin_user: cedi

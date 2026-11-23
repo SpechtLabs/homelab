@@ -1,0 +1,38 @@
+{
+  "os": {
+    "codename": "resolute",
+    "family": "debian",
+    "id": "ubuntu",
+    "kernel": "7.0.0-44-generic",
+    "pretty_name": "Ubuntu 26.04.1 LTS",
+    "version": "26.04"
+  },
+  "hardware": {
+    "arch": "x86_64",
+    "cpus": 12,
+    "mem": {
+      "total_mb": 15700
+    },
+    "model": "HP EliteDesk 800 G6 Desktop Mini PC",
+    "raspberry_pi": null,
+    "swap": {
+      "total_mb": 4095
+    },
+    "vendor": "HP"
+  },
+  "net": {
+    "hostname": "isa",
+    "fqdn": "isa.sphinx-map.ts.net"
+  },
+  "tailscale": {
+    "hostname": "isa.sphinx-map.ts.net",
+    "tags": [
+      "tag:core-infra"
+    ],
+    "online": true,
+    "backend_state": "Running",
+    "tailnet": "cedi.github"
+  },
+  "script": {},
+  "cloud": null
+}

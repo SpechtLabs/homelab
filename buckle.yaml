@@ -19,7 +19,7 @@ fleet:
     blades:     'host.id like "blade-pi*"'
     ptp-grandmaster: 'host.id == "timepi"'
     # Everything at home that keeps its own clock syncs from timepi over the LAN.
-    ntp-client:      '(host.facts.hardware.raspberry_pi.version != null || host.id == "nuc") && host.id != "timepi"'
+    ntp-client:      '(host.facts.hardware.raspberry_pi.version != null || host.id in ["nuc", "isa"]) && host.id != "timepi"'
     # Clients whose NIC timestamps PTP in hardware and has an adjustable clock:
     # the Pi 5s (macb) and the CM4 blades (BCM54210PE PHY). Needs a kernel past
     # 6.12.34 (its PHCs refuse every adjustment); every Pi runs 6.12.115 since
@@ -75,6 +75,8 @@ vars:
   # host exceptions
   - when: 'host.id == "nuc"'
     file: vars/host-nuc.yaml
+  - when: 'host.id == "isa"'
+    file: vars/host-isa.yaml
   - when: 'host.id == "hole"'
     file: vars/host-hole.yaml
   - when: 'host.id == "meet"'
