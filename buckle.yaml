@@ -36,11 +36,10 @@ fleet:
     tsidp:           'host.id == "isa"'
     buckle-server:   'host.id == "isa"'   # by host, like o11y-collector
 
-    # Power: the NUC proxies the Synology's UPS; Pis shut down early unless
-    # they are the ones that should outlive the cluster.
-    # Both while isa takes over from the NUC: clients move, then the NUC's goes.
-    nut-server: 'host.id in ["nuc", "isa"]'
-    nut-client: 'host.facts.hardware.raspberry_pi.version != null'
+    # Power: isa proxies the Synology's UPS; the Pis and the NUC shut down
+    # early unless they are the ones that should outlive the cluster.
+    nut-server: 'host.id == "isa"'
+    nut-client: 'host.facts.hardware.raspberry_pi.version != null || host.id == "nuc"'
     nut-late:   'host.id in ["jumphost", "timepi"]'
 
   # The k3s cluster as a Buckle target. The executor is the k3s server and

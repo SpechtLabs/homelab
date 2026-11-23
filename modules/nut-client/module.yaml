@@ -1,5 +1,5 @@
 name: nut-client
-description: upsmon on every Pi, watching isa's UPS proxy and shutting down early or late.
+description: upsmon on every Pi and the NUC, watching isa's UPS proxy and shutting down early or late.
 when: 'host.groups contains "nut-client"'
 tags: [power]
 vars:
