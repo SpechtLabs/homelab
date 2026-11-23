@@ -1,9 +1,4 @@
-# isa: HP EliteDesk 800 G6 Mini (i5-10500) on Ubuntu 26.04, at home; takes over from the NUC. Until the
-# NUC's roles move over (Buckle server, tsidp, NUT proxy, o11y collector) it's
-# a plain host. You log in as cedi.
+# isa: HP EliteDesk 800 G6 Mini (i5-10500) on Ubuntu 26.04, at home. It took
+# over from the NUC on 2026-11-23: Buckle server, tsidp, NUT proxy, o11y
+# collector. You log in as cedi.
 admin_user: cedi
-
-# Takeover, step by step. Alloy's OTLP receiver (:4317 gRPC, :4318 HTTP) runs
-# here as well as on the NUC, so Home Assistant's calendar integration can
-# move its exporter over before the collector role does.
-o11y_otlp_receiver: true

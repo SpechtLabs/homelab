@@ -27,11 +27,14 @@ fleet:
     # here: the agent reported its pre-reboot kernel for a while after the
     # upgrade, which kept the Ceph Pis on NTP.
     ptp-client:      '(host.facts.hardware.raspberry_pi.version == 5 || host.id like "blade-pi*") && host.id != "timepi"'
-    o11y-collector:  'host.facts.tailscale.tags contains "tag:o11y-collector"'
+    # By host, not by tag: a retag reaches Buckle only when the agent next
+    # reports facts, so a tag-derived role can't move in one rollout. The
+    # tag still grants the network access (tailscale/policy.hujson).
+    o11y-collector:  'host.id == "isa"'
     spechtlabs:      'host.id in ["hole", "meet"]'
     jitsi:           'host.id == "meet"'
     tsidp:           'host.id == "isa"'
-    buckle-server:   'host.facts.tailscale.tags contains "tag:buckle-server"'
+    buckle-server:   'host.id == "isa"'   # by host, like o11y-collector
 
     # Power: the NUC proxies the Synology's UPS; Pis shut down early unless
     # they are the ones that should outlive the cluster.
