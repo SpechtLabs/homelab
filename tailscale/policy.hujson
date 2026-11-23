@@ -79,8 +79,8 @@
 		"services": {
 			// Jellyfin on the NAS: `tailscale serve --service=svc:stream --https=443 http://localhost:8096`
 			"svc:stream": ["tag:core-infra"],
-			// Buckle's UI and API on the NUC (bootstrap/README.md). Agents keep dialling
-			// nuc:7700 directly: the server identifies them by whois, which a proxy hides.
+			// Buckle: UI and API on tcp:443, agents' gRPC on tcp:7700 with a PROXY v2
+			// header (bootstrap/README.md).
 			"svc:buckle": ["tag:buckle-server"],
 		},
 	},
@@ -334,6 +334,14 @@
 		{
 			"src": ["tag:homelab", "tag:core-infra", "tag:core-services"],
 			"dst": ["tag:buckle-server"],
+			"ip":  ["tcp:7700"],
+		},
+		// ...or through svc:buckle, which forwards tcp:7700 to whichever host runs
+		// the server with a PROXY v2 header (the server trusts it and whois-es the
+		// agent's own address), so the server can move without touching agents.
+		{
+			"src": ["tag:homelab", "tag:core-infra", "tag:core-services"],
+			"dst": ["svc:buckle"],
 			"ip":  ["tcp:7700"],
 		},
 	],
