@@ -1,7 +1,7 @@
-# /etc/buckle/server.yaml on the NUC. Installed by hand (see bootstrap/README.md),
+# /etc/buckle/server.yaml on isa. Installed by hand (see bootstrap/README.md),
 # not by Buckle itself: the server shouldn't be able to break its own config.
 listen:
-  # The NUC's tailnet address only. WireGuard encrypts; agents are identified
+  # isa's tailnet address only. WireGuard encrypts; agents are identified
   # by tailscaled's whois, so there is no TLS and no bootstrap token.
   grpc: "${{ env.BUCKLE_LISTEN_ADDR }}:7700"
   http: "${{ env.BUCKLE_LISTEN_ADDR }}:7701"
@@ -33,7 +33,7 @@ agents:
     #   client_secret: "${{ env.TS_OAUTH_CLIENT_SECRET }}"
     #   tags: ["tag:homelab", "tag:core-infra", "tag:core-services"]
   join:
-    server_url: http://nuc.sphinx-map.ts.net:7700
+    server_url: http://buckle.sphinx-map.ts.net:7700
   minimum_agent_version: "2.13.0"
   # desired_version defaults to the server's own, which modules/buckle keeps
   # at vars/versions.yaml's buckle_version.
@@ -59,4 +59,4 @@ secrets:
     file: { root: /etc/buckle/secrets }
 
 telemetry:
-  otlp_endpoint: http://127.0.0.1:4317     # the NUC's own Alloy OTLP receiver
+  otlp_endpoint: http://127.0.0.1:4317     # isa's own Alloy OTLP receiver

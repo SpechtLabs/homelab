@@ -9,8 +9,8 @@ The policy lives in `tailscale/policy.hujson` and already has the Buckle grant (
 `.github/workflows/tailscale.yaml` tests it on PRs and applies it on `main`, using the repo
 secrets `TS_OAUTH_ID`, `TS_OAUTH_SECRET` and `TS_TAILNET`.
 
-The grant only matches once the NUC carries the tag: admin console → Machines → nuc → Edit ACL
-tags → add `tag:buckle-server` next to its existing tags. Without it, the NUC's tailscaled logs
+The grant only matches once the server host carries the tag: admin console → Machines → isa → Edit
+ACL tags → add `tag:buckle-server` next to its existing tags. Without it, its tailscaled logs
 `Drop: TCP{… > 100.122.149.90:7700} no rules matched` for every agent.
 
 Create an OAuth client (Settings → OAuth clients) with **Auth Keys: write**, limited to
@@ -27,7 +27,7 @@ cd ~/src/gh/cedi/homelab-ansible
 ansible -i inventory/homelab.yaml clusterpi-leader -m debug -a var=token --ask-vault-pass
 ```
 
-On the NUC, one file per secret, root-owned, mode 0600:
+On the server host (isa), one file per secret, root-owned, mode 0600:
 
 | File in `/etc/buckle/secrets/` | Value |
 |---|---|
@@ -44,7 +44,7 @@ printf '%s' "$VALUE" | sudo install -m 0600 /dev/stdin /etc/buckle/secrets/K3S_T
 Rotating the NUT passwords means the first `nut-server` + `nut-client` rollout changes both
 ends. Do it in one rollout (it is: both modules are in the same revision).
 
-## 3. Server on the NUC
+## 3. Server on isa
 
 ```sh
 # binary (same version as mise.toml)
@@ -64,18 +64,30 @@ token in `GIT_TOKEN`.
 
 The UI and API are the Tailscale Service `svc:buckle`, at https://buckle.sphinx-map.ts.net.
 Define it once in the admin console (Services → Define Service, name `buckle`, port `tcp:443`);
-the policy auto-approves it for `tag:buckle-server`. Then, on the NUC:
+the policy auto-approves it for `tag:buckle-server`. Then, on isa:
 
 ```sh
-sudo tailscale serve --bg --service=svc:buckle --https=443 "http://$(tailscale ip -4):7701"
+ip=$(tailscale ip -4)
+sudo tailscale serve --bg --service=svc:buckle --https=443 "http://$ip:7701"
+sudo tailscale serve --bg --service=svc:buckle --tcp=7700 --proxy-protocol=2 "tcp://$ip:7700"
 ```
 
 tailscaled keeps this across reboots. `web.base_url` in `server.yaml` is that URL, so tsidp's
 Buckle client needs `https://buckle.sphinx-map.ts.net/api/v1/auth/callback` as a redirect URI.
-Agents don't go through the Service: they dial `nuc:7700` directly, because the server
-identifies them by Tailscale whois, which a proxy would replace with the NUC's own identity.
+Agents dial `buckle.sphinx-map.ts.net:7700` too (the `buckle` module owns the `server:` line of
+their `agent.yaml`). The Service forwards it with a PROXY v2 header, and `agents.trusted_proxies`
+in `server.yaml` lists the hosts allowed to send one, so the server still identifies each agent by
+Tailscale whois of its own address. Define the Service with both ports (`tcp:443`, `tcp:7700`):
+a host advertising it without serving every defined port gets no traffic at all.
 
-Nightly backup: install `bootstrap/backup.sh` as a cron job or timer on the NUC. Everything
+**Moving the server to another host** (as from the NUC to isa on 2026-11-23, about two minutes
+without a control plane, hosts unaffected): stage the binary, `/etc/buckle` and the units there
+(listen address in `server.env`, the host in `trusted_proxies`), give it `tag:buckle-server`, then
+`tailscale serve drain svc:buckle` and stop the server on the old host, copy `data_dir` with the
+server stopped (over the LAN: Tailscale SSH refuses host-to-host logins), start it on the new host
+and run the two `serve` commands there. Agents reconnect through the Service by themselves.
+
+Nightly backup: install `bootstrap/backup.sh` as a cron job or timer on isa. Everything
 else can be rebuilt from git and the secrets.
 
 ## 4. Enrol the existing hosts
@@ -153,13 +165,13 @@ within the hour, as Buckle revalidates them against tsidp. Agents and rollouts d
 it. When tsidp is down:
 
 ```sh
-ssh cedi@nuc sudo systemctl start buckle-server-breakglass   # stops buckle-server
-ssh -L 7701:127.0.0.1:7701 cedi@nuc                          # then open http://localhost:7701
-ssh cedi@nuc sudo systemctl stop buckle-server-breakglass    # back to sign-in
+ssh cedi@isa sudo systemctl start buckle-server-breakglass   # stops buckle-server
+ssh -L 7701:127.0.0.1:7701 cedi@isa                          # then open http://localhost:7701
+ssh cedi@isa sudo systemctl stop buckle-server-breakglass    # back to sign-in
 ```
 
 `buckle-server-breakglass` is the same server and database with `server-breakglass.yaml`: no
 sign-in, API/UI on `127.0.0.1:7701` only, agents unaffected. It reverts to `buckle-server`
-when stopped and after 4 hours at most. SSH to the NUC doesn't depend on tsidp (Tailscale SSH or
+when stopped and after 4 hours at most. SSH to isa doesn't depend on tsidp (Tailscale SSH or
 the LAN). Keep `server-breakglass.yaml` identical to `server.yaml` apart from `web` and
 `listen.http`.

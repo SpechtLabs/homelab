@@ -1,5 +1,5 @@
 name: time-sync
-description: chrony on every Pi and the NUC follows timepi; Pi 5s and the CM4 blades by PTP with hardware timestamps (ptp4l), the rest by NTP. The public pool is the fallback.
+description: chrony on every Pi, the NUC and isa follows timepi; Pi 5s and the CM4 blades by PTP with hardware timestamps (ptp4l), the rest by NTP. The public pool is the fallback.
 when: 'host.groups contains "ntp-client"'
 needs: [alloy]               # the textfile directory time-client-metrics writes to
 tags: [time]

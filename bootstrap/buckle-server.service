@@ -1,4 +1,4 @@
-# /etc/systemd/system/buckle-server.service on the NUC.
+# /etc/systemd/system/buckle-server.service on isa.
 [Unit]
 Description=Buckle fleet server
 Documentation=https://buckle.sierrasoftworks.com

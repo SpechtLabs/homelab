@@ -1,7 +1,7 @@
 # homelab
 
 Fleet configuration for the homelab, applied by [Buckle](https://buckle.sierrasoftworks.com).
-The Buckle server runs on the NUC and watches this repository; every commit on `main` becomes a
+The Buckle server runs on isa and watches this repository; every commit on `main` becomes a
 revision that rolls out through the phases in `buckle.yaml`, gated on health checks. Agents
 connect over the tailnet and are identified by their Tailscale node, so there is no SSH and no
 inventory.
@@ -19,7 +19,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `workloads/` | What Buckle applies to the k3s cluster (`labk3s`); see below |
 | `schedules/` | Actions Buckle runs on a cron schedule (nightly package upgrades) |
 | `fixtures/facts/` | One facts file per host; CI dry-plans every host against them |
-| `bootstrap/` | The server's own config, installed by hand on the NUC |
+| `bootstrap/` | The server's own config, installed by hand on isa |
 | `nas/` | Compose projects for the Synology, deployed through DSM (not Buckle) |
 | `tailscale/policy.hujson` | The tailnet policy; tested on PRs and applied on `main` by `.github/workflows/tailscale.yaml` |
 
@@ -36,14 +36,14 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `pi-tools` | Pi 5 | rpi-clone |
 | `headless` | Pis | No desktop: removes the Raspberry Pi OS desktop and its apps, boots to `multi-user.target` |
 | `rpi-exporter` | Pis | cedi/rpi_exporter on :9243 |
-| `nut-server` | nuc | upsd proxying the UPS Tower's NUT server to the Pis |
+| `nut-server` | isa | upsd proxying the UPS Tower's NUT server to the Pis and Home Assistant |
 | `nut-client` | Pis | upsmon + upssched; early or late shutdown |
 | `k3s-server` | clusterpi-leader | k3s control plane |
 | `k3s-agent` | clusterpi-worker* | k3s workers; *action*: reboot |
-| `time-sync` | Pis, nuc | systemd-timesyncd from timepi over the LAN, public pools as fallback |
+| `time-sync` | Pis, nuc, isa | systemd-timesyncd from timepi over the LAN, public pools as fallback |
 | `ptp-server` | timepi | GPS + PPS discipline ntpsec (NTP); phc2sys copies the clock to eth0's PHC and ptp4l serves PTP from it; `time-metrics` exports ntpsec, gpsd, PPS and PTP state as node_exporter textfiles |
-| `tsidp` | nuc | tailnet OIDC provider |
-| `buckle` | all | Buckle itself at `buckle_version`; restarts the agent (and the server on the NUC) after the run |
+| `tsidp` | isa | tailnet OIDC provider |
+| `buckle` | all | Buckle itself at `buckle_version`; restarts the agent (and the server on isa) after the run |
 | `compute-blade-agent` | blade-pi* | compute-blade-agent: fan curve, health LEDs (fan stall, under-voltage, throttling), power policy, button gestures (hold 5s: shutdown, 5 presses: power off), metrics on :9666, bladectl's mTLS API on :8081 announced via mDNS; renews its certificates |
 | `jitsi` | meet | Jitsi Meet: Prosody, jicofo, videobridge, nginx, coturn configs and pinned package versions |
 | `argocd-seed` | clusterpi-leader | installs Argo CD only on a cluster that has none, from k8s-deployment, with the age key |
@@ -78,7 +78,7 @@ mise exec -- buckle validate --config . $(printf -- '--facts %s ' fixtures/facts
   `vars/versions.yaml`. k3s goes server first, then two agents at a time.
 - **Upgrade Buckle**: merge renovate's `buckle` PR (`buckle_version` in `vars/versions.yaml` and
   the CLI in `mise.toml`). The `buckle` module updates every host through the phases: the blades
-  (`canary`, all four), then the NUC (server) with the rest of `core` (two at a time), then `fast`
+  (`canary`, all four), then isa (server) with the rest of `core` (two at a time), then `fast`
   (two at a time) and `slow` (one at a time: the Ceph hosts); agents restart into the new version
   90 seconds after their run.
   Major versions are left to you: read the release notes and upgrade the server first.

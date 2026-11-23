@@ -1,5 +1,5 @@
 name: nut-server
-description: upsd on the NUC, re-exporting the UPS Tower's NUT server (dummy-ups proxy) to the Pis.
+description: upsd on isa, re-exporting the UPS Tower's NUT server (dummy-ups proxy) to the Pis.
 when: 'host.groups contains "nut-server"'
 tags: [power]
 vars:

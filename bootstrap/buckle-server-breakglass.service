@@ -1,4 +1,4 @@
-# /etc/systemd/system/buckle-server-breakglass.service on the NUC. Never enabled.
+# /etc/systemd/system/buckle-server-breakglass.service on isa. Never enabled.
 # The fleet server without sign-in, API/UI on 127.0.0.1:7701 only, for when
 # tsidp is unreachable. Starting it stops buckle-server (same database);
 # stopping it, or 4 hours passing, brings buckle-server back.

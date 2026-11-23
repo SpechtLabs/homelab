@@ -1,5 +1,5 @@
 name: nut-client
-description: upsmon on every Pi, watching the NUC's UPS proxy and shutting down early or late.
+description: upsmon on every Pi, watching isa's UPS proxy and shutting down early or late.
 when: 'host.groups contains "nut-client"'
 tags: [power]
 vars:
@@ -29,8 +29,8 @@ handlers:
 health:
   - name: monitor
     systemd: { unit: nut-monitor, state: active, min_uptime: 30s }
-  # Without the UPS this host has no power-loss shutdown. The chain (NUC proxy
-  # -> UPS Tower) fails the NUC's proxied-ups check first, in core.
+  # Without the UPS this host has no power-loss shutdown. The chain (isa's proxy
+  # -> UPS Tower) fails isa's proxied-ups check first, in core.
   - name: ups-reachable
     command:
       run: ['upsc', '{{ vars.nut_ups_name }}@{{ vars.nut_server_host }}', 'ups.status']
