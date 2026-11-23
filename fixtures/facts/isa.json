@@ -11,7 +11,7 @@
     "arch": "x86_64",
     "cpus": 12,
     "mem": {
-      "total_mb": 15700
+      "total_mb": 15250
     },
     "model": "HP EliteDesk 800 G6 Desktop Mini PC",
     "raspberry_pi": null,
@@ -22,12 +22,13 @@
   },
   "net": {
     "hostname": "isa",
-    "fqdn": "isa.sphinx-map.ts.net"
+    "fqdn": "isa"
   },
   "tailscale": {
     "hostname": "isa.sphinx-map.ts.net",
     "tags": [
-      "tag:core-infra"
+      "tag:core-infra",
+      "tag:o11y-endpoint"
     ],
     "online": true,
     "backend_state": "Running",
