@@ -4,6 +4,10 @@ tags: [buckle]
 vars:
   buckle_bin: /usr/local/bin/buckle
   buckle_restart_delay: 90      # seconds: lets the current run finish and report first
+  # Where agents dial the server: svc:buckle, which forwards tcp:7700 to
+  # whichever host runs the server with a PROXY v2 header (the server's
+  # agents.trusted_proxies), so the server moves without touching agents.
+  buckle_server_url: 'http://buckle.{{ vars.tailnet }}:7700'
   buckle_units: '{{ "buckle-server.service buckle-agent.service" if "buckle-server" in host.groups else "buckle-agent.service" }}'
   # Restart the units into the binary on disk from a transient unit outside
   # the agent's cgroup, once: a timer already waiting means it's on its way.
@@ -40,6 +44,23 @@ tasks:
     id: buckle-restart-stale
     removal: leave
 
+  # The server the agent dials. `buckle up` wrote the rest of agent.yaml;
+  # only this line is Buckle's. The agent reads it at start, so restart it
+  # (only it: the server on its host keeps running) after the run reports.
+  - file.line:
+      path: /etc/buckle/agent.yaml
+      regex: '^server:'
+      line: 'server: {{ vars.buckle_server_url }}'
+    id: buckle-agent-server
+    removal: leave
+    notify: [restart-agent]
+
 handlers:
   restart:
     command.run: { run: '{{ vars.buckle_restart }}' }
+  restart-agent:
+    command.run:
+      run: >-
+        systemctl is-active --quiet buckle-agent-reconnect.timer ||
+        systemd-run --quiet --collect --on-active={{ vars.buckle_restart_delay }}
+        --unit=buckle-agent-reconnect systemctl restart buckle-agent.service
