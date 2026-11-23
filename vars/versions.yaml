@@ -20,7 +20,7 @@ tsidp_version: 0.0.21
 # like drift, auto-corrected on every host within 15 minutes, outside any
 # rollout. Renovate proposes newer commits as PRs instead.
 # renovate: datasource=git-refs depName=https://github.com/cedi/dotfiles branch=main
-dotfiles_ref: 7b0603bb370648db6257c914b59ed661e1a91740
+dotfiles_ref: 64a7ca3c5900720fdd609c0f7da38232e788abcc
 
 # Ceph (modules/ceph): the image cephadm bootstraps with and its cephadm, the
 # same release (download.ceph.com/rpm-<version>/el9/noarch/cephadm; no
