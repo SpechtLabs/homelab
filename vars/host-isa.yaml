@@ -2,3 +2,8 @@
 # NUC's roles move over (Buckle server, tsidp, NUT proxy, o11y collector) it's
 # a plain host. You log in as cedi.
 admin_user: cedi
+
+# Takeover, step by step. Alloy's OTLP receiver (:4317 gRPC, :4318 HTTP) runs
+# here as well as on the NUC, so Home Assistant's calendar integration can
+# move its exporter over before the collector role does.
+o11y_otlp_receiver: true
