@@ -11,6 +11,8 @@ vars:
   # time to number the PPS seconds with.
   ptp_gpsd_options: "-n"
   ptp_gpsd_usbauto: "false"
+  # The receiver's UBX protocol version, for ubxtool (MON-VER: PROTVER=18.00).
+  ptp_gps_protver: "18"
   # fudge time1 for the (never selected) NMEA refclock, in seconds: roughly how
   # late NMEA arrives after the PPS edge; 150-600 ms on timepi at 9600 baud.
   ntp_gps_offset: "0.600"
@@ -34,6 +36,25 @@ tasks:
 
   - systemd.unit: { name: gpsd, enabled: true, active: true }
   - systemd.unit: { name: ntpsec, enabled: true, active: true }
+
+  # The receiver (u-blox M8, SPG 3.01) keeps its configuration in RAM, set
+  # through gpsd. Its antenna sees little sky (the best satellite ~28 dB-Hz),
+  # and it emits PPS only with a fix, so every satellite counts: Galileo on
+  # next to GPS and GLONASS (the M8's three), and the stationary model, whose
+  # tighter filter holds a fix through weak spells. Re-applied whenever a
+  # power loss or reset has dropped them.
+  - command.run:
+      run: [ubxtool, -P, '{{ vars.ptp_gps_protver }}', -e, GALILEO, 'localhost:2947:{{ vars.ptp_gps_device }}']
+      unless: "ubxtool -P {{ vars.ptp_gps_protver }} -p CFG-GNSS localhost:2947:{{ vars.ptp_gps_device }} 2>/dev/null | grep -q 'Galileo E1 enabled'"
+      timeout: 1m
+    id: gps-galileo
+    removal: leave
+  - command.run:
+      run: [ubxtool, -P, '{{ vars.ptp_gps_protver }}', -p, 'MODEL,2', 'localhost:2947:{{ vars.ptp_gps_device }}']
+      unless: "ubxtool -P {{ vars.ptp_gps_protver }} -p CFG-NAV5 localhost:2947:{{ vars.ptp_gps_device }} 2>/dev/null | grep -q 'dynModel 2 '"
+      timeout: 1m
+    id: gps-stationary
+    removal: leave
 
   # ── PTP (opt-in) ──
   - apt.package: { name: linuxptp }
