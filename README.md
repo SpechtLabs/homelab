@@ -33,6 +33,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `tailscale` | all | keeps tailscaled current; `--ssh`, exit node on `hole` |
 | `alloy` | all | logs and metrics to Loki/Mimir (homelab or spechtlabs); OTLP receiver on the collector |
 | `pi-facts` | Pis | custom fact `host.facts.script.rpi` from the HAT EEPROM |
+| `ptp-facts` | Pis, nuc, isa | custom fact `host.facts.script.ptp`: whether the NIC towards timepi timestamps PTP in hardware (ethtool) |
 | `pi-firmware` | Pis | `config.txt` (PoE+ HAT fan, Pi 5 cooling/PCIe, GPS/PPS wiring), cgroups in `cmdline.txt`; reboots on change |
 | `pi-tools` | Pi 5 | rpi-clone |
 | `headless` | Pis | No desktop: removes the Raspberry Pi OS desktop and its apps, boots to `multi-user.target` |
