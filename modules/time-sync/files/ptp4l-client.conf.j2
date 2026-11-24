@@ -21,6 +21,8 @@ clock_servo		pi
 # Only the PHC steps (on start or after a long outage); the system clock is chrony's.
 step_threshold		1.0
 logging_level		6
-use_syslog		1
-verbose			0
+# To stdout, which systemd puts in the journal. Not syslog: under its unit's
+# sandbox, Ubuntu's AppArmor profile refuses /dev/log ("disconnected path").
+use_syslog		0
+verbose			1
 summary_interval	6
