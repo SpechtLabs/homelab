@@ -1,0 +1,194 @@
+// Vendored for Backstage's gRPC docs (the bladectl-api entity in
+// catalog-info.yaml reads it with $text, which may only reference files in
+// this repo). Unchanged from upstream:
+//   https://github.com/compute-blade-community/compute-blade-agent/blob/66b586486398a7cb072cd30bc295e1ea0503e152/api/bladeapi/v1alpha1/blade.proto
+// To update: copy the new upstream file over this one and bump the commit above.
+
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+package api.bladeapi.v1alpha1;
+
+option go_package = "github.com/uptime-induestries/compute-blade-agent/api/blade/v1alpha1;bladeapiv1alpha1";
+
+// Event is an event the agent reacts to.
+//
+// IDENTIFY, IDENTIFY_CONFIRM, CRITICAL and CRITICAL_RESET can be sent to the agent with EmitEvent.
+// All events are published to WatchEvents subscribers.
+enum Event {
+  IDENTIFY = 0;
+  IDENTIFY_CONFIRM = 1;
+  CRITICAL = 2;
+  CRITICAL_RESET = 3;
+  // A button (edge button or fan unit button) was pressed. Published only, carries ButtonDetails.
+  BUTTON_PRESS = 4;
+  // The fan is commanded to spin but its tachometer reports no rotation. Published only, carries FanDetails.
+  FAN_STALL = 5;
+  // The fan is spinning again after a stall. Published only, carries FanDetails.
+  FAN_STALL_CLEAR = 6;
+  // The supply voltage is too low (Raspberry Pi firmware flag). Published only, carries ThrottleDetails.
+  UNDERVOLTAGE = 7;
+  // The supply voltage is back to normal. Published only, carries ThrottleDetails.
+  UNDERVOLTAGE_CLEAR = 8;
+  // The CPU is throttled: frequency capped, throttled or at the soft temperature limit. Published only, carries
+  // ThrottleDetails.
+  THROTTLED = 9;
+  // The CPU is no longer throttled. Published only, carries ThrottleDetails.
+  THROTTLED_CLEAR = 10;
+  // The power policy limited the CPU, or changed the limit. Published only, carries PowerLimitDetails.
+  POWER_LIMIT = 11;
+  // The power policy lifted all CPU limits. Published only, carries PowerLimitDetails.
+  POWER_LIMIT_CLEAR = 12;
+  // A gesture of the edge button was recognised (single, double, multi_press, long_press). Published whether or not
+  // an action is bound to it. Published only, carries GestureDetails.
+  BUTTON_GESTURE = 13;
+}
+
+// FanUnit defines the fan unit detected by the blade
+enum FanUnit {
+  DEFAULT = 0;
+  SMART = 1;
+}
+
+// PowerStatus defines the power status of the blade
+enum PowerStatus {
+  POE_OR_USBC = 0;
+  POE_802_AT = 1;
+}
+
+message StealthModeRequest {
+  bool enable = 1;
+}
+
+message SetFanSpeedRequest {
+  int64 percent = 1;
+}
+
+message EmitEventRequest {
+  Event event = 1;
+}
+
+message FanCurveStep {
+  int64 temperature = 1;
+  uint32 percent = 2;
+}
+
+message VersionInfo {
+  string version = 1;
+  string commit = 2;
+  int64 date = 3;
+}
+
+message StatusResponse {
+  bool stealth_mode = 1;
+  bool identify_active = 2;
+  bool critical_active = 3;
+  int64 temperature = 4;
+  int64 fan_rpm = 5;
+  PowerStatus power_status = 6;
+  uint32 fan_percent = 7;
+  bool fan_speed_automatic = 8;
+  int64 critical_temperature_threshold = 9;
+  repeated FanCurveStep fan_curve_steps = 10;
+  VersionInfo version = 11;
+  // Currently raised health conditions, e.g. "fan_stall". Empty when the blade is healthy.
+  repeated string conditions = 12;
+}
+
+message WatchEventsRequest {
+  // Only stream these event types. If empty, all events are streamed.
+  repeated Event events = 1;
+}
+
+// AgentEvent is an event published by the agent.
+message AgentEvent {
+  Event event = 1;
+  // When the event occurred on the blade.
+  google.protobuf.Timestamp timestamp = 2;
+  // Hostname of the blade that published the event.
+  string blade = 3;
+
+  // Event-specific details, if the event carries any.
+  oneof details {
+    FanDetails fan = 10;
+    ThrottleDetails throttle = 11;
+    PowerLimitDetails power_limit = 12;
+    ButtonDetails button = 13;
+    GestureDetails gesture = 14;
+  }
+}
+
+// ButtonDetails are attached to BUTTON_PRESS events.
+message ButtonDetails {
+  // The button that was pressed: "edge" or "fan_unit".
+  string source = 1;
+}
+
+// GestureDetails are attached to BUTTON_GESTURE events.
+message GestureDetails {
+  // "single", "double", "multi_press" or "long_press".
+  string gesture = 1;
+  // Number of presses for single, double and multi_press.
+  uint32 presses = 2;
+  // How long the button was held for a long_press, in milliseconds.
+  int64 held_ms = 3;
+  // What the agent ran in response: a built-in action name, "exec", or empty if nothing is bound to the gesture.
+  string action = 4;
+}
+
+// PowerLimitDetails are attached to POWER_LIMIT and POWER_LIMIT_CLEAR events.
+message PowerLimitDetails {
+  // Why the CPU is limited: "undervoltage" and/or "limited_power". Empty when the limit was lifted.
+  repeated string reasons = 1;
+  // cpufreq governor in use because of the limit, empty if the policy doesn't set one.
+  string governor = 2;
+  // CPU frequency cap in MHz, 0 if the policy doesn't set one.
+  uint32 max_freq_mhz = 3;
+}
+
+// ThrottleDetails are attached to UNDERVOLTAGE(_CLEAR) and THROTTLED(_CLEAR) events.
+message ThrottleDetails {
+  // Raw Raspberry Pi firmware throttle bitfield, as reported by `vcgencmd get_throttled`.
+  uint32 flags = 1;
+  // Decoded current-state flags.
+  bool under_voltage = 2;
+  bool arm_freq_capped = 3;
+  bool throttled = 4;
+  bool soft_temp_limit = 5;
+}
+
+// FanDetails are attached to FAN_STALL and FAN_STALL_CLEAR events.
+message FanDetails {
+  // Fan speed commanded by the agent, in percent.
+  uint32 target_percent = 1;
+  // Fan speed measured by the tachometer.
+  uint32 rpm = 2;
+}
+
+service BladeAgentService {
+  // EmitEvent emits an event to the blade
+  rpc EmitEvent(EmitEventRequest) returns (google.protobuf.Empty) {}
+
+  // WaitForIdentifyConfirm blocks until the blades button is pressed
+  rpc WaitForIdentifyConfirm(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+
+  // Sets the fan speed to a specific value.
+  rpc SetFanSpeed(SetFanSpeedRequest) returns (google.protobuf.Empty) {}
+
+  // Sets the fan speed to automatic mode.
+  //
+  // Internally, this is equivalent to calling SetFanSpeed with a nil/empty value.
+  rpc SetFanSpeedAuto(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+
+  // Sets the blade to stealth mode (disables all LEDs)
+  rpc SetStealthMode(StealthModeRequest) returns (google.protobuf.Empty) {}
+
+  // Gets the current status of the blade
+  rpc GetStatus(google.protobuf.Empty) returns (StatusResponse) {}
+
+  // Streams events as the agent handles them, until the client disconnects or the agent shuts down.
+  //
+  // Delivery is best-effort: a subscriber that falls behind by more than a small buffer misses events.
+  rpc WatchEvents(WatchEventsRequest) returns (stream AgentEvent) {}
+}
