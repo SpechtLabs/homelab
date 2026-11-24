@@ -1,9 +1,12 @@
 name: k3s-agent
 description: k3s worker nodes, joined to the server over its MagicDNS name.
 when: 'host.groups contains "k3s-agent"'
-needs: [base]
+# After the k3s server, also inside a phase: a joining agent needs its API.
+needs: [base, 'group:k3s-server']
 tags: [k3s]
-bake: 5m
+# Half the workers at a time while this module changes them (k3s restarts);
+# the fast phase holds the same line for changes from other modules.
+parallel: 2
 vars:
   k3s_server: clusterpi-leader
   k3s_api_port: 6443
@@ -51,3 +54,7 @@ actions:
 health:
   - name: unit
     systemd: { unit: k3s-agent, state: active, min_uptime: 60s }
+  # The kubelet answers its own health endpoint: the node is running pods,
+  # not just a k3s process that hasn't registered yet.
+  - name: kubelet
+    http: { url: 'http://127.0.0.1:10248/healthz', expect: { status: 200, body_contains: ok } }

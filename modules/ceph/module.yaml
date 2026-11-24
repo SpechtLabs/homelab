@@ -3,6 +3,10 @@ description: Ceph through cephadm on the storage Pis; Buckle prepares the hosts 
 when: 'host.groups contains "ceph"'
 needs: [base, tailscale]
 tags: [ceph]
+# One host at a time: each runs a mon and an OSD, and the cluster check holds
+# the next one until it has recovered. The slow phase does the same for
+# changes from other modules (reboots).
+parallel: 1
 vars:
   ceph_image: 'quay.io/ceph/ceph:v{{ vars.ceph_version }}'
   # Tailscale's CGNAT range: every tailnet address (vars/group-ceph.yaml).

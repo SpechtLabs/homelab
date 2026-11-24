@@ -3,7 +3,6 @@ description: The k3s control plane (single server, SQLite/kine datastore).
 when: 'host.groups contains "k3s-server"'
 needs: [base]
 tags: [k3s]
-bake: 10m
 vars:
   k3s_disable: [traefik]
   k3s_disable_network_policy: true
@@ -49,6 +48,10 @@ handlers:
 health:
   - name: unit
     systemd: { unit: k3s, state: active, min_uptime: 60s }
+  # The kubelet answers its own health endpoint: the node is running pods,
+  # not just a k3s process that hasn't registered yet.
+  - name: kubelet
+    http: { url: 'http://127.0.0.1:10248/healthz', expect: { status: 200, body_contains: ok } }
   - name: apiserver
     command:
       run: [/usr/local/bin/k3s, kubectl, get, --raw, /readyz]

@@ -109,9 +109,12 @@ rollout:
   trigger: auto            # every valid revision on main starts a rollout
   supersede: latest
   on_failure: pause
+  # No bakes: a host is healthy once its required checks pass (unit uptimes,
+  # kubelet and API readiness, Ceph recovered, ...), not after a fixed wait.
+  # settle is how long a failing check may keep failing while a service
+  # restarts before it counts.
   settle: 2m
   health:
-    bake: 5m
     baseline: hold
   stragglers:
     parallel: 1
@@ -120,26 +123,27 @@ rollout:
   # a revision, then core (everything else leans on these), then whatever may
   # go in parallel, then whatever must go one by one.
   phases:
-    # No approval: the canary bake and health checks are the gate. A failure
-    # pauses the rollout (on_failure: pause) before any other host. All four
-    # at once: the blades carry nothing else depends on.
+    # No approval: the blades' health checks are the gate. A failure pauses
+    # the rollout (on_failure: pause) before any other host. All four at once:
+    # the blades carry nothing else depends on.
     - name: canary
       select: 'host.groups contains "blades"'
       parallel: 4
       approval: auto
-      bake: 10m
-    # The NUC runs the Buckle server, NUT proxy, tsidp and the o11y collector
-    # (Buckle upgrades the server before its agents this way), and isa is
-    # taking those over; timepi serves
-    # the LAN's time, jumphost is the way in, clusterpi-leader is the k3s
-    # control plane (before its agents). Two at a time: none of them needs
-    # another of them up to come back.
+    # isa runs the Buckle server, tsidp, the NUT proxy and the o11y collector
+    # (Buckle upgrades the server before its agents this way), timepi serves
+    # the LAN's time, jumphost is the way in. Two at a time: none of them
+    # needs another of them up to come back.
     - name: core
-      select: 'host.id in ["nuc", "isa", "timepi", "jumphost"] || host.groups contains "k3s-server"'
+      select: 'host.id in ["nuc", "isa", "timepi", "jumphost"]'
       parallel: 2
       approval: auto
-    # Every other host: the k3s agents and meet. 2 is the limit the agents set:
-    # half the workers at a time, the other two carry the load. Hosts only: a
+    # Every other host: the k3s server and agents and meet. The agents wait
+    # for the server inside this phase (k3s-agent needs group:k3s-server).
+    # 2 is the limit the workers set: half of them at a time, the other two
+    # carry the load. It stays a phase limit because reboots come from other
+    # modules (pi-firmware, base) than the one that would carry it; Buckle's
+    # limits are per module, not per fleet group. Hosts only: a
     # selector that reads host.* is false for a cluster as a whole (an added
     # `|| cluster.*` term doesn't help), so labk3s rolls out in slow.
     - name: fast
@@ -148,7 +152,8 @@ rollout:
       approval: auto
     # One at a time: the Ceph hosts (each takes a mon and an OSD down, and the
     # ceph module's health check holds the next one until the cluster has
-    # recovered), labk3s (its one workload, the root Argo CD Application), and
+    # recovered; a phase, not just ceph's own parallel: 1, so reboots from
+    # other modules go one by one too), labk3s (its one workload, the root Argo CD Application), and
     # anything no earlier phase claims, to be safe.
     - name: slow
       select: 'true'
