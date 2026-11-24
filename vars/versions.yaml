@@ -3,7 +3,7 @@
 
 # Buckle itself: agents everywhere, and the server on isa (modules/buckle).
 # renovate: datasource=github-releases depName=SierraSoftworks/buckle extractVersion=^v(?<version>.*)$
-buckle_version: 2.21.0
+buckle_version: 2.22.0
 # compute-blade-agent (and bladectl) on the blades; keep mise.toml's bladectl in step.
 # renovate: datasource=github-releases depName=compute-blade-community/compute-blade-agent extractVersion=^v(?<version>.*)$
 compute_blade_agent_version: 0.11.5
