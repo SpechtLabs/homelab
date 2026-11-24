@@ -236,6 +236,19 @@
 				"9666", // compute-blade-agent
 			],
 		},
+		// ...and to probe the services the homelab's availability SLOs measure
+		// (vars/group-o11y-collector.yaml, o11y_probes), on the paths users take:
+		// the k3s API like kubectl, Jellyfin through its Tailscale Service.
+		{
+			"src": ["tag:o11y-collector"],
+			"dst": ["tag:homelab"],
+			"ip":  ["tcp:6443"],
+		},
+		{
+			"src": ["tag:o11y-collector"],
+			"dst": ["svc:stream"],
+			"ip":  ["tcp:443"],
+		},
 		// Synology users can reach the NAS over Tailscale. The NAS is not in
 		// tag:core-services, so this is all they get: DSM and Drive. Jellyfin is svc:stream.
 		{

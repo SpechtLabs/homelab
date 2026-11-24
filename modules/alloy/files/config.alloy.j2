@@ -134,6 +134,65 @@ prometheus.scrape "{{ scrape.name }}" {
   forward_to = [prometheus.remote_write.mimir.receiver]
 }
 {% endfor %}
+{%- if vars.o11y_probes %}
+// ── Black-box probes: the availability SLIs of the homelab's services ────────
+// probe_success{job="blackbox", service, probe} every 30 s. Grafana Cloud
+// records them into its own Prometheus, where the SLO plugin reads them
+// (SpechtLabs/k8s-deployment, grafana/slos/).
+
+prometheus.exporter.blackbox "probes" {
+  config = `
+modules:
+  http_2xx:
+    prober: http
+    timeout: 10s
+    http:
+      preferred_ip_protocol: ip4
+  http_oidc_discovery:
+    prober: http
+    timeout: 10s
+    http:
+      preferred_ip_protocol: ip4
+      fail_if_body_not_matches_regexp: ['"issuer"']
+  # The API server answers but needs credentials (k3s: no anonymous auth): a
+  # 401 proves it is up, serving TLS and authenticating.
+  http_401_insecure:
+    prober: http
+    timeout: 10s
+    http:
+      preferred_ip_protocol: ip4
+      valid_status_codes: [401]
+      tls_config:
+        insecure_skip_verify: true
+`
+{%- for probe in vars.o11y_probes %}
+
+  target {
+    name    = "{{ probe.name }}"
+    address = "{{ probe.url }}"
+    module  = "{{ probe.module }}"
+    labels  = {"service" = "{{ probe.service }}"}
+  }
+{%- endfor %}
+}
+
+discovery.relabel "probes" {
+  targets = prometheus.exporter.blackbox.probes.targets
+
+  rule {
+    source_labels = ["__param_target"]
+    target_label  = "target"
+  }
+}
+
+prometheus.scrape "probes" {
+  job_name        = "blackbox"
+  targets         = discovery.relabel.probes.output
+  scrape_interval = "30s"
+  scrape_timeout  = "15s"
+  forward_to      = [prometheus.remote_write.mimir.receiver]
+}
+{%- endif %}
 prometheus.exporter.self "self" { }
 
 prometheus.scrape "self" {

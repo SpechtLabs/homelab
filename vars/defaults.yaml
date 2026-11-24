@@ -18,6 +18,8 @@ o11y_external_labels: {}
 o11y_local_scrapes: []
 # Collector only: other machines' exporters: {name, job, targets[, path, params]}
 o11y_remote_scrapes: []
+# Collector only: black-box probes {name, service, module, url} (modules/alloy).
+o11y_probes: []
 o11y_otlp_receiver: false
 # node_exporter textfile directory (*.prom; Debian's usual one); empty: no
 # textfile collector. time-sync's chrony/ptp4l metrics on every ntp-client,
