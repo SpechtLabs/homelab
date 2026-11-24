@@ -2,10 +2,10 @@
 # chrony (modules/time-sync). timepi (GPS + PPS, stratum 1) is the source;
 # the public pool only counts when timepi is unusable.
 {% if "ptp-client" in host.groups %}
-# eth0's hardware clock, which ptp4l keeps on timepi's PTP grandmaster with
+# {{ host.facts.script.ptp.interface }}'s hardware clock, which ptp4l keeps on timepi's PTP grandmaster with
 # hardware timestamps on both ends (~100-200 ns). It runs on TAI, hence the
 # offset. `prefer`: chrony ignores the NTP sources below while it's usable.
-refclock PHC /dev/ptp0 poll 0 dpoll -2 offset -{{ vars.time_tai_utc_offset }} refid PTP prefer
+refclock PHC /dev/ptp{{ host.facts.script.ptp.phc }} poll 0 dpoll -2 offset -{{ vars.time_tai_utc_offset }} refid PTP prefer
 server {{ vars.ntp_server }} iburst minpoll 1 maxpoll 3
 {% else %}
 # timepi over NTP every 2-8 s (ntpsec doesn't rate-limit the LAN).

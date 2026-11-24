@@ -1,6 +1,6 @@
 # {{ buckle_managed }}
 # ptp4l as a slave of timepi's grandmaster (modules/ptp-server). It only
-# steers eth0's hardware clock; chrony disciplines the system clock from it
+# steers {{ host.facts.script.ptp.interface }}'s hardware clock; chrony disciplines the system clock from it
 # (refclock PHC in chrony.conf).
 [global]
 slaveOnly		1

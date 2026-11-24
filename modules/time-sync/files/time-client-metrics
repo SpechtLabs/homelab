@@ -1,9 +1,11 @@
 #!/bin/sh
 # Time client metrics for node_exporter's textfile collector (modules/time-sync):
 # chrony's tracking and, on PTP clients, ptp4l's view of timepi. Read-only
-# queries with short timeouts; written atomically. Usage: time-client-metrics DIR
+# queries with short timeouts; written atomically.
+# Usage: time-client-metrics DIR [PTP-INTERFACE]
 set -u
-dir=${1:?usage: time-client-metrics DIR}
+dir=${1:?usage: time-client-metrics DIR [PTP-INTERFACE]}
+ptp_if=${2:-}
 out="$dir/time_client.prom"
 tmp="$out.$$"
 trap 'rm -f "$tmp"' EXIT
@@ -37,7 +39,7 @@ else
 fi
 
 up_ptp=""
-if systemctl is-active -q ptp4l@eth0 2>/dev/null; then
+if [ -n "$ptp_if" ] && systemctl is-active -q "ptp4l@$ptp_if" 2>/dev/null; then
   st=$(timeout 5 pmc -u -b 0 'GET TIME_STATUS_NP' 'GET CURRENT_DATA_SET' 'GET PORT_DATA_SET' 2>/dev/null)
   echo "$st" | awk '
     /master_offset/ { o = $2 } /meanPathDelay/ { d = $2 } /portState/ { s = $2 } /gmPresent/ { gm = ($2 == "true") ? 1 : 0 }

@@ -6,7 +6,7 @@ After=chrony.service
 [Service]
 Type=oneshot
 # Root for chronyc (chrony.conf: cmdport 0, the local socket only) and pmc.
-ExecStart=/usr/local/sbin/time-client-metrics {{ vars.o11y_textfile_dir }}
+ExecStart=/usr/local/sbin/time-client-metrics {{ vars.o11y_textfile_dir }}{% if "ptp-client" in host.groups %} {{ host.facts.script.ptp.interface }}{% endif %}
 TimeoutStartSec=20s
 ReadWritePaths={{ vars.o11y_textfile_dir }} /run
 ProtectSystem=strict

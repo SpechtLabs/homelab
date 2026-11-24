@@ -43,6 +43,11 @@
       "hat_product": "",
       "hat_vendor": "",
       "nvme": false
+    },
+    "ptp": {
+      "hardware": false,
+      "interface": "eth0",
+      "phc": null
     }
   },
   "cloud": null

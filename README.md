@@ -42,7 +42,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `nut-client` | Pis | upsmon + upssched; early or late shutdown |
 | `k3s-server` | clusterpi-leader | k3s control plane |
 | `k3s-agent` | clusterpi-worker* | k3s workers; *action*: reboot |
-| `time-sync` | Pis, nuc, isa | systemd-timesyncd from timepi over the LAN, public pools as fallback |
+| `time-sync` | Pis, nuc, isa | chrony from timepi: PTP with hardware timestamps (ptp4l) where `ptp-facts` finds the NIC can (Pi 5s, blades, isa), NTP elsewhere; public pool as fallback |
 | `ptp-server` | timepi | GPS + PPS discipline ntpsec (NTP); phc2sys copies the clock to eth0's PHC and ptp4l serves PTP from it; `time-metrics` exports ntpsec, gpsd, PPS and PTP state as node_exporter textfiles |
 | `tsidp` | isa | tailnet OIDC provider |
 | `buckle` | all | Buckle itself at `buckle_version`; restarts the agent (and the server on isa) after the run |

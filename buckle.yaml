@@ -20,13 +20,13 @@ fleet:
     ptp-grandmaster: 'host.id == "timepi"'
     # Everything at home that keeps its own clock syncs from timepi over the LAN.
     ntp-client:      '(host.facts.hardware.raspberry_pi.version != null || host.id in ["nuc", "isa"]) && host.id != "timepi"'
-    # Clients whose NIC timestamps PTP in hardware and has an adjustable clock:
-    # the Pi 5s (macb) and the CM4 blades (BCM54210PE PHY). Needs a kernel past
-    # 6.12.34 (its PHCs refuse every adjustment); every Pi runs 6.12.115 since
-    # 2026-11-19 and the nightly upgrades keep it that way. Not a kernel fact
-    # here: the agent reported its pre-reboot kernel for a while after the
-    # upgrade, which kept the Ceph Pis on NTP.
-    ptp-client:      '(host.facts.hardware.raspberry_pi.version == 5 || host.id like "blade-pi*") && host.id != "timepi"'
+    # Clients whose NIC timestamps PTP in hardware and has its own clock, as
+    # modules/ptp-facts finds out with ethtool (the Pi 5s, the CM4 blades and
+    # isa today; not the Pi 4s or the NUC). Only ntp-client hosts report it,
+    # so timepi and the VPSs stay out. Needs a Pi kernel past 6.12.34 (its
+    # PHCs refuse every adjustment); every Pi runs 6.12.115 since 2026-11-19
+    # and the nightly upgrades keep it that way.
+    ptp-client:      'host.facts.script.ptp.hardware == true'
     # By host, not by tag: a retag reaches Buckle only when the agent next
     # reports facts, so a tag-derived role can't move in one rollout. The
     # tag still grants the network access (tailscale/policy.hujson).
