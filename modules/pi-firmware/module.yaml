@@ -149,4 +149,4 @@ health:
   - name: watchdog-armed
     command:
       run: [systemctl, show, -p, RuntimeWatchdogUSec, --value]
-      expect: { stdout_matches: '^15s$' }
+      expect: { stdout_matches: '(?m)^15s$' }
