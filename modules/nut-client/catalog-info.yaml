@@ -10,6 +10,8 @@ metadata:
     shut down early on battery; jumphost and timepi (nut-late) last.
   annotations:
     github.com/project-slug: cedi/homelab
+    # The tags its traffic comes from on the tailnet (the hosts').
+    specht-labs.de/tailnet-src: tag:homelab
 spec:
   type: service
   owner: group:spechtlabs

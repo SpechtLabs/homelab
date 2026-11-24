@@ -39,6 +39,13 @@ metadata:
   name: buckle-agent-api
   title: Buckle agent API
   description: The gRPC endpoint Buckle agents connect to.
+  annotations:
+    # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
+    # Tailscale grants from these annotations (shadow mode: compared with
+    # tailscale/policy.hujson, not applied).
+    # The server's host directly, or svc:buckle in front of it.
+    specht-labs.de/tailnet-dst: tag:buckle-server,svc:buckle
+    specht-labs.de/tailnet-ports: tcp:7700
 spec:
   type: grpc
   owner: group:spechtlabs

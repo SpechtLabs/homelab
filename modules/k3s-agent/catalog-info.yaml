@@ -10,6 +10,8 @@ metadata:
     Rolled one worker at a time after the server, each drained first.
   annotations:
     github.com/project-slug: cedi/homelab
+    # The tags its traffic comes from on the tailnet (the workers').
+    specht-labs.de/tailnet-src: tag:homelab
 spec:
   type: service
   owner: group:spechtlabs

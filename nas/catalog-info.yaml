@@ -78,10 +78,34 @@ spec:
   owner: group:spechtlabs
   system: homelab
   lifecycle: production
+  providesApis:
+    - api:jellyfin-web
   dependsOn:
     - resource:nas
     - resource:tailnet
     - component:synology-dsm
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: jellyfin-web
+  title: Jellyfin web
+  description: Jellyfin's web UI and HTTP API, behind the Tailscale Service svc:stream.
+  annotations:
+    # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
+    # Tailscale grants from these annotations (shadow mode: compared with
+    # tailscale/policy.hujson, not applied). People's access (group:synology-users)
+    # stays hand-written there.
+    specht-labs.de/tailnet-dst: svc:stream
+    specht-labs.de/tailnet-ports: tcp:443
+spec:
+  type: http
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  definition: |
+    Base URL: https://stream.sphinx-map.ts.net (svc:stream, tcp:443)
+    Jellyfin's web UI and REST API; the o11y collector probes it for the SLO.
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Component

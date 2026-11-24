@@ -33,6 +33,12 @@ metadata:
   name: labk3s-kubernetes-api
   title: labk3s Kubernetes API
   description: The labk3s API server.
+  annotations:
+    # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
+    # Tailscale grants from these annotations (shadow mode: compared with
+    # tailscale/policy.hujson, not applied).
+    specht-labs.de/tailnet-dst: tag:homelab
+    specht-labs.de/tailnet-ports: tcp:6443
 spec:
   type: kubernetes
   owner: group:spechtlabs
