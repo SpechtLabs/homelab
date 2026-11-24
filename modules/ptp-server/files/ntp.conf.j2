@@ -1,6 +1,6 @@
 # {{ buckle_managed }}
-# /etc/ntpsec/ntp.conf: GPS PPS through gpsd (SHM 1), with the public pool as
-# a fallback. See ntp.conf(5).
+# /etc/ntpsec/ntp.conf: GPS PPS through gpsd (SHM 1), with PTB's stratum 1s and
+# the public pool as the fallback. See ntp.conf(5).
 
 driftfile /var/lib/ntpsec/ntp.drift
 leapfile /usr/share/zoneinfo/leap-seconds.list
@@ -8,6 +8,11 @@ leapfile /usr/share/zoneinfo/leap-seconds.list
 tos maxclock 11
 tos minclock 1 minsane 1
 
+# Stratum 1 at PTB (Braunschweig), Germany's legal time, ~20 ms away: the
+# fallback whenever the GPS has no fix, ahead of the pool's random stratum 2s.
+server ptbtime1.ptb.de iburst
+server ptbtime2.ptb.de iburst
+server ptbtime3.ptb.de iburst
 pool 0.pool.ntp.org iburst
 pool 1.pool.ntp.org iburst
 pool 2.pool.ntp.org iburst

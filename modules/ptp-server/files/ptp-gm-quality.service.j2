@@ -1,0 +1,9 @@
+# {{ buckle_managed }}
+[Unit]
+Description=Announce what the PTP grandmaster's clock is locked to (GPS, NTP or nothing)
+After=ptp4l@{{ vars.ptp_interface }}.service ntpsec.service
+Requisite=ptp4l@{{ vars.ptp_interface }}.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ptp-gm-quality {{ vars.time_tai_utc_offset }}

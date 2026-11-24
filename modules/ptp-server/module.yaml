@@ -1,5 +1,5 @@
 name: ptp-server
-description: GPS-disciplined time server. gpsd + PPS feed ntpsec (NTP); ptp4l and phc2sys serve PTP once ptp_enabled; time-metrics exports all of it.
+description: GPS-disciplined time server. gpsd + PPS feed ntpsec (NTP), PTB and the pool when the GPS has no fix; ptp4l and phc2sys serve PTP once ptp_enabled, announcing the clock's real quality; time-metrics exports all of it.
 when: 'host.groups contains "ptp-grandmaster"'
 needs: [pi-firmware, alloy]  # config.txt: the PPS overlay and UART; alloy: the textfile directory
 tags: [time]
@@ -90,8 +90,9 @@ tasks:
         # A grandmaster's time properties come from pmc, not ptp4l.conf: without
         # this it announced currentUtcOffsetValid 0 and timeTraceable 0, which
         # tells clients to distrust its UTC offset. GPS-traceable, TAI-UTC 37 s,
-        # static like clockClass 6 (ntpsec holds over if GPS goes). Retries until
-        # ptp4l's socket answers; a failure doesn't fail ptp4l.
+        # clockClass 6 at start; ptp-gm-quality (below) keeps class, accuracy
+        # and source current. Retries until ptp4l's socket answers; a failure
+        # doesn't fail ptp4l.
         ExecStartPost=-/bin/sh -c 'for i in $$(seq 30); do pmc -u -b 0 "SET GRANDMASTER_SETTINGS_NP clockClass 6 clockAccuracy 0x21 offsetScaledLogVariance 0xffff currentUtcOffset {{ vars.time_tai_utc_offset }} leap61 0 leap59 0 currentUtcOffsetValid 1 ptpTimescale 1 timeTraceable 1 frequencyTraceable 1 timeSource 0x20" 2>/dev/null | grep -q "currentUtcOffsetValid *1" && exit 0; sleep 1; done'
         TimeoutStartSec=120
         Restart=on-failure
@@ -104,6 +105,26 @@ tasks:
     when: 'vars.ptp_enabled == true'
   - systemd.unit: { name: 'phc2sys-{{ vars.ptp_interface }}', enabled: true, active: true, daemon_reload: true }
     id: phc2sys-service
+    when: 'vars.ptp_enabled == true'
+
+  # What the grandmaster announces follows what ntpsec follows: clockClass 6
+  # and timeSource GPS only while PPS is selected, 52/NTP on the network
+  # fallback, 248 when nothing is. The antenna loses the sky now and then, and
+  # clients (and their dashboards) should see when timepi is on fallback time
+  # instead of a static class 6. The drop-in's ExecStartPost sets class 6 at
+  # start; this corrects it within 15 s.
+  - file.copy: { src: ptp-gm-quality.sh, dest: /usr/local/sbin/ptp-gm-quality, mode: "0755" }
+    when: 'vars.ptp_enabled == true'
+  - file.template:
+      src: ptp-gm-quality.service.j2
+      dest: /etc/systemd/system/ptp-gm-quality.service
+      mode: "0644"
+    when: 'vars.ptp_enabled == true'
+    notify: [daemon-reload]
+  - file.copy: { src: ptp-gm-quality.timer, dest: /etc/systemd/system/ptp-gm-quality.timer, mode: "0644" }
+    when: 'vars.ptp_enabled == true'
+    notify: [daemon-reload]
+  - systemd.unit: { name: ptp-gm-quality.timer, enabled: true, active: true, daemon_reload: true }
     when: 'vars.ptp_enabled == true'
 
   # ── Metrics ──
@@ -141,11 +162,15 @@ health:
     command:
       run: [ntpq, -pn]
       expect: { stdout_matches: '(?m)^\*' }      # some source is selected
-  # GPS: gpsd's PPS (SHM 1) is the clock ntpsec follows.
+  # GPS: gpsd's PPS (SHM 1) is the clock ntpsec follows. Informational: the
+  # antenna loses the sky several times a day and ntpsec then serves network
+  # time (ntp-synced above gates rollouts). Grafana alerts on a long PPS loss
+  # (k8s-deployment, grafanaalertrules-time-sync.yaml).
   - name: gps-pps-selected
     command:
       run: [ntpq, -pn]
       expect: { stdout_matches: '(?m)^\*SHM\(1\)\s+\.PPS\.' }
+    required: false
   # PTP (health checks take no `when`: drop these two with ptp_enabled: false).
   - name: ptp4l-master
     command:
