@@ -22,13 +22,26 @@ tasks:
   - file.template: { src: ptp4l-client.conf.j2, dest: /etc/linuxptp/ptp4l.conf, mode: "0644" }
     when: 'host.groups contains "ptp-client"'
     notify: [restart-ptp4l]
-  # Where AppArmor enforces (Ubuntu: isa), linuxptp's profile lacks a rule for
-  # pmc's reply socket; the profile's local include takes it. Reloading
-  # applies it to the running ptp4l.
-  - file.copy: { src: apparmor-ptp4l.local, dest: /etc/apparmor.d/local/usr.sbin.ptp4l, mode: "0644" }
-    id: ptp4l-apparmor
+  # Where AppArmor enforces (Ubuntu: isa), linuxptp's profile can't work with
+  # the sandbox its own ptp4l@ unit sets up: in the unit's mount namespace
+  # every client socket is a "disconnected path" to the profile (it lacks
+  # attach_disconnected), so ptp4l can never answer pmc (chrony's start gate,
+  # chrony-follow-ptp, time-client-metrics). The systemd sandbox stays; the
+  # profile goes, as on the Pis, which run without AppArmor. disable/ keeps
+  # it unloaded across reboots and package upgrades.
+  - file.symlink:
+      path: /etc/apparmor.d/disable/usr.sbin.ptp4l
+      target: /etc/apparmor.d/usr.sbin.ptp4l
+    id: ptp4l-apparmor-disabled
     when: 'host.groups contains "ptp-client" && host.facts.systemd.active contains "apparmor.service"'
-    notify: [reload-ptp4l-apparmor]
+  # A ptp4l still confined (the profile was loaded when it started) is
+  # unloaded and restarted: a socket keeps the label it was created with.
+  - command.run:
+      run: [sh, -c, 'apparmor_parser -R /etc/apparmor.d/usr.sbin.ptp4l; systemctl restart ptp4l@{{ host.facts.script.ptp.interface }} && systemctl restart chrony']
+      only_if: 'pid=$(pgrep -x ptp4l) && grep -q "^ptp4l " /proc/$pid/attr/current'
+    id: ptp4l-unconfined
+    when: 'host.groups contains "ptp-client" && host.facts.systemd.active contains "apparmor.service"'
+    removal: leave
   # The NIC's hardware clock appears only once the link is up; a ptp4l started
   # earlier stays FAULTY for good (as on timepi, modules/ptp-server).
   - systemd.dropin:
@@ -112,7 +125,6 @@ handlers:
   daemon-reload: { systemd.daemon_reload: {} }
   restart-chrony: { command.run: { run: [sh, -c, 'systemctl daemon-reload && systemctl restart chrony'] } }
   # chrony restarts behind ptp4l: its drop-in waits for SLAVE (chrony-after-ptp4l).
-  reload-ptp4l-apparmor: { command.run: { run: [sh, -c, 'test ! -e /etc/apparmor.d/usr.sbin.ptp4l || apparmor_parser -r /etc/apparmor.d/usr.sbin.ptp4l'] } }
   restart-ptp4l: { command.run: { run: [sh, -c, 'systemctl daemon-reload && systemctl restart ptp4l@{{ host.facts.script.ptp.interface }} && systemctl restart chrony'] } }
 
 health:

@@ -7,6 +7,11 @@ slaveOnly		1
 domainNumber		0
 network_transport	UDPv4
 delay_mechanism		E2E
+# Delay_Req by unicast to the grandmaster (it answers by multicast as before).
+# Multicast ones reach every client, and a NIC that latches one receive
+# timestamp at a time (isa's I219) then misses Syncs: "received SYNC without
+# timestamp", rms ~700 ns instead of ~130.
+hybrid_e2e		1
 time_stamping		hardware
 {% if "pi5" in host.groups %}
 # The Pi 5's Ethernet (macb) can only timestamp all received packets or none.

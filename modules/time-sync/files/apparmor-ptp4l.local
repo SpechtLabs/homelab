@@ -1,5 +1,0 @@
-# Managed by Buckle (modules/time-sync). Site rules for the AppArmor profile
-# Ubuntu's linuxptp ships (/etc/apparmor.d/usr.sbin.ptp4l): it has none for
-# pmc's reply socket, so ptp4l could never answer pmc (chrony's start gate,
-# the chrony-follow-ptp guard, time-client-metrics).
-@{run}/pmc.[0-9]* rw,
