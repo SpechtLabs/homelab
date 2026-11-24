@@ -3,6 +3,9 @@ description: The k3s control plane (single server, SQLite/kine datastore).
 when: 'host.groups contains "k3s-server"'
 needs: [base]
 tags: [k3s]
+# A change here restarts k3s under the node's pods: labk3s drains the node
+# first (maintenance in buckle.yaml).
+disrupts: node
 vars:
   k3s_disable: [traefik]
   k3s_disable_network_policy: true

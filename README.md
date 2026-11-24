@@ -76,16 +76,17 @@ mise exec -- buckle validate --config . $(printf -- '--facts %s ' fixtures/facts
 - **Change something**: open a PR. CI dry-plans every host, and once it's merged the server
   rolls it out.
 - **Upgrade k3s / Alloy / rpi_exporter / tsidp**: merge the renovate PR that bumps
-  `vars/versions.yaml`. k3s goes server first, then two agents at a time.
+  `vars/versions.yaml`. k3s goes server first, then one agent at a time, each node drained
+  before its k3s restarts and uncordoned once it's healthy.
 - **Upgrade Buckle**: merge renovate's `buckle` PR (`buckle_version` in `vars/versions.yaml` and
   the CLI in `mise.toml`). The `buckle` module updates every host through the phases: the blades
-  (`canary`, all four), then isa (server) with the rest of `core` (two at a time), then `fast`
-  (two at a time) and `slow` (one at a time: the Ceph hosts); agents restart into the new version
-  90 seconds after their run.
+  (`canary`, all four), then isa (server) with the rest of `core` (two at a time), then `fleet`
+  (four at a time, one Ceph host and one k3s worker at most); agents restart into the new
+  version 90 seconds after their run.
   Major versions are left to you: read the release notes and upgrade the server first.
 - **Package upgrades**: `schedules/nightly-upgrades.yaml` runs `base: upgrade` on every host at
   03:00 Europe/Berlin through the normal phases, and reboots only the hosts that need it, one
-  or two at a time. Its runs show on the Schedules page; a failed host pauses that night's
+  Ceph host and one k3s node at a time (drained first). Its runs show on the Schedules page; a failed host pauses that night's
   rollout like any other.
 - **Blades from here**: `mise run bladectl-config` finds the blades with `bladectl discover`
   (mDNS, so on their LAN; elsewhere it refreshes the configured ones) and fetches each one's

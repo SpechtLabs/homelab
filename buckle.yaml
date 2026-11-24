@@ -53,6 +53,11 @@ fleet:
       executors: 'host.groups contains "k3s-server"'
       identity: local
       labels: { site: home }
+      # A rollout cordons and drains a node before a run that disrupts it (a
+      # reboot, or a change to a module marked disrupts: node: k3s-server,
+      # k3s-agent) and uncordons it once the host is healthy again. 10m for
+      # the pods to move before the drain counts as failed.
+      maintenance: { drain: disruptive, deadline: 10m }
 
 # Broad to narrow; later wins. Module defaults sit below all of these.
 vars:
@@ -123,9 +128,9 @@ rollout:
   stragglers:
     parallel: 1
     approval: auto
-  # A host belongs to the first phase that selects it. Order: the blades prove
-  # a revision, then core (everything else leans on these), then whatever may
-  # go in parallel, then whatever must go one by one.
+  # A host belongs to the first phase that selects it. The blades prove a
+  # revision, then core (everything else leans on these), then the rest in one
+  # phase, ordered and limited by the modules themselves.
   phases:
     # No approval: the blades' health checks are the gate. A failure pauses
     # the rollout (on_failure: pause) before any other host. All four at once:
@@ -142,24 +147,18 @@ rollout:
       select: 'host.id in ["nuc", "isa", "timepi", "jumphost"]'
       parallel: 2
       approval: auto
-    # Every other host: the k3s server and agents and meet. The agents wait
-    # for the server inside this phase (k3s-agent needs group:k3s-server).
-    # 2 is the limit the workers set: half of them at a time, the other two
-    # carry the load. It stays a phase limit because reboots come from other
-    # modules (pi-firmware, base) than the one that would carry it; Buckle's
-    # limits are per module, not per fleet group. Hosts only: a
-    # selector that reads host.* is false for a cluster as a whole (an added
-    # `|| cluster.*` term doesn't help), so labk3s rolls out in slow.
-    - name: fast
-      select: 'host.groups contains "debian" && !(host.groups contains "ceph")'
-      parallel: 2
-      approval: auto
-    # One at a time: the Ceph hosts (each takes a mon and an OSD down, and the
-    # ceph module's health check holds the next one until the cluster has
-    # recovered; a phase, not just ceph's own parallel: 1, so reboots from
-    # other modules go one by one too), labk3s (its one workload, the root Argo CD Application), and
-    # anything no earlier phase claims, to be safe.
-    - name: slow
+    # Everything else, hosts and labk3s: the k3s server and agents, the Ceph
+    # hosts and meet. The modules set the order and the limits, not phases:
+    #  - a module's parallel counts every host that runs it while that host's
+    #    plan changes anything, whichever module changes it (a reboot from
+    #    base or pi-firmware included). So ceph (parallel: 1) is one Ceph host
+    #    at a time and k3s-agent (parallel: 1) one worker at a time;
+    #  - k3s-agent needs group:k3s-server: the workers follow the server;
+    #  - labk3s drains a node around a run that disrupts it (maintenance), and
+    #    the drain holds the host's slot until the node is back.
+    # 4 is what those limits leave room for: the k3s server or a worker, a
+    # Ceph host and meet at once.
+    - name: fleet
       select: 'true'
-      parallel: 1
+      parallel: 4
       approval: auto

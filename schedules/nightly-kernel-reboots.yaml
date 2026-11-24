@@ -3,8 +3,9 @@
 # `reboot-if-required`). The upgrade action only reboots when its own run
 # changed something, so a kernel installed by an earlier run, or by hand,
 # would otherwise wait forever. Same phases: the blades together, core two at
-# a time, the k3s agents two at a time, the Ceph nodes one by one, each phase
-# gated on health; a host with nothing pending doesn't reboot.
+# a time, then the fleet phase with one Ceph host and one k3s node at a time
+# (drained around the reboot), gated on health; a host with nothing pending
+# doesn't reboot.
 description: Reboot hosts with a pending kernel, one phase at a time.
 cron: "30 5 * * *"
 timezone: Europe/Berlin
