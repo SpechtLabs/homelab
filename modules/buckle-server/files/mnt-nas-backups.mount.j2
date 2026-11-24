@@ -1,0 +1,15 @@
+# {{ buckle_managed }}
+# The NAS's backup share over NFS (modules/buckle-server), for the Buckle
+# database backup. Mounted when buckle-backup runs, not at boot: a NAS that is
+# down must not hold up the server host.
+[Unit]
+Description=NAS backup share ({{ vars.buckle_backup_nfs_export }})
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Mount]
+What={{ vars.buckle_backup_nfs_export }}
+Where=/mnt/nas/backups
+Type=nfs
+Options=nfsvers=3,soft,timeo=150,retrans=3,_netdev
+TimeoutSec=60

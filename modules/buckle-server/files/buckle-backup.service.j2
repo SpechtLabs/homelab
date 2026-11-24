@@ -1,0 +1,11 @@
+# {{ buckle_managed }}
+[Unit]
+Description=Back up the Buckle server's database (local and NAS)
+Wants=mnt-nas-backups.mount
+After=mnt-nas-backups.mount
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/buckle-backup {{ vars.o11y_textfile_dir }}
+Nice=10
+IOSchedulingClass=idle

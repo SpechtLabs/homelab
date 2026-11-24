@@ -1,0 +1,42 @@
+name: buckle-server
+description: The Buckle server's host. Nightly database backup, kept locally and on the NAS over NFS.
+when: 'host.groups contains "buckle-server"'
+needs: [alloy]               # the textfile directory the backup's metric goes to
+tags: [buckle]
+vars:
+  # The NAS's NFS export for these backups (its own folder: they go into its
+  # root). DSM: Shared Folder → NFS Permissions, read/write for this host's
+  # tailnet address, no squash. The Synology speaks NFS v3 only (v4 is off).
+  buckle_backup_nfs_export: 'nas.sphinx-map.ts.net:/volume1/homelab/buckle'
+tasks:
+  # sqlite3 for a consistent copy of a live database (.backup), nfs-common to
+  # mount the NAS.
+  - apt.package: { names: [sqlite3, nfs-common] }
+
+  - file.copy: { src: buckle-backup.sh, dest: /usr/local/sbin/buckle-backup, mode: "0755" }
+  - file.template:
+      src: mnt-nas-backups.mount.j2
+      dest: /etc/systemd/system/mnt-nas-backups.mount
+      mode: "0644"
+    notify: [daemon-reload]
+  - file.template:
+      src: buckle-backup.service.j2
+      dest: /etc/systemd/system/buckle-backup.service
+      mode: "0644"
+    notify: [daemon-reload]
+  - file.copy: { src: buckle-backup.timer, dest: /etc/systemd/system/buckle-backup.timer, mode: "0644" }
+    notify: [daemon-reload]
+  - systemd.unit: { name: buckle-backup.timer, enabled: true, active: true, daemon_reload: true }
+
+handlers:
+  daemon-reload: { systemd.daemon_reload: {} }
+
+health:
+  # Informational: a missed night mustn't hold a rollout. Grafana alerts when
+  # the NAS copy is older than 26 h (k8s-deployment, grafanaalertrules-homelab.yaml).
+  - name: backup-recent
+    file:
+      path: '{{ vars.o11y_textfile_dir }}/buckle_backup.prom'
+      max_age: 26h
+      contains: 'target="nas"'
+    required: false

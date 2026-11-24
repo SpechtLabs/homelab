@@ -87,8 +87,9 @@ without a control plane, hosts unaffected): stage the binary, `/etc/buckle` and 
 server stopped (over the LAN: Tailscale SSH refuses host-to-host logins), start it on the new host
 and run the two `serve` commands there. Agents reconnect through the Service by themselves.
 
-Nightly backup: install `bootstrap/backup.sh` as a cron job or timer on isa. Everything
-else can be rebuilt from git and the secrets.
+Nightly backup: the `buckle-server` module backs the database up at 01:30, kept 3 days on
+the server host and 14 days on the NAS (NFS export `vars.buckle_backup_nfs_export`); Grafana alerts
+when the NAS copy is older than 26 hours. Everything else can be rebuilt from git and the secrets.
 
 ## 4. Enrol the existing hosts
 

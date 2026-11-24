@@ -44,6 +44,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `ptp-server` | timepi | GPS + PPS discipline ntpsec (NTP); phc2sys copies the clock to eth0's PHC and ptp4l serves PTP from it; `time-metrics` exports ntpsec, gpsd, PPS and PTP state as node_exporter textfiles |
 | `tsidp` | isa | tailnet OIDC provider |
 | `buckle` | all | Buckle itself at `buckle_version`; restarts the agent (and the server on isa) after the run |
+| `buckle-server` | isa | the Buckle server's nightly database backup: local and on the NAS (NFS) |
 | `compute-blade-agent` | blade-pi* | compute-blade-agent: fan curve, health LEDs (fan stall, under-voltage, throttling), power policy, button gestures (hold 5s: shutdown, 5 presses: power off), metrics on :9666, bladectl's mTLS API on :8081 announced via mDNS; renews its certificates |
 | `jitsi` | meet | Jitsi Meet: Prosody, jicofo, videobridge, nginx, coturn configs and pinned package versions |
 | `argocd-seed` | clusterpi-leader | installs Argo CD only on a cluster that has none, from k8s-deployment, with the age key |
