@@ -34,6 +34,13 @@
     "backend_state": "Running",
     "tailnet": "cedi.github"
   },
-  "script": {},
+  "script": {
+    "ptp": {
+      "hardware": false,
+      "interface": "eth0",
+      "lan": false,
+      "phc": null
+    }
+  },
   "cloud": null
 }

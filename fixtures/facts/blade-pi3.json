@@ -42,11 +42,13 @@
     "rpi": {
       "hat_product": "",
       "hat_vendor": "",
-      "nvme": true
+      "nvme": true,
+      "pps_gpio": false
     },
     "ptp": {
       "hardware": true,
       "interface": "eth0",
+      "lan": true,
       "phc": 0
     }
   },

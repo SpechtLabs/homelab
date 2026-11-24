@@ -37,6 +37,7 @@
     "ptp": {
       "hardware": false,
       "interface": "enp3s0",
+      "lan": true,
       "phc": null
     }
   },

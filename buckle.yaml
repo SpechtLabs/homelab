@@ -20,16 +20,19 @@ fleet:
     # no ID of its own (no HAT EEPROM; its fan unit and I2C show up only once
     # compute-blade-agent's overlays are in), so the CM4 is the hardware fact.
     blades:     'host.facts.hardware.raspberry_pi.compute_module == true'
-    ptp-grandmaster: 'host.id == "timepi"'
-    # Everything at home that keeps its own clock syncs from timepi over the LAN.
-    ntp-client:      '(host.facts.hardware.raspberry_pi.version != null || host.id in ["nuc", "isa"]) && host.id != "timepi"'
-    # Clients whose NIC timestamps PTP in hardware and has its own clock, as
-    # modules/ptp-facts finds out with ethtool (the Pi 5s, the CM4 blades and
-    # isa today; not the Pi 4s or the NUC). Only ntp-client hosts report it,
-    # so timepi and the VPSs stay out. Needs a Pi kernel past 6.12.34 (its
+    # The GPS board's PPS is wired to a GPIO (modules/pi-facts). The board has
+    # no ID EEPROM, so its overlay is declared once with the host's hardware
+    # (vars/host-timepi.yaml, rpi_gps_pps); the role follows from the result.
+    ptp-grandmaster: 'host.facts.script.rpi.pps_gpio == true'
+    # Everything on the home LAN syncs from timepi (modules/ptp-facts: timepi
+    # is on-link; false on timepi itself and on hosts elsewhere).
+    ntp-client:      'host.facts.script.ptp.lan == true'
+    # ... by PTP where the NIC timestamps in hardware and has its own clock,
+    # as ptp-facts finds out with ethtool (the Pi 5s, the CM4 blades and isa
+    # today; not the Pi 4s or the NUC). Needs a Pi kernel past 6.12.34 (its
     # PHCs refuse every adjustment); every Pi runs 6.12.115 since 2026-11-19
     # and the nightly upgrades keep it that way.
-    ptp-client:      'host.facts.script.ptp.hardware == true'
+    ptp-client:      'host.facts.script.ptp.lan == true && host.facts.script.ptp.hardware == true'
     # By host, not by tag: a retag reaches Buckle only when the agent next
     # reports facts, so a tag-derived role can't move in one rollout. The
     # tag still grants the network access (tailscale/policy.hujson).

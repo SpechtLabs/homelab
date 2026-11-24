@@ -40,6 +40,7 @@
     "ptp": {
       "hardware": true,
       "interface": "eno1",
+      "lan": true,
       "phc": 0
     }
   },
