@@ -115,6 +115,10 @@ rollout:
   # restarts before it counts.
   settle: 2m
   health:
+    # Explicitly zero: the default (5m) holds each phase after its last apply.
+    # Before a phase starts, every host the rollout already updated is checked
+    # again; that, not a wait, is the gate.
+    bake: 0s
     baseline: hold
   stragglers:
     parallel: 1
