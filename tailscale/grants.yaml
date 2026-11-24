@@ -1,0 +1,123 @@
+# Capability grants as Backstage catalog entities (kind TailscaleGrant).
+#
+# Each one mirrors a grant in policy.hujson that carries application
+# capabilities, and names the services it is for (spec.targets): their
+# Backstage pages show it, and Backstage's tailnet-policy plugin renders it
+# into the generated policy and compares it with the hand-written one
+# (shadow mode: nothing here is applied).
+#
+# Backstage reads this file as a catalog location of its own, the only one
+# allowed to define TailscaleGrant (k8s-deployment's Backstage config). Keep
+# it out of the repo-root catalog-info.yaml's Location: entities read through
+# that one would be rejected.
+#
+# src, dst, ip and app are the grant's own fields, as in policy.hujson.
+# Sources are groups or tags, destinations tags or Tailscale Services; grants
+# with autogroups or wildcards stay hand-written.
+apiVersion: specht-labs.de/v1alpha1
+kind: TailscaleGrant
+metadata:
+  name: tka-admins
+  title: Admins get cluster-admin through TKA
+  description: >-
+    group:admins sign in to both clusters through TKA as cluster-admin, for
+    an hour at a time.
+spec:
+  owner: group:spechtlabs
+  system: homelab
+  targets:
+    - component:tka
+    - component:tka-labk3s
+  src: [group:admins]
+  dst: [tag:tka]
+  ip: ['*']
+  app:
+    specht-labs.de/cap/tka:
+      - role: cluster-admin
+        period: 1h
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: TailscaleGrant
+metadata:
+  name: tsidp-admins
+  title: Admins manage tsidp and administer Buckle
+  description: >-
+    group:admins use tsidp's admin UI and register OIDC clients. Their tokens
+    carry groups ["buckle-admins"], which Buckle's admin_acl checks.
+spec:
+  owner: group:spechtlabs
+  system: homelab
+  targets:
+    - component:tsidp
+    - component:buckle-server
+  src: [group:admins]
+  dst: [tag:tsidp]
+  ip: ['*']
+  app:
+    tailscale.com/cap/tsidp:
+      - allow_admin_ui: true
+        allow_dcr: true
+        extraClaims:
+          groups: [buckle-admins]
+        includeInUserInfo: true
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: TailscaleGrant
+metadata:
+  name: tsidp-grafana-admins
+  title: Admins are Grafana admins
+  description: >-
+    group:admins get groups ["grafana-admins"] in their tsidp tokens; Grafana
+    maps it to its Admin role. tsidp unions list claims across grants.
+spec:
+  owner: group:spechtlabs
+  system: homelab
+  targets:
+    - component:tsidp
+  src: [group:admins]
+  dst: [tag:tsidp]
+  ip: ['*']
+  app:
+    tailscale.com/cap/tsidp:
+      - extraClaims:
+          groups: [grafana-admins]
+        includeInUserInfo: true
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: TailscaleGrant
+metadata:
+  name: tsidp-synology
+  title: Synology users sign in to the NAS through tsidp
+spec:
+  owner: group:spechtlabs
+  system: homelab
+  targets:
+    - component:tsidp
+    - component:synology-dsm
+  src: [group:synology-users]
+  dst: [tag:tsidp]
+  ip: ['*']
+  app:
+    tailscale.com/cap/tsidp:
+      - users: [group:synology-users]
+        resources: [synology]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: TailscaleGrant
+metadata:
+  name: tsidp-argocd-sre
+  title: SREs sign in to Argo CD through tsidp
+spec:
+  owner: group:spechtlabs
+  system: homelab
+  targets:
+    - component:tsidp
+    - component:argocd
+    - component:argocd-labk3s
+  src: [group:sre]
+  dst: [tag:tsidp]
+  ip: ['*']
+  app:
+    tailscale.com/cap/tsidp:
+      - users: [group:sre]
+        resources: [argocd]
