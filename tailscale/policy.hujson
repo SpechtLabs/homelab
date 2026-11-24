@@ -50,6 +50,8 @@
 		"tag:o11y-endpoint":  ["group:admins", "tag:k8s-operator"], // Devices tagged with tag:o11y-endpoint accept o11y data send by o11-collector
 		"tag:jumphost":       ["group:admins"], // Devices tagged with tag:jumphost are allowed to initiate SSH connections via tailscale-ssh
 		"tag:homelab":        ["group:admins", "tag:k3s-operator"], // Devices tagged with tag:homelab should be considered as experimental devices running test workloads
+		"tag:backstage":      ["group:admins", "tag:k8s-operator"], // Backstage's egress proxies on specht-labs (its view onto the labk3s ArgoCD)
+		"tag:lab-argocd":     ["group:admins", "tag:k3s-operator"], // The labk3s ArgoCD API as a plain TCP device, for Backstage
 		"tag:opencode":       ["group:admins"], // Devices tagged with tag:opencode are running the OpenCode Web UI
 		"tag:buckle-server":  ["group:admins"], // Devices tagged with tag:buckle-server run the Buckle fleet server (github.com/cedi/homelab)
 	},
@@ -223,6 +225,13 @@
 				],
 			},
 		},
+		// Backstage on specht-labs reads the labk3s ArgoCD API (read-only
+		// account) through its egress proxy; nothing else on either side.
+		{
+			"src": ["tag:backstage"],
+			"dst": ["tag:lab-argocd"],
+			"ip":  ["tcp:443"],
+		},
 		// Allow tag:o11y-collector to scrape all prometheus endpoints
 		{
 			"src":    ["tag:o11y-collector"],
@@ -392,6 +401,13 @@
 			"src":    "tag:smarthome",
 			"proto":  "tcp",
 			"deny":   ["nas:443", "nas:5001", "nas:22"],
+		},
+		// Backstage's egress reaches the labk3s ArgoCD API and nothing else there.
+		{
+			"src":    "tag:backstage",
+			"proto":  "tcp",
+			"accept": ["tag:lab-argocd:443"],
+			"deny":   ["tag:lab-argocd:22", "tag:homelab:443", "nas:443"],
 		},
 		{
 			"src":    "group:synology-users",
