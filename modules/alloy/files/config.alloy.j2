@@ -176,12 +176,28 @@ modules:
 {%- endfor %}
 }
 
+// The exporter names each target's job integrations/blackbox/<name>, which
+// wins over job_name below: one job "blackbox" instead, the probe name in
+// "probe", and the prober as instance.
 discovery.relabel "probes" {
   targets = prometheus.exporter.blackbox.probes.targets
 
   rule {
     source_labels = ["__param_target"]
     target_label  = "target"
+  }
+  rule {
+    source_labels = ["job"]
+    regex         = "integrations/blackbox/(.*)"
+    target_label  = "probe"
+  }
+  rule {
+    target_label = "job"
+    replacement  = "blackbox"
+  }
+  rule {
+    target_label = "instance"
+    replacement  = "{{ host.id }}"
   }
 }
 
