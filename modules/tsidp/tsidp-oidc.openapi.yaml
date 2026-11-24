@@ -1,0 +1,125 @@
+# tsidp's OIDC endpoints, hand-written from its discovery document
+# (https://idp.sphinx-map.ts.net/.well-known/openid-configuration, 2026-11-24).
+# The definition of api:tsidp-oidc (catalog-info.yaml here).
+openapi: 3.0.3
+info:
+  title: tsidp OpenID Connect
+  version: '1.0'
+  description: |
+    tsidp, the tailnet's OIDC provider, on isa as the tailnet node `idp`.
+    Public through Tailscale Funnel, so clients outside the tailnet
+    (Backstage on specht-labs) reach it too. Identity is the Tailscale login;
+    the email claim is the login name (e.g. cedi@github.idp.sphinx-map.ts.net).
+    Extra claims come from tailscale/policy.hujson grants (app
+    tailscale.com/cap/tsidp), e.g. groups=[buckle-admins] for group:admins.
+    Clients (redirect URIs) are registered in tsidp's admin UI or through
+    /register. ID tokens are signed RS256; clients authenticate at /token with
+    client_secret_post or client_secret_basic.
+servers:
+  - url: https://idp.sphinx-map.ts.net
+paths:
+  /.well-known/openid-configuration:
+    get:
+      summary: OIDC discovery document
+      responses:
+        '200':
+          description: Provider metadata
+          content:
+            application/json: {schema: {type: object}}
+  /.well-known/jwks.json:
+    get:
+      summary: Signing keys (RS256)
+      responses:
+        '200':
+          description: JWK set
+          content:
+            application/json: {schema: {type: object}}
+  /authorize:
+    get:
+      summary: Authorization endpoint
+      parameters:
+        - {name: client_id, in: query, required: true, schema: {type: string}}
+        - {name: redirect_uri, in: query, required: true, schema: {type: string}}
+        - {name: response_type, in: query, required: true, schema: {type: string, enum: [code, id_token]}}
+        - {name: scope, in: query, required: true, schema: {type: string}, description: 'openid, plus email, profile, offline_access'}
+        - {name: state, in: query, schema: {type: string}}
+        - {name: nonce, in: query, schema: {type: string}}
+        - {name: code_challenge, in: query, schema: {type: string}}
+        - {name: code_challenge_method, in: query, schema: {type: string, enum: [plain, S256]}}
+      responses:
+        '302': {description: Redirect to redirect_uri with code and state}
+  /token:
+    post:
+      summary: Token endpoint
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [grant_type]
+              properties:
+                grant_type:
+                  type: string
+                  enum: [authorization_code, refresh_token, 'urn:ietf:params:oauth:grant-type:token-exchange']
+                code: {type: string}
+                redirect_uri: {type: string}
+                code_verifier: {type: string}
+                refresh_token: {type: string}
+                client_id: {type: string}
+                client_secret: {type: string}
+      responses:
+        '200':
+          description: Tokens
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token: {type: string}
+                  id_token: {type: string}
+                  refresh_token: {type: string}
+                  token_type: {type: string}
+                  expires_in: {type: integer}
+  /userinfo:
+    get:
+      summary: Claims for the access token's user
+      security:
+        - bearer: []
+      responses:
+        '200':
+          description: Claims (sub, email, name, ...)
+          content:
+            application/json: {schema: {type: object}}
+  /introspect:
+    post:
+      summary: Token introspection (RFC 7662)
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: {type: string}
+      responses:
+        '200':
+          description: Whether the token is active, and its claims
+          content:
+            application/json: {schema: {type: object}}
+  /register:
+    post:
+      summary: Dynamic client registration (RFC 7591)
+      requestBody:
+        required: true
+        content:
+          application/json: {schema: {type: object}}
+      responses:
+        '201':
+          description: The registered client
+          content:
+            application/json: {schema: {type: object}}
+components:
+  securitySchemes:
+    bearer: {type: http, scheme: bearer}

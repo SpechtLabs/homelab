@@ -1,0 +1,64 @@
+# Backstage catalog entries for the Ceph cluster, its S3 API and the RBD pool
+# labk3s uses. Not read by Buckle: Backstage reads it through the Location in
+# the repo-root catalog-info.yaml. Runbook: docs/ceph.md.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ceph
+  title: Ceph (homelab-ceph)
+  description: >-
+    Ceph 20 through cephadm on storagepi-ceph1..3, all over the tailnet:
+    three mons, three mgrs, an OSD per host on the NVMe, RGW on
+    storagepi-ceph2. Pools replicated three times. Buckle preps the hosts
+    and applies the orchestrator specs, pools, keys and S3 users.
+  annotations:
+    github.com/project-slug: cedi/homelab
+  links:
+    - url: https://github.com/cedi/homelab/blob/main/docs/ceph.md
+      title: Runbook (docs/ceph.md)
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  providesApis:
+    - api:ceph-s3
+  dependsOn:
+    - resource:storagepi-ceph1
+    - resource:storagepi-ceph2
+    - resource:storagepi-ceph3
+    - resource:tailnet
+    # Mons refuse to form quorum on clock skew.
+    - component:time-sync
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ceph-rbd-k3s
+  title: Ceph RBD pool k3s
+  description: >-
+    The RBD pool for labk3s's volumes (ceph-csi, StorageClass ceph-rbd),
+    accessed as client.k3s (an aes key: the nodes' krbd can't use aes256k).
+  tags: [ceph, rbd]
+spec:
+  type: rbd-pool
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - component:ceph
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: ceph-s3
+  title: Ceph S3 (RGW)
+  description: S3 on the Ceph cluster, for experiments.
+spec:
+  type: s3
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: experimental
+  definition: |
+    S3-compatible API (Ceph RGW): http://storagepi-ceph2.sphinx-map.ts.net:7480
+    Users (ceph_rgw_users in vars/group-ceph.yaml): experiments.
+    Keys: docs/ceph.md ("S3").

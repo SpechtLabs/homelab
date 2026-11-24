@@ -1,0 +1,62 @@
+# Backstage catalog entry for this repo. The Location below pulls in the rest:
+# the hardware (catalog/hardware.yaml), the tailnet, the NAS and one
+# catalog-info.yaml per module that runs something. Buckle ignores all of them.
+#
+# How it's modelled:
+#  - Resource: infrastructure something runs on or stores data in (hosts, the
+#    NAS, the UPS, networks, the k3s cluster, Ceph's RBD pool).
+#  - Component: software that runs (a service, an agent on every host, a site).
+#    It dependsOn the Resources it runs on and the Components it can't work
+#    without.
+#  - API: an interface another Component consumes over the network (OIDC, NUT,
+#    NTP, PTP, OTLP, S3, ...). Providers list it in providesApis, consumers in
+#    consumesApis; that is the relation, not a dependsOn on the provider.
+#  - Fleet-wide agents (alloy, buckle-agent, nut-client, time-sync) don't list
+#    every host they run on: "runs on every Pi" isn't a dependency of the Pi.
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: homelab
+  description: Every catalog-info.yaml in cedi/homelab.
+spec:
+  targets:
+    - ./catalog/hardware.yaml
+    - ./tailscale/catalog-info.yaml
+    - ./nas/catalog-info.yaml
+    - ./modules/*/catalog-info.yaml
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: homelab
+  title: Homelab
+  description: >-
+    The machines at home (Raspberry Pis, compute blades, isa, the NUC, the
+    Synology) and the two VPS hosts, what runs on them, and the cluster and
+    storage they form. Configured by this repo through Buckle.
+  annotations:
+    github.com/project-slug: cedi/homelab
+  links:
+    - url: https://buckle.sphinx-map.ts.net
+      title: Buckle
+    - url: https://github.com/cedi/homelab
+      title: cedi/homelab
+spec:
+  owner: group:spechtlabs
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: homelab-config
+  title: homelab (fleet config)
+  description: >-
+    This repo: the fleet configuration the Buckle server watches. Every commit
+    on main becomes a revision that rolls out through the phases in
+    buckle.yaml.
+  annotations:
+    github.com/project-slug: cedi/homelab
+spec:
+  type: gitops
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production

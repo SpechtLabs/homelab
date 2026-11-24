@@ -1,0 +1,20 @@
+# Backstage catalog entry for rpi_exporter. Not read by Buckle: Backstage
+# reads it through the Location in the repo-root catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: rpi-exporter
+  title: rpi_exporter
+  description: >-
+    cedi/rpi_exporter on every Pi, :9243: SoC temperature, clocks,
+    throttling. Scraped by the host's Alloy.
+  annotations:
+    github.com/project-slug: cedi/homelab
+  links:
+    - url: https://github.com/cedi/rpi_exporter
+      title: Upstream
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production

@@ -1,0 +1,26 @@
+# Backstage catalog entry for the tailnet. Referenced from the Location in the
+# repo-root catalog-info.yaml. tailscaled itself (modules/tailscale) isn't an
+# entity: it's how a host joins this Resource.
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: tailnet
+  title: Tailnet sphinx-map.ts.net
+  description: >-
+    The tailnet every host joins. Buckle identifies agents by their Tailscale
+    node, Ceph runs over it, and Tailscale Services (svc:buckle, svc:stream)
+    and Funnel (tsidp) publish services on it. The policy is policy.hujson
+    here, tested on PRs and applied on main.
+  annotations:
+    github.com/project-slug: cedi/homelab
+  links:
+    - url: https://login.tailscale.com/admin/machines
+      title: Tailscale admin console
+  tags: [network, tailscale]
+spec:
+  type: network
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    # Tailscale's coordination service (k8s-deployment catalog/external.yaml).
+    - component:tailscale-control-plane

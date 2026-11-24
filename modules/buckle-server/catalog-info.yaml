@@ -1,0 +1,76 @@
+# Backstage catalog entry for the Buckle server (config in bootstrap/, backup
+# here) and its two APIs. Not read by Buckle: Backstage reads it through the
+# Location in the repo-root catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: buckle-server
+  title: Buckle server
+  description: >-
+    The Buckle server on isa: watches this repo, plans and rolls out every
+    revision through the phases in buckle.yaml, and applies the labk3s
+    workloads. Nightly database backup locally and on the NAS.
+  annotations:
+    github.com/project-slug: cedi/homelab
+  links:
+    - url: https://buckle.sphinx-map.ts.net
+      title: Buckle UI
+    - url: https://buckle.sierrasoftworks.com
+      title: Buckle docs
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  providesApis:
+    - api:buckle-agent-api
+    - api:buckle-api
+  consumesApis:
+    - api:tsidp-oidc
+    - api:nas-nfs
+  dependsOn:
+    - resource:isa
+    - resource:tailnet
+    - component:homelab-config
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: buckle-agent-api
+  title: Buckle agent API
+  description: The gRPC endpoint Buckle agents connect to.
+spec:
+  type: grpc
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  definition: |
+    Endpoint: http://buckle.sphinx-map.ts.net:7700 (gRPC)
+    Tailscale Service svc:buckle forwards tcp:7700 to the host that serves it
+    (isa) with a PROXY v2 header; the server trusts it from the serving hosts'
+    tailnet addresses (bootstrap/server.yaml agents.trusted_proxies).
+
+    Auth: tailscale. The server whois-es the agent's tailnet address; the
+    node name is the host id. Known tags register automatically.
+    Minimum agent version: bootstrap/server.yaml agents.minimum_agent_version.
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: buckle-api
+  title: Buckle UI and API
+  description: Buckle's web UI and HTTP API, for people and the buckle CLI.
+spec:
+  type: http
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  definition: |
+    Base URL: https://buckle.sphinx-map.ts.net (svc:buckle, tcp:443)
+    Readiness: GET /readyz (the o11y collector probes it for the SLO)
+    Hosts:     POST /api/v1/hosts/{id}/pause, POST /api/v1/hosts/{id}/resume
+
+    Sign-in: OIDC through tsidp (scopes openid profile email
+    offline_access). Users and admins need "buckle-admins" in the token's
+    groups claim, which tsidp adds for group:admins. Callback:
+    /api/v1/auth/callback. Break-glass: bootstrap/README.md.

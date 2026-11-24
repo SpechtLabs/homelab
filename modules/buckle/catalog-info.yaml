@@ -1,0 +1,26 @@
+# Backstage catalog entry for the Buckle agent. Not read by Buckle: Backstage
+# reads it through the Location in the repo-root catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: buckle-agent
+  title: Buckle agent
+  description: >-
+    The Buckle agent on every host, at buckle_version (vars/versions.yaml):
+    reports facts, applies its host's plan, runs actions. On the k3s server
+    it is also labk3s's executor. Restarts into a new version 90 s after
+    the run.
+  annotations:
+    github.com/project-slug: cedi/homelab
+  links:
+    - url: https://buckle.sierrasoftworks.com
+      title: Buckle docs
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  consumesApis:
+    - api:buckle-agent-api
+  dependsOn:
+    - resource:tailnet

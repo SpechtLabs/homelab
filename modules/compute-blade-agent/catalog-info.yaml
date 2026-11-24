@@ -1,0 +1,47 @@
+# Backstage catalog entry for compute-blade-agent and bladectl's API. Not read
+# by Buckle: Backstage reads it through the Location in the repo-root
+# catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: compute-blade-agent
+  description: >-
+    compute-blade-agent on blade-pi1..4: fan curve, health LEDs, power
+    policy, button gestures (hold 5 s: shutdown, 5 presses: power off),
+    metrics on :9666. Renews its own certificates.
+  annotations:
+    github.com/project-slug: cedi/homelab
+  links:
+    - url: https://github.com/compute-blade-community/compute-blade-agent
+      title: Upstream
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  providesApis:
+    - api:bladectl-api
+  dependsOn:
+    - resource:blade-pi1
+    - resource:blade-pi2
+    - resource:blade-pi3
+    - resource:blade-pi4
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: bladectl-api
+  title: bladectl API
+  description: compute-blade-agent's control API, which bladectl talks to.
+spec:
+  type: grpc
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  definition: |
+    gRPC over mTLS on :8081 of each blade, announced via mDNS on the LAN
+    (bladectl discover). The agent issues the CA and client certificates;
+    `mise run bladectl-config` fetches each blade's client config into
+    ~/.config/bladectl/config.yaml.
+    Proto: github.com/compute-blade-community/compute-blade-agent,
+    api/bladeapi/v1alpha1/blade.proto.

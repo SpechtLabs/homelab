@@ -1,0 +1,44 @@
+# Backstage catalog entry for the NUT proxy on isa and the NUT API it serves.
+# Not read by Buckle: Backstage reads it through the Location in the repo-root
+# catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: nut-server
+  title: NUT server
+  description: >-
+    upsd on isa: re-exports the UPS Tower's own NUT server (dummy-ups proxy)
+    to the Pis, the NUC and Home Assistant, so they don't all poll the UPS.
+  annotations:
+    github.com/project-slug: cedi/homelab
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  providesApis:
+    - api:nut
+  dependsOn:
+    - resource:isa
+    - resource:ups
+    - resource:home-lan
+    - resource:tailnet
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: nut
+  title: NUT (UPS status)
+  description: Network UPS Tools on isa, proxying the UPS Tower.
+spec:
+  type: nut
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  definition: |
+    Network UPS Tools protocol, TCP 3493 on isa.sphinx-map.ts.net.
+    UPS name: ups (MONITOR ups@isa.sphinx-map.ts.net).
+    Users: a monitor account for upsmon clients (secondary), an admin
+    account; passwords NUT_MONITOR_PASSWORD / NUT_ADMIN_PASSWORD in the Buckle
+    server's secret store.
+    Upstream: ups@192.168.0.156 (the UPS Tower), as a secondary.

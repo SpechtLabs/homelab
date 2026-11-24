@@ -1,0 +1,26 @@
+# Backstage catalog entry for the k3s workers. Not read by Buckle: Backstage
+# reads it through the Location in the repo-root catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: k3s-agent
+  title: k3s agent
+  description: >-
+    k3s on clusterpi-worker1..4, joined to the server over its MagicDNS name.
+    Rolled one worker at a time after the server, each drained first.
+  annotations:
+    github.com/project-slug: cedi/homelab
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  consumesApis:
+    - api:labk3s-kubernetes-api
+  dependsOn:
+    - component:k3s-server
+    - resource:clusterpi-worker1
+    - resource:clusterpi-worker2
+    - resource:clusterpi-worker3
+    - resource:clusterpi-worker4
+    - resource:tailnet

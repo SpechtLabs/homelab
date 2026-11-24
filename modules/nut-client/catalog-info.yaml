@@ -1,0 +1,21 @@
+# Backstage catalog entry for the NUT clients. Not read by Buckle: Backstage
+# reads it through the Location in the repo-root catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: nut-client
+  title: NUT client (upsmon)
+  description: >-
+    upsmon + upssched on every Pi and the NUC, watching isa's NUT proxy. Most
+    shut down early on battery; jumphost and timepi (nut-late) last.
+  annotations:
+    github.com/project-slug: cedi/homelab
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  consumesApis:
+    - api:nut
+  dependsOn:
+    - resource:tailnet

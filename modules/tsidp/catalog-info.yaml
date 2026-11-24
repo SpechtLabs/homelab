@@ -1,0 +1,41 @@
+# Backstage catalog entry for tsidp and the OIDC API it provides. Not read by
+# Buckle: Backstage reads it through the Location in the repo-root
+# catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: tsidp
+  description: >-
+    tsidp, the tailnet's OIDC identity provider, on isa as its own tailnet
+    node `idp`, public through Funnel.
+  annotations:
+    github.com/project-slug: cedi/homelab
+  links:
+    - url: https://idp.sphinx-map.ts.net
+      title: tsidp
+    - url: https://github.com/tailscale/tsidp
+      title: Upstream
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  providesApis:
+    - api:tsidp-oidc
+  dependsOn:
+    - resource:isa
+    - resource:tailnet
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: tsidp-oidc
+  title: tsidp OIDC
+  description: OpenID Connect provider for the tailnet's users, public through Funnel.
+spec:
+  type: openapi
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  definition:
+    $text: ./tsidp-oidc.openapi.yaml

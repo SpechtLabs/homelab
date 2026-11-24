@@ -1,0 +1,23 @@
+# Backstage catalog entry for the time clients. Not read by Buckle: Backstage
+# reads it through the Location in the repo-root catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: time-sync
+  title: Time sync (chrony, ptp4l)
+  description: >-
+    chrony on every Pi, the NUC and isa, following timepi. The Pi 5s and the
+    CM4 blades by PTP with hardware timestamps (ptp4l, ~10-70 ns), the rest
+    by NTP (~0.1-1 us); the public pool as fallback.
+  annotations:
+    github.com/project-slug: cedi/homelab
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  consumesApis:
+    - api:ntp
+    - api:ptp
+  dependsOn:
+    - resource:home-lan

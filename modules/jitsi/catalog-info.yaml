@@ -1,0 +1,23 @@
+# Backstage catalog entry for Jitsi Meet on meet. Not read by Buckle:
+# Backstage reads it through the Location in the repo-root catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: jitsi-meet
+  title: Jitsi Meet
+  description: >-
+    Jitsi Meet for meet.realschule-rottweil.de on meet: Prosody, jicofo,
+    the videobridge, nginx and coturn, from the quick-install, versions
+    pinned in vars/host-meet.yaml.
+  annotations:
+    github.com/project-slug: cedi/homelab
+  links:
+    - url: https://meet.realschule-rottweil.de
+      title: Jitsi Meet
+spec:
+  type: website
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  dependsOn:
+    - resource:meet

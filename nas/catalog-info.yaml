@@ -1,0 +1,123 @@
+# Backstage catalog entries for the Synology: the box (Resource), DSM and the
+# compose projects in this directory (Components). Referenced from the Location
+# in the repo-root catalog-info.yaml. Deployed through DSM, not Buckle
+# (README.md here).
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: nas
+  title: Synology NAS
+  description: The Synology at home (LAN 192.168.0.64, tailnet `nas`), on DSM.
+  tags: [synology]
+spec:
+  type: nas
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: synology-dsm
+  title: Synology DSM
+  description: >-
+    DSM on the NAS: web UI and Drive (sign-in through tsidp), Container
+    Manager for the projects here, and NFS exports.
+  annotations:
+    github.com/project-slug: cedi/homelab
+  links:
+    - url: https://nas.sphinx-map.ts.net
+      title: DSM
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  providesApis:
+    - api:nas-nfs
+  consumesApis:
+    - api:tsidp-oidc
+  dependsOn:
+    - resource:nas
+    - resource:tailnet
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: nas-nfs
+  title: NAS NFS exports
+  description: NFS v3 shares on the Synology.
+spec:
+  type: nfs
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  definition: |
+    NFS v3 (v4 is off on the Synology) from nas.sphinx-map.ts.net.
+    Exports are per shared folder (DSM: Shared Folder > NFS Permissions),
+    granted to a client's tailnet address.
+
+    /volume1/homelab/buckle   read/write for isa, no squash
+                              (buckle-server's nightly database backup)
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: jellyfin
+  description: >-
+    Jellyfin media server (compose project `media`), on the tailnet as
+    https://stream.sphinx-map.ts.net (Tailscale Service svc:stream).
+  annotations:
+    github.com/project-slug: cedi/homelab
+  links:
+    - url: https://stream.sphinx-map.ts.net
+      title: Jellyfin
+spec:
+  type: website
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  dependsOn:
+    - resource:nas
+    - resource:tailnet
+    - component:synology-dsm
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: nginx-proxy-manager
+  title: Nginx Proxy Manager
+  description: >-
+    Nginx Proxy Manager on the NAS (compose project `media`), on ports 80,
+    81 (admin) and 443 of every interface.
+  annotations:
+    github.com/project-slug: cedi/homelab
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  dependsOn:
+    - resource:nas
+    - component:synology-dsm
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: nas-exporters
+  title: NAS exporters
+  description: >-
+    node-exporter (:9100), snmp-exporter (:9116, Synology MIBs over SNMPv3)
+    and cAdvisor (:8123) on the NAS (compose project `o11y`); the o11y
+    collector on isa scrapes them.
+  annotations:
+    github.com/project-slug: cedi/homelab
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  dependsOn:
+    - resource:nas
+    - component:synology-dsm

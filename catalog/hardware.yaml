@@ -1,0 +1,296 @@
+# Backstage: the hardware and the home network. One Resource per host Buckle
+# manages (its id is the tailnet node name), plus what they hang off. What runs
+# on a host is a Component in modules/*/catalog-info.yaml that dependsOn it.
+# Referenced from the Location in the repo-root catalog-info.yaml.
+
+# Networks and power
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: home-lan
+  title: Home LAN
+  description: >-
+    192.168.0.0/24. Carries what must not wait for Tailscale: NTP and PTP from
+    timepi, and the UPS's NUT server.
+spec:
+  type: network
+  owner: group:spechtlabs
+  system: homelab
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ups
+  title: UPS Tower
+  description: >-
+    Ubiquiti UPS Tower (UPSTower.local, 192.168.0.156). Serves NUT itself (UPS
+    name `ups`); isa re-exports it to the fleet (nut-server).
+  tags: [power]
+spec:
+  type: ups
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: gps-receiver
+  title: timepi GPS/PPS receiver
+  description: >-
+    u-blox M8 on timepi's HAT (UART + PPS GPIO). PPS only while it has a fix,
+    which the antenna's poor sky view loses several times a day.
+  tags: [time, hardware]
+spec:
+  type: gps-receiver
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:timepi
+---
+# Hosts at home: x86
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: isa
+  description: >-
+    HP EliteDesk 800 G6 Mini (i5-10500), Ubuntu 26.04. Took over from the NUC
+    on 2026-11-23: Buckle server, tsidp, NUT proxy, o11y collector.
+  tags: [x86-64, ubuntu, core]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: nuc
+  description: >-
+    GIGABYTE mini PC (Celeron), Ubuntu 24.10, end of life (apt points at
+    old-releases by hand). A plain host since isa replaced it; still runs
+    Incus, unmanaged.
+  tags: [x86-64, ubuntu, core]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+# Hosts at home: Raspberry Pis
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: timepi
+  description: >-
+    Raspberry Pi 5 (4 GB) with the GPS/PPS HAT: the LAN's stratum 1 NTP server
+    and PTP grandmaster. Root on NVMe, boot from SD.
+  tags: [raspberry-pi-5, core, time]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: jumphost
+  description: Raspberry Pi 5 (8 GB). The way in; may open Tailscale SSH to the rest.
+  tags: [raspberry-pi-5, core]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: clusterpi-leader
+  description: Raspberry Pi 5 (8 GB). labk3s's k3s server (control plane).
+  tags: [raspberry-pi-5, k3s]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: clusterpi-worker1
+  description: Raspberry Pi 4 Model B (8 GB). labk3s worker.
+  tags: [raspberry-pi-4, k3s]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: clusterpi-worker2
+  description: Raspberry Pi 4 Model B. labk3s worker.
+  tags: [raspberry-pi-4, k3s]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: clusterpi-worker3
+  description: Raspberry Pi 4 Model B. labk3s worker.
+  tags: [raspberry-pi-4, k3s]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: clusterpi-worker4
+  description: Raspberry Pi 4 Model B. labk3s worker.
+  tags: [raspberry-pi-4, k3s]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: storagepi-ceph1
+  description: >-
+    Raspberry Pi 5 (8 GB), NVMe split into root and an OSD partition. Ceph mon,
+    mgr and OSD; cephadm's admin host.
+  tags: [raspberry-pi-5, ceph]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: storagepi-ceph2
+  description: >-
+    Raspberry Pi 5 (8 GB), NVMe split into root and an OSD partition. Ceph mon,
+    mgr, OSD and the S3 gateway (RGW).
+  tags: [raspberry-pi-5, ceph]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: storagepi-ceph3
+  description: >-
+    Raspberry Pi 5 (8 GB), NVMe split into root and an OSD partition. Ceph mon,
+    mgr and OSD.
+  tags: [raspberry-pi-5, ceph]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: blade-pi1
+  description: Compute Module 4 on a compute blade (PoE+, smart fan unit).
+  tags: [cm4, compute-blade]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: blade-pi2
+  description: Compute Module 4 on a compute blade (PoE+, smart fan unit).
+  tags: [cm4, compute-blade]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: blade-pi3
+  description: Compute Module 4 on a compute blade (PoE+, smart fan unit).
+  tags: [cm4, compute-blade]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: blade-pi4
+  description: Compute Module 4 on a compute blade (PoE+, smart fan unit).
+  tags: [cm4, compute-blade]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+# VPS hosts. They ship o11y to the spechtlabs tenants, not the homelab ones.
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: hole
+  description: VPS, Debian 12. The tailnet's exit node.
+  tags: [x86-64, vps]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: meet
+  description: Hetzner vServer, Ubuntu 24.04. Jitsi Meet for meet.realschule-rottweil.de.
+  tags: [x86-64, vps, hetzner]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab

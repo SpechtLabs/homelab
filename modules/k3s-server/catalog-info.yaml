@@ -1,0 +1,69 @@
+# Backstage catalog entries for the k3s control plane, its API and the labk3s
+# cluster. Not read by Buckle: Backstage reads it through the Location in the
+# repo-root catalog-info.yaml. labk3s's workloads are k8s-deployment's; they
+# dependOn resource:labk3s.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: k3s-server
+  title: k3s server
+  description: >-
+    The k3s control plane on clusterpi-leader (single server, SQLite/kine
+    datastore; traefik and the network policy controller off). Drained
+    around disruptive runs.
+  annotations:
+    github.com/project-slug: cedi/homelab
+  links:
+    - url: https://docs.k3s.io
+      title: k3s docs
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  providesApis:
+    - api:labk3s-kubernetes-api
+  dependsOn:
+    - resource:clusterpi-leader
+    - resource:tailnet
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: labk3s-kubernetes-api
+  title: labk3s Kubernetes API
+  description: The labk3s API server.
+spec:
+  type: kubernetes
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  definition: |
+    Kubernetes API, https://clusterpi-leader.sphinx-map.ts.net:6443
+    (version: k3s_version in vars/versions.yaml).
+    Agents join with K3S_TOKEN. Buckle applies its workloads (the root
+    Argo CD Application) through the server's own admin kubeconfig
+    (/etc/rancher/k3s/k3s.yaml). /readyz answers 401 to anonymous callers,
+    which the o11y collector's probe counts as up.
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: labk3s
+  description: >-
+    The k3s cluster at home: clusterpi-leader and clusterpi-worker1..4.
+    Buckle brings up k3s, seeds Argo CD once and owns the root Application
+    (1-meta-labk3s); Argo CD deploys everything else from k8s-deployment.
+    Volumes from Ceph (StorageClass ceph-rbd).
+  annotations:
+    github.com/project-slug: cedi/homelab
+  tags: [kubernetes, k3s]
+spec:
+  type: kubernetes-cluster
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - component:k3s-server
+    - component:k3s-agent
+    - component:homelab-config
+    - component:k8s-deployment

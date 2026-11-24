@@ -1,0 +1,62 @@
+# Backstage catalog entry for timepi's time service and the NTP and PTP APIs
+# it serves. Not read by Buckle: Backstage reads it through the Location in
+# the repo-root catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: time-server
+  title: Time server (timepi)
+  description: >-
+    GPS-disciplined stratum 1 on timepi: gpsd and PPS feed ntpsec (PTB and
+    the pool when the GPS has no fix); phc2sys copies the clock to eth0's
+    PHC and ptp4l serves PTP from it, announcing the clock's real quality.
+    time-metrics exports ntpsec, gpsd, PPS and PTP state.
+  annotations:
+    github.com/project-slug: cedi/homelab
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  providesApis:
+    - api:ntp
+    - api:ptp
+  dependsOn:
+    - resource:timepi
+    - resource:gps-receiver
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: ntp
+  title: NTP (timepi)
+  description: Stratum 1 NTP on the LAN.
+spec:
+  type: ntp
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  definition: |
+    NTP, UDP 123 on 192.168.0.109 (timepi's LAN address, a fixed DHCP lease:
+    not its tailnet name, so time doesn't wait for Tailscale).
+    ntpsec, GPS + PPS reference; no rate limit for 192.168.0.0/24.
+    Clients fall back to 2.debian.pool.ntp.org.
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: ptp
+  title: PTP grandmaster (timepi)
+  description: IEEE 1588 grandmaster on the LAN.
+spec:
+  type: ptp
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  definition: |
+    IEEE 1588 (PTPv2) from timepi's eth0: UDPv4, end-to-end delay,
+    domain 0, transportSpecific 0x0. Clock class 6 while GPS-locked; the
+    grandmaster settings (currentUtcOffsetValid, timeTraceable) follow the
+    clock's real state. Timescale TAI (UTC + 37 s).
+    Needs a NIC with hardware timestamps on the client (Pi 5, CM4).
