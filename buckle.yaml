@@ -16,7 +16,10 @@ fleet:
     k3s-server: 'host.id == "clusterpi-leader"'
     k3s-agent:  'host.id like "clusterpi-worker*"'
     ceph:       'host.id like "storagepi-ceph*"'
-    blades:     'host.id like "blade-pi*"'
+    # Compute Modules only run on the compute blades here: the blade board has
+    # no ID of its own (no HAT EEPROM; its fan unit and I2C show up only once
+    # compute-blade-agent's overlays are in), so the CM4 is the hardware fact.
+    blades:     'host.facts.hardware.raspberry_pi.compute_module == true'
     ptp-grandmaster: 'host.id == "timepi"'
     # Everything at home that keeps its own clock syncs from timepi over the LAN.
     ntp-client:      '(host.facts.hardware.raspberry_pi.version != null || host.id in ["nuc", "isa"]) && host.id != "timepi"'

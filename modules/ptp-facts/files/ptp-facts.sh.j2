@@ -1,15 +1,24 @@
 #!/bin/sh
 # {{ buckle_managed }}
-# Buckle fact provider, mounted at host.facts.script.ptp. Whether the NIC that
-# reaches timepi ({{ vars.ntp_server }}) can be a PTP client with hardware
-# timestamps, which decides the ptp-client group (buckle.yaml):
-#   interface: the NIC the route to timepi leaves by ("" without a route)
+# Buckle fact provider, mounted at host.facts.script.ptp. How this host reaches
+# timepi ({{ vars.ntp_server }}), which decides the ntp-client and ptp-client
+# groups (buckle.yaml):
+#   lan:       timepi is on-link (no gateway between): the host is on the home
+#              LAN. false on timepi itself and on hosts elsewhere
+#   interface: the NIC the route to timepi leaves by ("" on timepi, no route)
 #   phc:       index of its PTP hardware clock, /dev/ptp<phc> (null if none)
 #   hardware:  true if it timestamps in hardware both ways and has that clock
 # ethtool asks the driver (or, on the CM4 blades, the PHY) for its timestamping
 # capabilities: sysfs can't tell, the Pi 5's and the PHY's clocks don't hang
 # off the netdev.
-dev=$(ip -o route get {{ vars.ntp_server }} 2>/dev/null | sed -n 's/.* dev \([^ ]*\).*/\1/p')
+route=$(ip -o route get {{ vars.ntp_server }} 2>/dev/null)
+dev=$(printf '%s\n' "$route" | sed -n 's/.* dev \([^ ]*\).*/\1/p')
+lan=false
+case "$route" in
+  local\ *|*" dev lo "*) dev= ;;
+  *" via "*) ;;
+  ?*) lan=true ;;
+esac
 ts=$( [ -n "$dev" ] && ethtool -T "$dev" 2>/dev/null)
 # ethtool 6.1 (Debian 12) says "PTP Hardware Clock: 0", newer ones
 # "Hardware timestamp provider index: 0"; "none" or -1 without a clock.
@@ -22,4 +31,4 @@ if [ -n "$phc" ] && [ -c "/dev/ptp$phc" ]; then
     printf '%s\n' "$ts" | grep -qw -- "$cap" || hardware=false
   done
 fi
-printf '{"interface":"%s","phc":%s,"hardware":%s}\n' "$dev" "${phc:-null}" "$hardware"
+printf '{"lan":%s,"interface":"%s","phc":%s,"hardware":%s}\n' "$lan" "$dev" "${phc:-null}" "$hardware"

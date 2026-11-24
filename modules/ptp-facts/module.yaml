@@ -1,6 +1,7 @@
 name: ptp-facts
-description: A custom fact provider exposing whether the NIC that reaches timepi timestamps PTP in hardware, as host.facts.script.ptp.
-when: 'host.groups contains "ntp-client"'
+description: A custom fact provider exposing how the host reaches timepi (on the home LAN, and whether that NIC timestamps PTP in hardware), as host.facts.script.ptp.
+# Every host: ntp-client and ptp-client are derived from this fact.
+when: 'host.groups contains "debian"'
 tags: [base, hardware, time]
 facts:
   provides: [script]
