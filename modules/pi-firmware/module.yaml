@@ -1,5 +1,5 @@
 name: pi-firmware
-description: Raspberry Pi boot firmware (config.txt [all], cmdline.txt), reboots when either changes; WiFi off.
+description: Raspberry Pi boot firmware (config.txt [all], cmdline.txt), reboots when either changes; WiFi off; the hardware watchdog armed.
 when: 'host.groups contains "pi"'
 needs: [pi-facts]          # the PoE HAT task keys off host.facts.script.rpi
 tags: [base, hardware]
@@ -126,5 +126,27 @@ tasks:
     when: 'vars.rpi_gps_pps == true'
     notify: [reboot]
 
+  # Hardware watchdog. clusterpi-worker3 froze hard on 2026-11-23 (no ping, no
+  # log, kernel and all) and stayed down until power-cycled; systemd only armed
+  # the watchdog for shutdowns. Applied with daemon-reexec, which services
+  # survive (k3s, Ceph); guarded on the live value, so an interrupted run
+  # catches up on the next pass instead of depending on a handler.
+  - file.directory: { path: /etc/systemd/system.conf.d, mode: "0755" }
+    id: systemd-conf-dir
+    removal: leave
+  - file.copy: { src: watchdog.conf, dest: /etc/systemd/system.conf.d/90-watchdog.conf, mode: "0644" }
+    id: watchdog-conf
+  - command.run:
+      run: [systemctl, daemon-reexec]
+      only_if: 'test "$(systemctl show -p RuntimeWatchdogUSec --value)" != 15s'
+    id: watchdog-arm
+    removal: leave
+
 handlers:
   reboot: { system.reboot: { delay: 10s, timeout: 5m } }
+
+health:
+  - name: watchdog-armed
+    command:
+      run: [systemctl, show, -p, RuntimeWatchdogUSec, --value]
+      expect: { stdout_matches: '^15s$' }
