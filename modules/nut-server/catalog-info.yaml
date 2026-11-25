@@ -34,8 +34,7 @@ metadata:
     # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
     # Tailscale grants from these annotations (shadow mode: compared with
     # tailscale/policy.hujson, not applied).
-    # isa directly, or svc:nut in front of it (the clients move to svc:nut).
-    specht-labs.de/tailnet-dst: tag:core-infra,svc:nut
+    specht-labs.de/tailnet-dst: svc:nut
     specht-labs.de/tailnet-ports: tcp:3493
 spec:
   type: nut
@@ -43,8 +42,9 @@ spec:
   system: elbschloss
   lifecycle: production
   definition: |
-    Network UPS Tools protocol, TCP 3493 on isa.sphinx-map.ts.net.
-    UPS name: ups (MONITOR ups@isa.sphinx-map.ts.net).
+    Network UPS Tools protocol, TCP 3493 on nut.sphinx-map.ts.net, the
+    Tailscale Service svc:nut that isa serves (upsd on localhost).
+    UPS name: ups (MONITOR ups@nut.sphinx-map.ts.net).
     Users: a monitor account for upsmon clients (secondary), an admin
     account; passwords NUT_MONITOR_PASSWORD / NUT_ADMIN_PASSWORD in the Buckle
     server's secret store.

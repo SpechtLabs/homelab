@@ -185,13 +185,6 @@
 			"dst": ["svc:nut"],
 			"ip":  ["*"],
 		},
-		// Allow homelab resources to access the nut-server (until the clients
-		// dial svc:nut)
-		{
-			"src":    ["tag:homelab"],
-			"dst":    ["tag:core-infra"],
-			"ip":     ["3493"],
-		},
 		// Allow everyone to access core services
 		{
 			"src": ["autogroup:member", "autogroup:tagged"],
@@ -440,8 +433,7 @@
 		{
 			"src":    "tag:homelab",
 			"proto":  "tcp",
-			"accept": ["nas-elbschloss:3493"],
-			"deny":   ["nas-elbschloss:443", "nas-elbschloss:445", "nas-elbschloss:5001", "nas-elbschloss:22"],
+			"deny":   ["nas-elbschloss:443", "nas-elbschloss:445", "nas-elbschloss:5001", "nas-elbschloss:22", "nas-elbschloss:3493"],
 		},
 		{
 			"src":    "tag:smarthome",
@@ -512,10 +504,11 @@
 			"deny":  ["tag:smarthome:8123"],
 		},
 
+		// NUT goes through svc:nut; the server's own address is closed to the clients.
 		{
 			"src":    "clusterpi-leader",
 			"proto":  "tcp",
-			"accept": ["tag:core-infra:3493"],
+			"deny":   ["tag:core-infra:3493"],
 		},
 		// Buckle agents reach the server; nothing else is exposed to them.
 		{
