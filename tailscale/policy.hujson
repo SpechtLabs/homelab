@@ -282,19 +282,9 @@
 			"dst": ["svc:nas"],
 			"ip":  ["tcp:443"],
 		},
-		// Home Assistant (hass-elbschloss and hass-schiltach) writes its backups
-		// to a share on the NAS: SMB through svc:nas, NFS on the device (NFS v3's
-		// portmapper and mountd can't go through a Service).
-		{
-			"src": ["tag:smarthome"],
-			"dst": ["svc:nas"],
-			"ip":  ["tcp:445"],
-		},
-		{
-			"src": ["tag:smarthome"],
-			"dst": ["nas-elbschloss"],
-			"ip":  ["tcp:445", "tcp:2049"],
-		},
+		// Home Assistant has nothing on the NAS over the tailnet: hass-elbschloss
+		// backs up through the Synology integration over the LAN, hass-schiltach
+		// doesn't use the NAS (DSM's connection log and the backup folder, 2026-11-26).
 		// Home Assistant at home, https://hass.<tailnet> and http://hass.<tailnet>:8123,
 		// for group:hass-users; the collector probes it for the availability SLO.
 		// The Service has only the web UI's ports, so "*" is all it offers.
@@ -454,12 +444,7 @@
 		{
 			"src":    "tag:smarthome",
 			"proto":  "tcp",
-			"accept": ["nas-elbschloss:445", "nas-elbschloss:2049"],
-		},
-		{
-			"src":    "hass-schiltach",
-			"proto":  "tcp",
-			"accept": ["nas-elbschloss:445", "nas-elbschloss:2049"],
+			"deny":   ["nas-elbschloss:445", "nas-elbschloss:2049", "nas-elbschloss:6690"],
 		},
 		{
 			"src":   "group:vpn",

@@ -1,7 +1,7 @@
 # Backstage: the two Home Assistant instances, at home (hass) and in Schiltach
 # (hass-schiltach). Their configuration doesn't live in this repo and Buckle
 # doesn't manage them; they're here because the homelab serves them (NAS
-# backups, NUT) and watches them (the availability SLO). Referenced from the
+# backups at home, NUT) and watches them (the availability SLO). Referenced from the
 # Location in the repo-root catalog-info.yaml.
 apiVersion: backstage.io/v1alpha1
 kind: Resource
@@ -37,8 +37,9 @@ metadata:
   name: home-assistant
   title: Home Assistant
   description: >-
-    Home Assistant at home. Backs up to a share on the NAS (SMB or NFS);
-    metrics (its Prometheus integration) and logs go to the `hass` tenants
+    Home Assistant at home. Backs up nightly (01:00) through the Synology
+    DSM integration to /volume1/backup/hass, as DSM user `hass` over the LAN,
+    not the tailnet; metrics (its Prometheus integration) and logs go to the `hass` tenants
     of Mimir and Loki on specht-labs (hass-mimir / hass-loki
     .k8s.specht-labs.de). The o11y collector probes it for the availability
     SLO (hlhassavail in k8s-deployment).
@@ -64,7 +65,7 @@ spec:
   dependsOn:
     - resource:hass
     - resource:tailnet
-    # Backups.
+    # Backups, over the LAN (no tailnet grant to the NAS).
     - component:synology-dsm
     # UPS status from isa's NUT proxy, over the LAN: there is no tailnet grant
     # from tag:smarthome to NUT. Listing api:nut in consumesApis would make
@@ -104,8 +105,7 @@ metadata:
   name: home-assistant-schiltach
   title: Home Assistant (Schiltach)
   description: >-
-    Home Assistant in Schiltach. Backs up to a share on the NAS (SMB or NFS)
-    over the tailnet; metrics and logs go to the `hass-schiltach` tenants of
+    Home Assistant in Schiltach. Doesn't use the NAS; metrics and logs go to the `hass-schiltach` tenants of
     Mimir and Loki on specht-labs. Same Grafana dashboard as hass.
   annotations:
     # The tags its traffic comes from on the tailnet.
@@ -125,5 +125,3 @@ spec:
   dependsOn:
     - resource:hass-schiltach
     - resource:tailnet
-    # Backups.
-    - component:synology-dsm
