@@ -18,9 +18,9 @@ The SNMP exporter config comes from
 
 ## Tailscale
 
-The NAS runs DSM's Tailscale package, tagged `tag:core-infra` only (not
-`tag:core-services`, which would open every port to every member). What each
-group may reach on it is in `tailscale/policy.hujson`, with tests.
+The NAS runs DSM's Tailscale package, tagged `tag:core-infra` and `tag:nas`
+(the only tag allowed to serve `svc:nas` and `svc:stream`). What each group
+may reach on it is in `tailscale/policy.hujson`, with tests.
 
 The device is `nas-elbschloss` on the tailnet. Two Tailscale Services, which
 it hosts, put DSM and Jellyfin on tailnet names with Tailscale certificates:

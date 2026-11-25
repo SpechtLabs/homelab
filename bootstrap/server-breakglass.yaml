@@ -26,14 +26,14 @@ agents:
   trusted_proxies: ["100.122.149.90", "100.70.89.41"]   # nuc, isa
   tailscale:
     # Existing hosts already carry these tags; anything else waits in the UI.
-    allowed_tags: ["tag:buckle-agent", "tag:homelab", "tag:core-infra", "tag:core-services"]
+    allowed_tags: ["tag:buckle-agent", "tag:homelab", "tag:core-infra"]
     # Uncomment once the Tailscale OAuth client exists (bootstrap/README.md, step 1):
     # "Add an agent" then mints a tagged, single-use, pre-approved auth key.
     # provisioning:
     #   flow: client
     #   client_id: "${{ env.TS_OAUTH_CLIENT_ID }}"
     #   client_secret: "${{ env.TS_OAUTH_CLIENT_SECRET }}"
-    #   tags: ["tag:homelab", "tag:core-infra", "tag:core-services"]
+    #   tags: ["tag:buckle-agent", "tag:homelab", "tag:core-infra"]
   join:
     server_url: http://buckle.sphinx-map.ts.net:7700
   minimum_agent_version: "2.13.0"

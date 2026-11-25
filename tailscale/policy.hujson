@@ -37,7 +37,7 @@
 	// Declare ACL-Tags and their owners
 	"tagOwners": {
 		"tag:core-infra":     ["group:admins"], // Devices tagged with tag:core-infra are critical services in the infrastructure that need to be treated more carefully and should not be as exposed
-		"tag:core-services":  ["group:admins"], // Devices tagged with tag:core-services are the services that every user gets access to
+		"tag:core-services":  ["group:admins"], // Retired: in no grant any more; goes once hass-elbschloss's add-on stops advertising it
 		"tag:tsidp":          ["group:admins"], // Devices tagged with tag:tsidp are allowed to run tsidp with Tailscale Funnel
 		"tag:smarthome":      ["group:admins"], // Devices tagged with tag:smarthome are smart-home devices with should be treated with tighter access controll restrictions
 		"tag:k8s-operator":   ["group:admins"], // tag:k8s-operator is the tailscale operator running on my k8s clusters
@@ -115,7 +115,7 @@
 		{
 			"action": "accept",
 			"src":    ["group:admins", "tag:jumphost"],
-			"dst":    ["tag:core-infra", "tag:core-services", "tag:buckle-agent"],
+			"dst":    ["tag:core-infra", "tag:buckle-agent"],
 			"users":  ["autogroup:nonroot"],
 		},
 		// admins can access the core-infra resources as root in check mode
@@ -123,7 +123,7 @@
 			"action":      "check",
 			"checkPeriod": "8h",
 			"src":         ["group:admins"],
-			"dst":         ["tag:core-infra", "tag:core-services", "tag:buckle-agent"],
+			"dst":         ["tag:core-infra", "tag:buckle-agent"],
 			"users":       ["root"],
 		},
 		// any user can use Tailscale SSH to connect to their own devices as non-root user
@@ -175,12 +175,6 @@
 			"dst": ["autogroup:internet"],
 			"ip":  ["*"],
 		},
-		// Allow core-services to core-services
-		{
-			"src":  ["tag:core-services"],
-			"dst":  ["tag:core-services"],
-			"ip":   ["*"],
-		},
 		// Allow core-infra to core-infra
 		{
 			"src":    ["tag:core-infra"],
@@ -192,12 +186,6 @@
 		{
 			"src": ["tag:homelab", "tag:core-infra"],
 			"dst": ["svc:nut"],
-			"ip":  ["*"],
-		},
-		// Allow everyone to access core services
-		{
-			"src": ["autogroup:member", "autogroup:tagged"],
-			"dst": ["tag:core-services"],
 			"ip":  ["*"],
 		},
 		// Allow admins to access all tailscale web interfaces and edit everything
@@ -278,7 +266,7 @@
 			"ip":  ["*"],
 		},
 		// Synology users reach DSM and Drive through svc:nas (https://nas.<tailnet>).
-		// The NAS is not in tag:core-services, so this is all they get. Jellyfin is
+		// This is all they get on the NAS. Jellyfin is
 		// svc:stream. svc:nas also carries SMB (tcp:445) for Home Assistant's
 		// backups, so these grants list ports instead of "*".
 		{
@@ -319,8 +307,6 @@
 		// Home Assistant at home, https://hass.<tailnet> and http://hass.<tailnet>:8123,
 		// for every member; the collector probes it for the availability SLO. The
 		// Service has only the web UI's ports, so "*" is all it offers.
-		// (Until hass-elbschloss leaves tag:core-services, that grant still opens
-		// the device itself.)
 		{
 			"src": ["autogroup:member", "tag:o11y-collector"],
 			"dst": ["svc:hass"],
@@ -409,18 +395,12 @@
 			"dst": ["svc:buckle"],
 			"ip":  ["tcp:443"],
 		},
-		// Buckle agents dial out to the server's gRPC port.
-		// (Admins also reach the UI on nuc:7701 through the admin grant above.)
+		// Buckle agents dial the server's gRPC port through svc:buckle, which
+		// forwards tcp:7700 to whichever host runs the server with a PROXY v2
+		// header (the server trusts it and whois-es the agent's own address), so
+		// the server can move without touching agents.
 		{
-			"src": ["tag:buckle-agent", "tag:homelab", "tag:core-infra", "tag:core-services"],
-			"dst": ["tag:buckle-server"],
-			"ip":  ["tcp:7700"],
-		},
-		// ...or through svc:buckle, which forwards tcp:7700 to whichever host runs
-		// the server with a PROXY v2 header (the server trusts it and whois-es the
-		// agent's own address), so the server can move without touching agents.
-		{
-			"src": ["tag:buckle-agent", "tag:homelab", "tag:core-infra", "tag:core-services"],
+			"src": ["tag:buckle-agent", "tag:homelab", "tag:core-infra"],
 			"dst": ["svc:buckle"],
 			"ip":  ["tcp:7700"],
 		},
@@ -443,10 +423,11 @@
 		{
 			"src":    "x1bay@github",
 			"proto":  "tcp",
-			"accept": ["nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:6690", "hass-elbschloss:8123"],
+			"accept": ["nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:6690"],
 			// Only DSM and Drive on the NAS: no Jellyfin port (svc:stream instead),
-			// plain DSM, SSH or SMB.
-			"deny":   ["hass-schiltach:8123", "nas-elbschloss:8096", "nas-elbschloss:5000", "nas-elbschloss:22", "nas-elbschloss:445"],
+			// plain DSM, SSH or SMB. Home Assistant only through svc:hass, not on
+			// the device; nothing on the devices that left tag:core-services.
+			"deny":   ["hass-schiltach:8123", "nas-elbschloss:8096", "nas-elbschloss:5000", "nas-elbschloss:22", "nas-elbschloss:445", "hass-elbschloss:8123", "hass-elbschloss:22"],
 		},
 		// Homelab boxes and Home Assistant get only their own ports on the NAS.
 		{
@@ -529,16 +510,11 @@
 			"proto":  "tcp",
 			"deny":   ["tag:core-infra:3493"],
 		},
-		// Buckle agents reach the server; nothing else is exposed to them.
+		// Buckle agents reach the server through svc:buckle only, not on its own address.
 		{
 			"src":    "tag:homelab",
 			"proto":  "tcp",
-			"accept": ["tag:buckle-server:7700"],
-		},
-		{
-			"src":    "tag:core-services",
-			"proto":  "tcp",
-			"accept": ["tag:buckle-server:7700"],
+			"deny":   ["tag:buckle-server:7700"],
 		},
 	],
 
