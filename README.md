@@ -21,7 +21,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 | `fixtures/facts/` | One facts file per host; CI dry-plans every host against them |
 | `bootstrap/` | The server's own config, installed by hand on isa |
 | `nas/` | Compose projects for the Synology, deployed through DSM (not Buckle) |
-| `tailscale/policy.hujson` | The tailnet policy; tested on PRs and applied on `main` by `.github/workflows/tailscale.yaml` |
+| `tailscale/policy.hujson` | The tailnet policy; tested on PRs and applied on `main` by `.github/workflows/tailscale.yaml`. The model (attributes to Services) is in `tailscale/README.md` |
 | `catalog-info.yaml`, `catalog/`, `*/catalog-info.yaml` | Backstage: the `homelab` Domain and its Systems (`catalog/systems.yaml`: elbschloss, tailnet, fleet, timekeeping, ceph, labk3s, compute-blades, jitsi, schiltach), hosts and networks as Resources, what runs as Components, their APIs. The root file's Location lists the rest; Buckle ignores them |
 
 ## Modules
