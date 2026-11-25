@@ -60,7 +60,10 @@
 		"tag:buckle-agent":   ["group:admins"], // Devices tagged with tag:buckle-agent run a Buckle agent: they dial the server, and admins SSH to them
 		"tag:ceph":           ["group:admins"], // Ceph cluster hosts (storagepi-ceph1..3): mons, OSDs, mgr, cephadm
 		"tag:ceph-client":    ["group:admins"], // Ceph clients: the labk3s nodes, where ceph-csi maps RBD volumes
-		"tag:tsidp-client":   ["group:admins", "tag:k8s-operator", "tag:k3s-operator"], // Machines that are tsidp relying parties (token, JWKS, userinfo calls): the Buckle server, the labk3s egress to idp
+		"tag:tsidp-client":   ["group:admins", "tag:k8s-operator", "tag:k3s-operator"],
+		// Host tag owned by the operator too (it mints the proxies' keys), unlike
+		// the admins-only host tags above.
+		"tag:specht-labs-ingress": ["group:admins", "tag:k8s-operator"], // The tailnet-ingress ProxyGroup on specht-labs (k8s-deployment): hosts svc:lgtm, svc:argocd, svc:backstage // Machines that are tsidp relying parties (token, JWKS, userinfo calls): the Buckle server, the labk3s egress to idp
 		// Service hosts: a tag that only the one host allowed to serve a Service
 		// carries, for its autoApprovers. Owned by admins only, so neither k8s
 		// operator can hand it to a proxy (tag:core-infra is on operator proxies).
@@ -106,6 +109,11 @@
 			"svc:nut": ["tag:nut-server"],
 			// The labk3s API (modules/k3s-server), tcp:6443 passed through to k3s.
 			"svc:labk3s": ["tag:k3s-server"],
+			// The specht-labs tailnet Gateway (k8s-deployment
+			// apps/envoy-gateway/cluster/specht-labs/tailnet-services.yaml).
+			"svc:lgtm":      ["tag:specht-labs-ingress"],
+			"svc:argocd":    ["tag:specht-labs-ingress"],
+			"svc:backstage": ["tag:specht-labs-ingress"],
 		},
 	},
 
@@ -177,6 +185,22 @@
 			"src": ["tag:ceph-client"],
 			"dst": ["tag:ceph"],
 			"ip":  ["tcp:3300", "tcp:6789", "tcp:6800-7479", "tcp:7481-7568"],
+		},
+		// LGTM push and query through svc:lgtm, plain HTTP (it has only tcp:80):
+		// Alloy on the Buckle hosts, the collector, meet and labk3s's
+		// lab-lgtm-egress (tag:o11y-agent), Home Assistant. Replaces the
+		// tag:o11y-endpoint grants once k8s-load-balancer is gone.
+		{
+			"src": ["tag:buckle-agent", "tag:o11y-collector", "tag:o11y-agent", "tag:smarthome"],
+			"dst": ["svc:lgtm"],
+			"ip":  ["tcp:80"],
+		},
+		// Argo CD and Backstage on specht-labs (argocd.k8s.specht-labs.de,
+		// backstage.k8s.specht-labs.de); admins' "*" grant covers them too.
+		{
+			"src": ["group:admins"],
+			"dst": ["svc:argocd", "svc:backstage"],
+			"ip":  ["tcp:443"],
 		},
 		// Alloy on every Buckle host (modules/alloy in this repo) pushes logs and
 		// metrics to homelab-loki/homelab-mimir on the o11y endpoint, plain HTTP only.
