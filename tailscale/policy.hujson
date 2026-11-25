@@ -166,16 +166,17 @@
 		// modules/ceph): the hosts among themselves (cephadm's sshd on 2222, mons
 		// on 3300/6789, OSDs and mgr on 6800-7568, ms_bind_port_max) and the
 		// labk3s nodes' ceph-csi as clients. Node-scoped: clients reach every OSD
-		// at its own address, so there's no Service in front.
+		// at its own address, so there's no Service in front. The OSD range skips
+		// 7480, RGW's port (no consumer).
 		{
 			"src": ["tag:ceph"],
 			"dst": ["tag:ceph"],
-			"ip":  ["tcp:2222", "tcp:3300", "tcp:6789", "tcp:6800-7568"],
+			"ip":  ["tcp:2222", "tcp:3300", "tcp:6789", "tcp:6800-7479", "tcp:7481-7568"],
 		},
 		{
 			"src": ["tag:ceph-client"],
 			"dst": ["tag:ceph"],
-			"ip":  ["tcp:3300", "tcp:6789", "tcp:6800-7568"],
+			"ip":  ["tcp:3300", "tcp:6789", "tcp:6800-7479", "tcp:7481-7568"],
 		},
 		// Alloy on every Buckle host (modules/alloy in this repo) pushes logs and
 		// metrics to homelab-loki/homelab-mimir on the o11y endpoint, plain HTTP only.
