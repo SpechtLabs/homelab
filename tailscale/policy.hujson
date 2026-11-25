@@ -276,13 +276,6 @@
 				"tcp:6690", // Synology Drive sync
 			],
 		},
-		// The same on the device itself, until no client dials nas-elbschloss
-		// directly any more (it was `nas` until the svc:nas switch-over).
-		{
-			"src": ["group:synology-users"],
-			"dst": ["nas-elbschloss"],
-			"ip":  ["tcp:443", "tcp:5001", "tcp:6690"],
-		},
 		// The collector probes DSM for its availability SLO.
 		{
 			"src": ["tag:o11y-collector"],
@@ -431,11 +424,9 @@
 		{
 			"src":    "x1bay@github",
 			"proto":  "tcp",
-			"accept": ["nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:6690"],
-			// Only DSM and Drive on the NAS: no Jellyfin port (svc:stream instead),
-			// plain DSM, SSH or SMB. Home Assistant only through svc:hass, not on
-			// the device.
-			"deny":   ["hass-schiltach:8123", "nas-elbschloss:8096", "nas-elbschloss:5000", "nas-elbschloss:22", "nas-elbschloss:445", "hass-elbschloss:8123", "hass-elbschloss:22"],
+			// DSM and Drive only through svc:nas, Home Assistant not at all: nothing
+			// on the devices themselves.
+			"deny":   ["hass-schiltach:8123", "nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:6690", "nas-elbschloss:8096", "nas-elbschloss:5000", "nas-elbschloss:22", "nas-elbschloss:445", "hass-elbschloss:8123", "hass-elbschloss:22"],
 		},
 		// Homelab boxes and Home Assistant get only their own ports on the NAS.
 		{
@@ -458,7 +449,7 @@
 		{
 			"src":    "group:synology-users",
 			"proto":  "tcp",
-			"accept": ["nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:6690"],
+			"deny":   ["nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:6690"],
 		},
 		{
 			"src":    "tag:smarthome",
