@@ -34,11 +34,11 @@ o11y_remote_scrapes:
 # Availability SLIs: probe_success per service, every 30 s (SLOs in
 # SpechtLabs/k8s-deployment grafana/slos/). Each URL is what users reach:
 # tailnet names and Tailscale Services (tailscale/policy.hujson grants the
-# collector the k3s API and svc:stream for this).
+# collector svc:labk3s and svc:stream for this).
 o11y_probes:
   - { name: buckle, service: buckle, module: http_2xx, url: "https://buckle.sphinx-map.ts.net/readyz" }
   - { name: tsidp, service: tsidp, module: http_oidc_discovery, url: "https://idp.sphinx-map.ts.net/.well-known/openid-configuration" }
   - { name: home-assistant, service: home-assistant, module: http_2xx, url: "http://hass.sphinx-map.ts.net:8123/" }
-  - { name: labk3s-api, service: labk3s-api, module: http_401_insecure, url: "https://clusterpi-leader.sphinx-map.ts.net:6443/readyz" }
+  - { name: labk3s-api, service: labk3s-api, module: http_401_insecure, url: "https://labk3s.sphinx-map.ts.net:6443/readyz" }
   - { name: nas-dsm, service: nas, module: http_2xx, url: "https://nas.sphinx-map.ts.net/" }
   - { name: jellyfin, service: jellyfin, module: http_2xx, url: "https://stream.sphinx-map.ts.net/health" }
