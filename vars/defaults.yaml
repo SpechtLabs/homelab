@@ -27,8 +27,9 @@ o11y_otlp_receiver: false
 o11y_textfile_dir: /var/lib/prometheus/node-exporter
 alloy_custom_args: ""
 
-# NUT
-nut_server_host: 'isa.{{ vars.tailnet }}'
+# NUT: the Tailscale Service svc:nut, served by whichever host runs
+# nut-server (isa), so the server can move without touching the clients.
+nut_server_host: 'nut.{{ vars.tailnet }}'
 nut_ups_name: ups
 
 # Time (modules/time-sync): timepi's LAN address (keep its DHCP lease fixed;
