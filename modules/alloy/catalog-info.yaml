@@ -3,7 +3,7 @@
 # probes. Not read by Buckle: Backstage reads it through the Location in the
 # repo-root catalog-info.yaml. Loki, Mimir and Tempo run on specht-labs
 # (k8s-deployment); their ingest APIs are k8s-deployment's. The homelab hosts
-# write to the homelab tenants, hole and meet to the spechtlabs ones.
+# write to the homelab tenants, meet to the spechtlabs ones.
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:

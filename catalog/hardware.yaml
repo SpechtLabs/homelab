@@ -276,17 +276,6 @@ spec:
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
-  name: hole
-  description: VPS, Debian 12. The tailnet's exit node.
-  tags: [x86-64, vps]
-spec:
-  type: host
-  owner: group:spechtlabs
-  system: tailnet
----
-apiVersion: backstage.io/v1alpha1
-kind: Resource
-metadata:
   name: meet
   description: Hetzner vServer, Ubuntu 24.04. Jitsi Meet for meet.realschule-rottweil.de.
   tags: [x86-64, vps, hetzner]

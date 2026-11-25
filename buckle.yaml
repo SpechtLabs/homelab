@@ -37,7 +37,7 @@ fleet:
     # reports facts, so a tag-derived role can't move in one rollout. The
     # tag still grants the network access (tailscale/policy.hujson).
     o11y-collector:  'host.id == "isa"'
-    spechtlabs:      'host.id in ["hole", "meet"]'
+    spechtlabs:      'host.id == "meet"'
     jitsi:           'host.id == "meet"'
     tsidp:           'host.id == "isa"'
     buckle-server:   'host.id == "isa"'   # by host, like o11y-collector
@@ -91,8 +91,6 @@ vars:
     file: vars/host-nuc.yaml
   - when: 'host.id == "isa"'
     file: vars/host-isa.yaml
-  - when: 'host.id == "hole"'
-    file: vars/host-hole.yaml
   - when: 'host.id == "meet"'
     file: vars/host-meet.yaml
   - when: 'host.id == "timepi"'

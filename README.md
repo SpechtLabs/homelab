@@ -30,7 +30,7 @@ First-time setup: [bootstrap/README.md](bootstrap/README.md).
 |---|---|---|
 | `base` | all | hostname, locale, bootstrap packages; *actions*: upgrade packages, reboot |
 | `dotfiles` | all | cedi/dotfiles and fish as login shell for each host's login account (`admin_user`) |
-| `tailscale` | all | keeps tailscaled current; `--ssh`, exit node on `hole` |
+| `tailscale` | all | keeps tailscaled current; `--ssh`; an exit node where `tailscale_exit_node` is set |
 | `alloy` | all | logs and metrics to Loki/Mimir (homelab or spechtlabs); OTLP receiver on the collector |
 | `pi-facts` | Pis | custom fact `host.facts.script.rpi`: HAT EEPROM, NVMe, GPIO PPS input |
 | `ptp-facts` | all | custom fact `host.facts.script.ptp`: whether timepi is on the host's LAN, and whether that NIC timestamps PTP in hardware (ethtool) |

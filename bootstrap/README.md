@@ -104,7 +104,7 @@ enrol() {  # enrol HOST SSH_USER
     'curl -fsSL https://github.com/SierraSoftworks/buckle/releases/download/v2.15.0/install.sh \
        | sudo sh -s -- up --server http://nuc.sphinx-map.ts.net:7700 --insecure-plaintext'
 }
-for h in nuc hole meet; do enrol "$h" root; done
+for h in nuc meet; do enrol "$h" root; done
 enrol timepi cedi
 for h in jumphost clusterpi-leader \
          clusterpi-worker1 clusterpi-worker2 clusterpi-worker3 clusterpi-worker4 \
@@ -138,7 +138,7 @@ after the first rollout.
 
 **Enrol every Pi before the first rollout.** The NUC's new Alloy config stops scraping the
 Pis centrally, so a Pi that isn't running Buckle's Alloy yet goes dark. The `core` phase (NUC,
-hole, meet) runs last for this reason, but it can't cover hosts that aren't enrolled.
+meet) runs last for this reason, but it can't cover hosts that aren't enrolled.
 
 Start one from the Rollouts page and read every host's plan before approving. What to look for:
 

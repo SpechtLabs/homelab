@@ -36,7 +36,6 @@
 		"nuc":                 "100.122.149.90",
 		"idp":                 "100.77.112.23",
 		"hass-schiltach":      "100.89.41.43",
-		"hole":                "100.65.216.48",
 	},
 
 	// Declare ACL-Tags and their owners

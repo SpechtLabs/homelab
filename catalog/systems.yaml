@@ -48,7 +48,7 @@ metadata:
   description: >-
     The tailnet sphinx-map.ts.net that ties both sites together: its policy
     (tailscale/policy.hujson) and capability grants, tsidp as its OIDC
-    provider, the exit node hole and the jumphost. Offers OIDC (tsidp).
+    provider and the jumphost. Offers OIDC (tsidp).
 spec:
   type: network
   owner: group:spechtlabs
