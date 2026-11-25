@@ -42,7 +42,6 @@
 	// Declare ACL-Tags and their owners
 	"tagOwners": {
 		"tag:core-infra":     ["group:admins"], // Retired: in no grant. Only k8s-load-balancer (k8s-deployment) still carries it, until it moves behind a Service
-		"tag:core-services":  ["group:admins"], // Retired: in no grant any more; goes once hass-elbschloss's add-on stops advertising it
 		"tag:tsidp":          ["group:admins"], // Devices tagged with tag:tsidp are allowed to run tsidp with Tailscale Funnel
 		"tag:smarthome":      ["group:admins"], // Devices tagged with tag:smarthome are smart-home devices with should be treated with tighter access controll restrictions
 		"tag:k8s-operator":   ["group:admins"], // tag:k8s-operator is the tailscale operator running on my k8s clusters
@@ -436,7 +435,7 @@
 			"accept": ["nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:6690"],
 			// Only DSM and Drive on the NAS: no Jellyfin port (svc:stream instead),
 			// plain DSM, SSH or SMB. Home Assistant only through svc:hass, not on
-			// the device; nothing on the devices that left tag:core-services.
+			// the device.
 			"deny":   ["hass-schiltach:8123", "nas-elbschloss:8096", "nas-elbschloss:5000", "nas-elbschloss:22", "nas-elbschloss:445", "hass-elbschloss:8123", "hass-elbschloss:22"],
 		},
 		// Homelab boxes and Home Assistant get only their own ports on the NAS.
