@@ -11,7 +11,7 @@ metadata:
   annotations:
     github.com/project-slug: cedi/homelab
     # The tags its traffic comes from on the tailnet (the hosts').
-    specht-labs.de/tailnet-src: tag:homelab
+    specht-labs.de/tailnet-src: tag:buckle-agent
 spec:
   type: service
   owner: group:spechtlabs

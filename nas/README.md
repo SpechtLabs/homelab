@@ -18,8 +18,8 @@ The SNMP exporter config comes from
 
 ## Tailscale
 
-The NAS runs DSM's Tailscale package, tagged `tag:core-infra` and `tag:nas`
-(the only tag allowed to serve `svc:nas` and `svc:stream`). What each group
+The NAS runs DSM's Tailscale package, tagged `tag:nas` (the only tag
+allowed to serve `svc:nas` and `svc:stream`). What each group
 may reach on it is in `tailscale/policy.hujson`, with tests.
 
 The device is `nas-elbschloss` on the tailnet. Two Tailscale Services, which

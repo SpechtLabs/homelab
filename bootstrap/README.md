@@ -5,7 +5,7 @@ Everything here happens once, by hand. After that, a merged commit is a rollout.
 ## 1. Tailnet policy
 
 The policy lives in `tailscale/policy.hujson` and already has the Buckle grant (agents with
-`tag:buckle-agent`, `tag:homelab` or `tag:core-infra` may reach `svc:buckle` on tcp:7700).
+`tag:buckle-agent` may reach `svc:buckle` on tcp:7700).
 `.github/workflows/tailscale.yaml` tests it on PRs and applies it on `main`, using the repo
 secrets `TS_OAUTH_ID`, `TS_OAUTH_SECRET` and `TS_TAILNET`.
 
@@ -14,7 +14,7 @@ ACL tags → add `tag:buckle-server` next to its existing tags. Without it, its 
 `Drop: TCP{… > 100.122.149.90:7700} no rules matched` for every agent.
 
 Create an OAuth client (Settings → OAuth clients) with **Auth Keys: write**, limited to
-`tag:buckle-agent`, `tag:homelab` and `tag:core-infra`. The server uses it to mint single-use
+`tag:buckle-agent`. The server uses it to mint single-use
 keys for the "Add an agent" button. **Revoke the old `tailscale_authkey`** from the Ansible
 inventory once this works.
 

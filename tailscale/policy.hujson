@@ -41,7 +41,7 @@
 
 	// Declare ACL-Tags and their owners
 	"tagOwners": {
-		"tag:core-infra":     ["group:admins"], // Devices tagged with tag:core-infra are critical services in the infrastructure that need to be treated more carefully and should not be as exposed
+		"tag:core-infra":     ["group:admins"], // Retired: in no grant. Only k8s-load-balancer (k8s-deployment) still carries it, until it moves behind a Service
 		"tag:core-services":  ["group:admins"], // Retired: in no grant any more; goes once hass-elbschloss's add-on stops advertising it
 		"tag:tsidp":          ["group:admins"], // Devices tagged with tag:tsidp are allowed to run tsidp with Tailscale Funnel
 		"tag:smarthome":      ["group:admins"], // Devices tagged with tag:smarthome are smart-home devices with should be treated with tighter access controll restrictions
@@ -117,19 +117,19 @@
 			"dst":    ["tag:homelab", "tag:smarthome"],
 			"users":  ["autogroup:nonroot", "root"],
 		},
-		// admins and jumphost can access the core-infra resources as nonroot
+		// admins and jumphost can access the Buckle-managed hosts as nonroot
 		{
 			"action": "accept",
 			"src":    ["group:admins", "tag:jumphost"],
-			"dst":    ["tag:core-infra", "tag:buckle-agent"],
+			"dst":    ["tag:buckle-agent"],
 			"users":  ["autogroup:nonroot"],
 		},
-		// admins can access the core-infra resources as root in check mode
+		// admins can access the Buckle-managed hosts as root in check mode
 		{
 			"action":      "check",
 			"checkPeriod": "8h",
 			"src":         ["group:admins"],
-			"dst":         ["tag:core-infra", "tag:buckle-agent"],
+			"dst":         ["tag:buckle-agent"],
 			"users":       ["root"],
 		},
 		// any user can use Tailscale SSH to connect to their own devices as non-root user
@@ -171,7 +171,7 @@
 		// Alloy on every Buckle host (modules/alloy in this repo) pushes logs and
 		// metrics to homelab-loki/homelab-mimir on the o11y endpoint, plain HTTP only.
 		{
-			"src":    ["tag:buckle-agent", "tag:homelab"],
+			"src":    ["tag:buckle-agent"],
 			"dst":    ["tag:o11y-endpoint"],
 			"ip":     ["tcp:80"],
 		},
@@ -181,16 +181,10 @@
 			"dst": ["autogroup:internet"],
 			"ip":  ["*"],
 		},
-		// Allow core-infra to core-infra
+		// The NUT clients (modules/nut-client: the Pis and the NUC, all Buckle
+		// hosts) reach upsd through svc:nut. It has only tcp:3493.
 		{
-			"src":    ["tag:core-infra"],
-			"dst":    ["tag:core-infra"],
-			"ip":  ["*"],
-		},
-		// The NUT clients (modules/nut-client: the Pis and the NUC) reach upsd
-		// through svc:nut. It has only tcp:3493.
-		{
-			"src": ["tag:buckle-agent", "tag:homelab", "tag:core-infra"],
+			"src": ["tag:buckle-agent"],
 			"dst": ["svc:nut"],
 			"ip":  ["*"],
 		},
@@ -416,7 +410,7 @@
 		// header (the server trusts it and whois-es the agent's own address), so
 		// the server can move without touching agents.
 		{
-			"src": ["tag:buckle-agent", "tag:homelab", "tag:core-infra"],
+			"src": ["tag:buckle-agent"],
 			"dst": ["svc:buckle"],
 			"ip":  ["tcp:7700"],
 		},
@@ -484,10 +478,17 @@
 			"deny":  ["tag:homelab:443", "tag:homelab:80"],
 		},
 		{
-			"src":    "tag:homelab",
+			"src":    "tag:buckle-agent",
 			"proto":  "tcp",
 			"accept": ["tag:o11y-endpoint:80"],
-			"deny":   ["tag:o11y-endpoint:443", "tag:core-infra:22"],
+			"deny":   ["tag:o11y-endpoint:443", "tag:buckle-server:22"],
+		},
+		// tag:homelab alone is only an SSH target and the homelab mesh: no Alloy
+		// push, no Buckle server.
+		{
+			"src":    "tag:homelab",
+			"proto":  "tcp",
+			"deny":   ["tag:o11y-endpoint:80", "tag:buckle-server:7700"],
 		},
 		{
 			"src":    "group:vpn",
@@ -512,7 +513,7 @@
 		{
 			"src":   "tag:o11y-collector",
 			"proto": "tcp",
-			"deny":  ["tag:core-infra:443", "tag:homelab:6443"],
+			"deny":  ["nas-elbschloss:443", "tag:homelab:6443"],
 		},
 		{
 			"src":   "group:vpn",
@@ -524,11 +525,11 @@
 		{
 			"src":    "clusterpi-leader",
 			"proto":  "tcp",
-			"deny":   ["tag:core-infra:3493"],
+			"deny":   ["tag:nut-server:3493"],
 		},
 		// Buckle agents reach the server through svc:buckle only, not on its own address.
 		{
-			"src":    "tag:homelab",
+			"src":    "tag:buckle-agent",
 			"proto":  "tcp",
 			"deny":   ["tag:buckle-server:7700"],
 		},

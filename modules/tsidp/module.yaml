@@ -10,7 +10,7 @@ vars:
   tsidp_use_funnel: true
   tsidp_enable_sts: true
   tsidp_arch: '{{ "arm64" if host.facts.hardware.arch == "aarch64" else "amd64" }}'
-  tsidp_advertise_tags: "tag:core-infra,tag:tsidp"
+  tsidp_advertise_tags: "tag:tsidp"
 tasks:
   # Release assets, not the GitHub API: the API allows 60 calls an hour per IP,
   # shared by every host at home, and github.release spends one per plan until
