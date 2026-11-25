@@ -60,6 +60,7 @@
 		"tag:buckle-agent":   ["group:admins"], // Devices tagged with tag:buckle-agent run a Buckle agent: they dial the server, and admins SSH to them
 		"tag:ceph":           ["group:admins"], // Ceph cluster hosts (storagepi-ceph1..3): mons, OSDs, mgr, cephadm
 		"tag:ceph-client":    ["group:admins"], // Ceph clients: the labk3s nodes, where ceph-csi maps RBD volumes
+		"tag:k3s-node":       ["group:admins"], // labk3s nodes (clusterpi-leader, clusterpi-worker1..4): k3s runs over the tailnet
 		"tag:tsidp-client":   ["group:admins", "tag:k8s-operator", "tag:k3s-operator"],
 		// Host tag owned by the operator too (it mints the proxies' keys), unlike
 		// the admins-only host tags above.
@@ -185,6 +186,26 @@
 			"src": ["tag:ceph-client"],
 			"dst": ["tag:ceph"],
 			"ip":  ["tcp:3300", "tcp:6789", "tcp:6800-7479", "tcp:7481-7568"],
+		},
+		// labk3s over the tailnet (node-ip and flannel on tailscale0): agents join
+		// through svc:labk3s, then use the API endpoint Kubernetes advertises (the
+		// server's own tailnet address); flannel's VXLAN, the kubelet API
+		// (exec/logs, metrics-server, Alloy's scrapes) and ceph-csi's metrics run
+		// node to node. Node-scoped like Ceph: every node is a peer.
+		{
+			"src": ["tag:k3s-node"],
+			"dst": ["svc:labk3s"],
+			"ip":  ["*"],
+		},
+		{
+			"src": ["tag:k3s-node"],
+			"dst": ["tag:k3s-server"],
+			"ip":  ["tcp:6443"],
+		},
+		{
+			"src": ["tag:k3s-node"],
+			"dst": ["tag:k3s-node"],
+			"ip":  ["udp:8472", "tcp:10250", "tcp:8681"],
 		},
 		// LGTM push and query through svc:lgtm, plain HTTP (it has only tcp:80):
 		// Alloy on the Buckle hosts, the collector, meet and labk3s's
