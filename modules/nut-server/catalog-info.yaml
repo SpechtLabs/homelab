@@ -34,7 +34,8 @@ metadata:
     # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
     # Tailscale grants from these annotations (shadow mode: compared with
     # tailscale/policy.hujson, not applied).
-    specht-labs.de/tailnet-dst: tag:core-infra
+    # isa directly, or svc:nut in front of it (the clients move to svc:nut).
+    specht-labs.de/tailnet-dst: tag:core-infra,svc:nut
     specht-labs.de/tailnet-ports: tcp:3493
 spec:
   type: nut

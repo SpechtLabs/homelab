@@ -30,6 +30,18 @@ tasks:
   - systemd.unit: { name: nut-server, enabled: true, active: true }
   - systemd.unit: { name: nut-monitor, enabled: true, active: true }
 
+  # The Tailscale Service svc:nut (nut.<tailnet>, tcp:3493), which the clients
+  # dial instead of this host: the server can move without touching them.
+  # The definition is in the admin console; the policy's autoApprovers
+  # approve this host. upsd sees every client as 127.0.0.1, which is fine:
+  # it authenticates by user and password, not by address. Home Assistant
+  # stays on the LAN.
+  - command.run:
+      run: [tailscale, serve, --service=svc:nut, --tcp=3493, 'tcp://localhost:3493']
+      unless: 'tailscale serve get-config --all | grep -q "\"tcp:3493\": \"tcp://localhost:3493\""'
+    id: svc-nut
+    removal: leave
+
 handlers:
   restart-server:  { systemd.restart: { name: nut-server } }
   restart-monitor: { systemd.restart: { name: nut-monitor } }
@@ -43,3 +55,11 @@ health:
     command:
       run: ['upsc', '{{ vars.nut_ups_name }}@localhost', 'ups.status']
       expect: { exit: 0 }
+  # ...and the same through svc:nut, the way the clients reach it. Not
+  # required: right after a push the rollout can beat the policy apply that
+  # approves this host. The clients' ups-reachable check is the one that holds.
+  - name: svc-nut
+    command:
+      run: ['upsc', '{{ vars.nut_ups_name }}@nut.{{ vars.tailnet }}', 'ups.status']
+      expect: { exit: 0 }
+    required: false

@@ -89,6 +89,8 @@
 			"svc:hass": ["tag:smarthome"],
 			// DSM, Drive and SMB on the NAS (nas/README.md).
 			"svc:nas": ["tag:core-infra"],
+			// upsd on isa (modules/nut-server), the UPS for every Pi and the NUC.
+			"svc:nut": ["tag:core-infra"],
 		},
 	},
 
@@ -176,7 +178,15 @@
 			"dst":    ["tag:core-infra"],
 			"ip":  ["*"],
 		},
-		// Allow homelab resources to access the nut-server
+		// The NUT clients (modules/nut-client: the Pis and the NUC) reach upsd
+		// through svc:nut. It has only tcp:3493.
+		{
+			"src": ["tag:homelab", "tag:core-infra"],
+			"dst": ["svc:nut"],
+			"ip":  ["*"],
+		},
+		// Allow homelab resources to access the nut-server (until the clients
+		// dial svc:nut)
 		{
 			"src":    ["tag:homelab"],
 			"dst":    ["tag:core-infra"],
