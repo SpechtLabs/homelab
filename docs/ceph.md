@@ -63,12 +63,39 @@ the cluster; `ceph orch rm` or `ceph … rm` do.
   `cluster=homelab-ceph` (the mgr's prometheus module is on through `ceph_mgr_modules`, since
   `--skip-monitoring-stack` leaves it off; standby mgrs answer `/metrics` with an empty body). On labk3s, k8s-monitoring scrapes ceph-csi through pod annotations (jobs
   `ceph-csi-rbd/nodeplugin` and `ceph-csi-rbd/provisioner`), plus kubelet volume stats.
-- **Dashboards** in Grafana under Infrastructure › Ceph: the ceph-mixin set (cluster, hosts, OSDs,
-  pools, RBD, RGW) and *Ceph CSI (RBD)*, which k8s-deployment generates with
-  `hack/gen-ceph-csi-dashboard.py`.
-- **Alerts** (group `ceph-health`, same folder): HEALTH_ERR, long HEALTH_WARN, no cluster
-  metrics, OSD down, PGs inactive, mon out of quorum, OSD over 75% full, no CSI provisioner, a
-  node without a CSI node plugin, failing CSI operations, and a PVC over 85% full.
+- **Dashboards** in Grafana under Infrastructure › Ceph. Start at *Ceph - Status*: one row per
+  host (daemons running, OSD up, mon in quorum, exporters scraped), the active health checks, every
+  daemon by host, and timelines of when each stopped. Then the ceph-mixin set (cluster, hosts,
+  OSDs, pools, RBD, RGW) and *Ceph CSI (RBD)*. k8s-deployment generates the two non-mixin ones
+  (`hack/gen-ceph-status-dashboard.py`, `hack/gen-ceph-csi-dashboard.py`).
+- **Alerts** (group `ceph-health`, same folder), one instance per daemon, OSD, mon or health check,
+  with its host in the title: a health check at HEALTH_ERR, or at HEALTH_WARN for 30 min (muted
+  checks left out by name, so a new `ceph_health_mutes` entry goes there too), no cluster metrics,
+  an OSD down, a mon out of quorum, a cephadm daemon not running, PGs inactive, an OSD over 75%
+  full; for ceph-csi: no provisioner, a node without a node plugin, failing operations, a PVC over
+  85% full. Each links to *Ceph - Status* and to the section below.
+
+## When an alert fires
+
+Open *Ceph - Status*. The Hosts table says where; the alerts say it too.
+
+- **Several daemons on one host not running**, mon and OSD with them: that host's daemons
+  stopped together, almost always Docker restarting (an upgrade) or the host rebooting.
+  `ssh <host> systemctl list-units 'ceph-*'` shows them; since 2026-11-25 systemd restarts them
+  by itself (`buckle-restart.conf`), so look at `journalctl -u docker` and the units' journals
+  for why they didn't come back. To start them:
+  `sudo systemctl start ceph-85412c6c-e39c-11f1-ba59-2ccf678b0944@<daemon>` on the host, or
+  `sudo cephadm shell -- ceph orch daemon start <daemon>` from any of them.
+- **The host's exporters aren't scraped and nothing else from it changes**: the host is down or
+  off the tailnet. Its OSD and mon alerts come from the other hosts' view.
+- **An OSD is down but its daemon runs**: it can't reach the others. Its log:
+  `sudo cephadm logs --name osd.<n>` on the host.
+- **A health check** without a daemon or host behind it: `sudo cephadm shell -- ceph health
+  detail` names the PGs or daemons. PG_DEGRADED and undersized PGs after an OSD came back
+  recover by themselves; watch `ceph -s`.
+
+Buckle won't touch the next Ceph host while the `cluster` health check fails, so a stuck host
+also stops the nightly upgrades and reboots there.
 
 ## Day to day
 
