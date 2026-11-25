@@ -1,6 +1,6 @@
 # Backstage catalog entry for this repo. The Location below pulls in the rest:
-# the hardware (catalog/hardware.yaml), the tailnet, the NAS and one
-# catalog-info.yaml per module that runs something. Buckle ignores all of them.
+# the hardware (catalog/hardware.yaml), Home Assistant (catalog/home-assistant.yaml),
+# the tailnet, the NAS and one catalog-info.yaml per module that runs something. Buckle ignores all of them.
 #
 # How it's modelled:
 #  - Resource: infrastructure something runs on or stores data in (hosts, the
@@ -21,6 +21,7 @@ metadata:
 spec:
   targets:
     - ./catalog/hardware.yaml
+    - ./catalog/home-assistant.yaml
     - ./tailscale/catalog-info.yaml
     - ./nas/catalog-info.yaml
     - ./modules/*/catalog-info.yaml
@@ -33,7 +34,9 @@ metadata:
   description: >-
     The machines at home (Raspberry Pis, compute blades, isa, the NUC, the
     Synology) and the two VPS hosts, what runs on them, and the cluster and
-    storage they form. Configured by this repo through Buckle.
+    storage they form. Configured by this repo through Buckle. Home
+    Assistant, at home and in Schiltach, is here too: the homelab backs it
+    up and watches it.
   annotations:
     github.com/project-slug: cedi/homelab
   links:

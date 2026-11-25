@@ -1,0 +1,128 @@
+# Backstage: the two Home Assistant instances, at home (hass) and in Schiltach
+# (hass-schiltach). Their configuration doesn't live in this repo and Buckle
+# doesn't manage them; they're here because the homelab serves them (NAS
+# backups, NUT) and watches them (the availability SLO). Referenced from the
+# Location in the repo-root catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: hass
+  description: >-
+    The box Home Assistant runs on at home (tailnet `hass`, tag:smarthome).
+    Not managed by Buckle.
+  tags: [smarthome]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+  dependsOn:
+    - resource:home-lan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: hass-schiltach
+  description: >-
+    The box Home Assistant runs on in Schiltach (tailnet `hass-schiltach`,
+    tag:smarthome), reached only over the tailnet. Not managed by Buckle.
+  tags: [smarthome]
+spec:
+  type: host
+  owner: group:spechtlabs
+  system: homelab
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: home-assistant
+  title: Home Assistant
+  description: >-
+    Home Assistant at home. Backs up to a share on the NAS (SMB or NFS);
+    metrics (its Prometheus integration) and logs go to the `hass` tenants
+    of Mimir and Loki on specht-labs (hass-mimir / hass-loki
+    .k8s.specht-labs.de). The o11y collector probes it for the availability
+    SLO (hlhassavail in k8s-deployment).
+  annotations:
+    # The tags its traffic comes from on the tailnet.
+    specht-labs.de/tailnet-src: tag:smarthome
+  links:
+    - url: http://hass.sphinx-map.ts.net:8123
+      title: Home Assistant (tailnet)
+    - url: https://hass.elbschloss.xyz
+      title: hass.elbschloss.xyz
+  tags: [smarthome]
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  providesApis:
+    - api:home-assistant-api
+  consumesApis:
+    - api:loki-push
+    - api:mimir-remote-write
+  dependsOn:
+    - resource:hass
+    - resource:tailnet
+    # Backups.
+    - component:synology-dsm
+    # UPS status from isa's NUT proxy, over the LAN: there is no tailnet grant
+    # from tag:smarthome to NUT. Listing api:nut in consumesApis would make
+    # Backstage's tailnet-policy plugin render one.
+    - component:nut-server
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: home-assistant-api
+  title: Home Assistant web and REST API
+  description: Home Assistant's web UI, REST and WebSocket API on hass, port 8123.
+  annotations:
+    # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
+    # Tailscale grants from these annotations (shadow mode: compared with
+    # tailscale/policy.hujson, not applied). People's access stays hand-written
+    # there.
+    specht-labs.de/tailnet-dst: tag:smarthome
+    specht-labs.de/tailnet-ports: tcp:8123
+spec:
+  type: http
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  definition: |
+    Base URL: http://hass.sphinx-map.ts.net:8123 (tag:smarthome, tcp:8123),
+    plain HTTP on the tailnet.
+    /             web UI; the o11y collector probes it for the SLO
+    /api/         REST API, bearer token (a long-lived access token)
+    /api/websocket  WebSocket API
+    /api/prometheus metrics from the Prometheus integration (hass_*)
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: home-assistant-schiltach
+  title: Home Assistant (Schiltach)
+  description: >-
+    Home Assistant in Schiltach. Backs up to a share on the NAS (SMB or NFS)
+    over the tailnet; metrics and logs go to the `hass-schiltach` tenants of
+    Mimir and Loki on specht-labs. Same Grafana dashboard as hass.
+  annotations:
+    # The tags its traffic comes from on the tailnet.
+    specht-labs.de/tailnet-src: tag:smarthome
+  links:
+    - url: http://hass-schiltach.sphinx-map.ts.net:8123
+      title: Home Assistant Schiltach (tailnet)
+  tags: [smarthome]
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: homelab
+  lifecycle: production
+  consumesApis:
+    - api:loki-push
+    - api:mimir-remote-write
+  dependsOn:
+    - resource:hass-schiltach
+    - resource:tailnet
+    # Backups.
+    - component:synology-dsm

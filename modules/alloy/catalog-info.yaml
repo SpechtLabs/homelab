@@ -60,6 +60,7 @@ spec:
     - api:mimir-remote-write
     - api:labk3s-kubernetes-api
     - api:jellyfin-web
+    - api:home-assistant-api
   dependsOn:
     - resource:isa
     - component:nas-exporters
