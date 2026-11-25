@@ -60,6 +60,7 @@
 		"tag:opencode":       ["group:admins"], // Devices tagged with tag:opencode are running the OpenCode Web UI
 		"tag:buckle-server":  ["group:admins"], // Devices tagged with tag:buckle-server run the Buckle fleet server (github.com/cedi/homelab)
 		"tag:buckle-agent":   ["group:admins"], // Devices tagged with tag:buckle-agent run a Buckle agent: they dial the server, and admins SSH to them
+		"tag:tsidp-client":   ["group:admins", "tag:k8s-operator", "tag:k3s-operator"], // Machines that are tsidp relying parties (token, JWKS, userinfo calls): the Buckle server, the labk3s egress to idp
 		// Service hosts: a tag that only the one host allowed to serve a Service
 		// carries, for its autoApprovers. Owned by admins only, so neither k8s
 		// operator can hand it to a proxy (tag:core-infra is on operator proxies).
@@ -167,10 +168,10 @@
 			"dst":    ["tag:homelab"],
 			"ip":     ["*"],
 		},
-		// Allow the homelab hosts' Alloy (modules/alloy in this repo) to push logs and
+		// Alloy on every Buckle host (modules/alloy in this repo) pushes logs and
 		// metrics to homelab-loki/homelab-mimir on the o11y endpoint, plain HTTP only.
 		{
-			"src":    ["tag:homelab"],
+			"src":    ["tag:buckle-agent", "tag:homelab"],
 			"dst":    ["tag:o11y-endpoint"],
 			"ip":     ["tcp:80"],
 		},
@@ -189,7 +190,7 @@
 		// The NUT clients (modules/nut-client: the Pis and the NUC) reach upsd
 		// through svc:nut. It has only tcp:3493.
 		{
-			"src": ["tag:homelab", "tag:core-infra"],
+			"src": ["tag:buckle-agent", "tag:homelab", "tag:core-infra"],
 			"dst": ["svc:nut"],
 			"ip":  ["*"],
 		},
@@ -326,10 +327,20 @@
 		// Every member signs in through tsidp (https://idp.<tailnet>); the grants
 		// below add capabilities per group. tsidp stays a device, not a Service:
 		// it relies on Funnel and on capability grants matched on its own address.
+		// Machines that are relying parties (tag:tsidp-client) and the collector's
+		// probe reach it the same way.
 		{
-			"src": ["autogroup:member"],
+			"src": ["autogroup:member", "tag:tsidp-client", "tag:o11y-collector"],
 			"dst": ["tag:tsidp"],
 			"ip":  ["tcp:443"],
+		},
+		// The Buckle server's nightly backup goes to the NAS over NFS v3, which
+		// can't go through a Service: portmapper, status, mountd, nfs, nlockmgr
+		// (rpcinfo -p on the NAS).
+		{
+			"src": ["tag:buckle-server"],
+			"dst": ["nas-elbschloss"],
+			"ip":  ["tcp:111", "tcp:662", "tcp:892", "tcp:2049", "tcp:4045"],
 		},
 		// Admins can manage tsidp and register OIDC clients. Their tokens carry
 		// groups: ["buckle-admins"], which Buckle's admin_acl checks: who
