@@ -54,6 +54,7 @@
 		"tag:lab-argocd":     ["group:admins", "tag:k3s-operator"], // The labk3s ArgoCD API as a plain TCP device, for Backstage
 		"tag:opencode":       ["group:admins"], // Devices tagged with tag:opencode are running the OpenCode Web UI
 		"tag:buckle-server":  ["group:admins"], // Devices tagged with tag:buckle-server run the Buckle fleet server (github.com/cedi/homelab)
+		"tag:buckle-agent":   ["group:admins"], // Devices tagged with tag:buckle-agent run a Buckle agent: they dial the server, and admins SSH to them
 		// Service hosts: a tag that only the one host allowed to serve a Service
 		// carries, for its autoApprovers. Owned by admins only, so neither k8s
 		// operator can hand it to a proxy (tag:core-infra is on operator proxies).
@@ -114,7 +115,7 @@
 		{
 			"action": "accept",
 			"src":    ["group:admins", "tag:jumphost"],
-			"dst":    ["tag:core-infra", "tag:core-services"],
+			"dst":    ["tag:core-infra", "tag:core-services", "tag:buckle-agent"],
 			"users":  ["autogroup:nonroot"],
 		},
 		// admins can access the core-infra resources as root in check mode
@@ -122,7 +123,7 @@
 			"action":      "check",
 			"checkPeriod": "8h",
 			"src":         ["group:admins"],
-			"dst":         ["tag:core-infra", "tag:core-services"],
+			"dst":         ["tag:core-infra", "tag:core-services", "tag:buckle-agent"],
 			"users":       ["root"],
 		},
 		// any user can use Tailscale SSH to connect to their own devices as non-root user
@@ -331,6 +332,14 @@
 			"dst": ["svc:stream"],
 			"ip":  ["tcp:443"],
 		},
+		// Every member signs in through tsidp (https://idp.<tailnet>); the grants
+		// below add capabilities per group. tsidp stays a device, not a Service:
+		// it relies on Funnel and on capability grants matched on its own address.
+		{
+			"src": ["autogroup:member"],
+			"dst": ["tag:tsidp"],
+			"ip":  ["tcp:443"],
+		},
 		// Admins can manage tsidp and register OIDC clients. Their tokens carry
 		// groups: ["buckle-admins"], which Buckle's admin_acl checks: who
 		// administers the fleet is decided here, by group:admins.
@@ -403,7 +412,7 @@
 		// Buckle agents dial out to the server's gRPC port.
 		// (Admins also reach the UI on nuc:7701 through the admin grant above.)
 		{
-			"src": ["tag:homelab", "tag:core-infra", "tag:core-services"],
+			"src": ["tag:buckle-agent", "tag:homelab", "tag:core-infra", "tag:core-services"],
 			"dst": ["tag:buckle-server"],
 			"ip":  ["tcp:7700"],
 		},
@@ -411,7 +420,7 @@
 		// the server with a PROXY v2 header (the server trusts it and whois-es the
 		// agent's own address), so the server can move without touching agents.
 		{
-			"src": ["tag:homelab", "tag:core-infra", "tag:core-services"],
+			"src": ["tag:buckle-agent", "tag:homelab", "tag:core-infra", "tag:core-services"],
 			"dst": ["svc:buckle"],
 			"ip":  ["tcp:7700"],
 		},

@@ -26,7 +26,7 @@ agents:
   trusted_proxies: ["100.122.149.90", "100.70.89.41"]   # nuc, isa
   tailscale:
     # Existing hosts already carry these tags; anything else waits in the UI.
-    allowed_tags: ["tag:homelab", "tag:core-infra", "tag:core-services"]
+    allowed_tags: ["tag:buckle-agent", "tag:homelab", "tag:core-infra", "tag:core-services"]
     # Uncomment once the Tailscale OAuth client exists (bootstrap/README.md, step 1):
     # "Add an agent" then mints a tagged, single-use, pre-approved auth key.
     # provisioning:
