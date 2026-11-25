@@ -1,5 +1,5 @@
 name: k3s-agent
-description: k3s worker nodes, joined to the server over its MagicDNS name.
+description: k3s worker nodes, joined to the server through svc:labk3s, over the tailnet.
 when: 'host.groups contains "k3s-agent"'
 # After the k3s server, also inside a phase: a joining agent needs its API.
 needs: [base, 'group:k3s-server']
@@ -12,7 +12,8 @@ disrupts: node
 # three, and the server, take the drained node's pods.
 parallel: 1
 vars:
-  k3s_server: clusterpi-leader
+  # The Tailscale Service in front of the API (modules/k3s-server).
+  k3s_server: 'labk3s.{{ vars.tailnet }}'
   k3s_api_port: 6443
 tasks:
   - sysctl.param: { name: net.ipv4.ip_forward, value: 1 }
