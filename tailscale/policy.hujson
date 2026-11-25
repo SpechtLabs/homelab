@@ -15,6 +15,11 @@
 			"x1bay@github",
 			"x545vpxsbj@privaterelay.appleid.com",
 		],
+		// group:hass-users is given access to Home Assistant at home (svc:hass)
+		"group:hass-users": [
+			"cedi@github",
+			"x545vpxsbj@privaterelay.appleid.com",
+		],
 		// group:synology-users is given access to the Synology NAS
 		"group:synology-users": [
 			"cedi@github",
@@ -305,10 +310,10 @@
 			"ip":  ["tcp:445", "tcp:2049"],
 		},
 		// Home Assistant at home, https://hass.<tailnet> and http://hass.<tailnet>:8123,
-		// for every member; the collector probes it for the availability SLO. The
-		// Service has only the web UI's ports, so "*" is all it offers.
+		// for group:hass-users; the collector probes it for the availability SLO.
+		// The Service has only the web UI's ports, so "*" is all it offers.
 		{
-			"src": ["autogroup:member", "tag:o11y-collector"],
+			"src": ["group:hass-users", "tag:o11y-collector"],
 			"dst": ["svc:hass"],
 			"ip":  ["*"],
 		},
