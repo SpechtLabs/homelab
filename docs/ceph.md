@@ -47,6 +47,11 @@ the cluster; `ceph orch rm` or `ceph … rm` do.
   (`ceph_health_mutes`). A second `aes` client would go unnoticed. Buckle creates a client's key
   with its `key_type` but never rotates one: a key of the wrong type fails the `resources` step,
   which prints the `ceph auth rotate` command to run by hand once ceph-csi's secret can follow.
+- **cephadm's daemons restart always, not only on failure.** A Docker restart (the nightly
+  `base/upgrade` installing a new docker-ce) stops every container with SIGTERM; the daemons exit
+  0 and cephadm's `Restart=on-failure` left them down: storagepi-ceph1 lost mon, mgr and OSD for
+  7 h on 2026-11-25. Buckle adds a drop-in, `ceph-<fsid>@.service.d/buckle-restart.conf`, with
+  `Restart=always`; `systemctl stop` (what `ceph orch daemon stop` uses) still stops for good.
 - **ceph-csi lists the mons by IP.** labk3s's CoreDNS sends `*.ts.net` to the Tailscale
   operator's nameserver, which doesn't know the storage Pis. Pods reach the tailnet through the
   node.

@@ -19,6 +19,7 @@ vars:
   ceph_rgw_port: 7480
   # Cluster facts, set in vars/group-ceph.yaml.
   ceph_admin_host: ''
+  ceph_fsid: ''
   ceph_hosts: {}
   ceph_rgw_hosts: []
   ceph_cephadm_pubkey: ''
@@ -39,6 +40,24 @@ tasks:
   # Docker CE came with the hosts (download.docker.com source); cephadm runs
   # every daemon as a container through it.
   - systemd.unit: { name: docker, enabled: true, active: true }
+  # cephadm's daemon units restart only on failure. A Docker restart (an apt
+  # upgrade of docker-ce, nightly through base/upgrade) stops every container
+  # with SIGTERM, the daemons exit 0, and systemd counts that as a clean stop:
+  # storagepi-ceph1 lost its mon, mgr and OSD for 7 h on 2026-11-25 although
+  # Docker was back after 8 s. Restart=always brings them back; an explicit
+  # `systemctl stop` (ceph orch daemon stop/rm, cephadm redeploys) still stops
+  # them for good. Template-level drop-in, so it covers every daemon cephadm
+  # adds later; cephadm writes the unit file only, never this directory.
+  - file.directory: { path: '/etc/systemd/system/ceph-{{ vars.ceph_fsid }}@.service.d', mode: "0755" }
+    when: 'vars.ceph_fsid != ""'
+  - file.copy:
+      src: cephadm-restart.conf
+      dest: '/etc/systemd/system/ceph-{{ vars.ceph_fsid }}@.service.d/buckle-restart.conf'
+      mode: "0644"
+      owner: root
+      group: root
+    when: 'vars.ceph_fsid != ""'
+    notify: [daemon-reload]
   - file.download:
       url: 'https://download.ceph.com/rpm-{{ vars.ceph_version }}/el9/noarch/cephadm'
       dest: /usr/local/sbin/cephadm
@@ -173,6 +192,7 @@ actions:
       capture: always
 
 handlers:
+  daemon-reload: { systemd.daemon_reload: {} }
   reload-sshd:
     command.run: { run: 'sshd -t && systemctl reload ssh' }
   restart-tailnet-route: { systemd.restart: { name: ceph-tailnet-route } }

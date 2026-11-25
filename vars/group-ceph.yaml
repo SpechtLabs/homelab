@@ -16,6 +16,10 @@ rpi_kernel: kernel8.img
 # Where cephadm bootstraps the cluster and where Buckle applies the specs.
 ceph_admin_host: storagepi-ceph1
 
+# The cluster's fsid (bootstrap printed it; `ceph fsid`). cephadm names its
+# systemd units after it: ceph-<fsid>@<daemon>.service.
+ceph_fsid: 85412c6c-e39c-11f1-ba59-2ccf678b0944
+
 # The cluster's hosts and their tailnet IPv4 addresses (`tailscale ip -4`).
 # cephadm can't see these itself (`cephadm list-networks` only reads the main
 # routing table, Tailscale's routes live in table 52), so mons are placed at
