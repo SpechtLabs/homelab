@@ -43,8 +43,8 @@ metadata:
     # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
     # Tailscale grants from these annotations (shadow mode: compared with
     # tailscale/policy.hujson, not applied).
-    # The server's host directly, or svc:buckle in front of it.
-    specht-labs.de/tailnet-dst: tag:buckle-server,svc:buckle
+    # svc:buckle, which forwards tcp:7700 to the server's host.
+    specht-labs.de/tailnet-dst: svc:buckle
     specht-labs.de/tailnet-ports: tcp:7700
 spec:
   type: grpc

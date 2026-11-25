@@ -70,6 +70,13 @@ metadata:
   name: ceph-rbd
   title: Ceph RBD
   description: Block devices from the Ceph cluster's RBD pools, through its monitors.
+  annotations:
+    # Where tailnet consumers reach it: the Ceph hosts themselves (clients
+    # reach every OSD at its own address, so no Service). Backstage's
+    # tailnet-policy plugin renders grants from these (shadow mode). The OSD
+    # range skips 7480, RGW's port.
+    specht-labs.de/tailnet-dst: tag:ceph
+    specht-labs.de/tailnet-ports: tcp:3300,tcp:6789,tcp:6800-7479,tcp:7481-7568
 spec:
   type: ceph-rbd
   owner: group:spechtlabs
