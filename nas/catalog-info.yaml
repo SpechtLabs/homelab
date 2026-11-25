@@ -12,7 +12,7 @@ metadata:
 spec:
   type: nas
   owner: group:spechtlabs
-  system: homelab
+  system: elbschloss
   dependsOn:
     - resource:home-lan
 ---
@@ -32,7 +32,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: elbschloss
   lifecycle: production
   providesApis:
     - api:nas-nfs
@@ -51,7 +51,7 @@ metadata:
 spec:
   type: nfs
   owner: group:spechtlabs
-  system: homelab
+  system: elbschloss
   lifecycle: production
   definition: |
     NFS v3 (v4 is off on the Synology) from nas.sphinx-map.ts.net.
@@ -76,7 +76,7 @@ metadata:
 spec:
   type: website
   owner: group:spechtlabs
-  system: homelab
+  system: elbschloss
   lifecycle: production
   providesApis:
     - api:jellyfin-web
@@ -101,7 +101,7 @@ metadata:
 spec:
   type: http
   owner: group:spechtlabs
-  system: homelab
+  system: elbschloss
   lifecycle: production
   definition: |
     Base URL: https://stream.sphinx-map.ts.net (svc:stream, tcp:443)
@@ -120,7 +120,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: elbschloss
   lifecycle: production
   dependsOn:
     - resource:nas
@@ -140,7 +140,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: observability
   lifecycle: production
   dependsOn:
     - resource:nas

@@ -15,7 +15,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: labk3s
   lifecycle: production
   consumesApis:
     - api:labk3s-kubernetes-api

@@ -1,5 +1,5 @@
-# Backstage catalog entries for the Ceph cluster, its S3 API and the RBD pool
-# labk3s uses. Not read by Buckle: Backstage reads it through the Location in
+# Backstage catalog entries for the Ceph cluster, its RBD and S3 APIs and the
+# RBD pool labk3s uses (internal to the ceph system: labk3s consumes the API). Not read by Buckle: Backstage reads it through the Location in
 # the repo-root catalog-info.yaml. Runbook: docs/ceph.md.
 apiVersion: backstage.io/v1alpha1
 kind: Component
@@ -19,9 +19,10 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: ceph
   lifecycle: production
   providesApis:
+    - api:ceph-rbd
     - api:ceph-s3
   dependsOn:
     - resource:storagepi-ceph1
@@ -43,7 +44,7 @@ metadata:
 spec:
   type: rbd-pool
   owner: group:spechtlabs
-  system: homelab
+  system: ceph
   dependsOn:
     - component:ceph
 ---
@@ -56,9 +57,32 @@ metadata:
 spec:
   type: s3
   owner: group:spechtlabs
-  system: homelab
+  system: ceph
   lifecycle: experimental
   definition: |
     S3-compatible API (Ceph RGW): http://storagepi-ceph2.sphinx-map.ts.net:7480
     Users (ceph_rgw_users in vars/group-ceph.yaml): experiments.
     Keys: docs/ceph.md ("S3").
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: ceph-rbd
+  title: Ceph RBD
+  description: Block devices from the Ceph cluster's RBD pools, through its monitors.
+spec:
+  type: ceph-rbd
+  owner: group:spechtlabs
+  system: ceph
+  lifecycle: production
+  definition: |
+    Ceph's own protocol (msgr v1/v2) to the monitors, then the OSDs, at the
+    storagepi hosts' tailnet addresses (public_network 100.64.0.0/10):
+      mon storagepi-ceph1  100.105.212.35:6789
+      mon storagepi-ceph2  100.107.71.68:6789
+      mon storagepi-ceph3  100.118.224.54:6789
+    fsid 85412c6c-e39c-11f1-ba59-2ccf678b0944.
+
+    Pools and their clients (Buckle creates both, vars/group-ceph.yaml):
+      k3s   client.k3s, AES-128 key (the nodes' kernel rbd can't use
+            aes256k); labk3s's ceph-csi-rbd, StorageClass ceph-rbd.

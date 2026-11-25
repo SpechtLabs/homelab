@@ -1,16 +1,26 @@
 # Backstage catalog entry for this repo. The Location below pulls in the rest:
-# the hardware (catalog/hardware.yaml), Home Assistant (catalog/home-assistant.yaml),
-# the tailnet, the NAS and one catalog-info.yaml per module that runs something. Buckle ignores all of them.
+# the domain and systems (catalog/systems.yaml), the hardware, Home Assistant,
+# the tailnet, the NAS and one catalog-info.yaml per module that runs
+# something. Buckle ignores all of them.
 #
-# How it's modelled:
+# How it's modelled (https://backstage.io/docs/features/software-catalog/system-model/):
+#  - Domain `homelab`: everything at home or run from this repo. Its sibling
+#    domains, specht-labs and third-party, are in SpechtLabs/k8s-deployment.
+#  - System: a set of Components and Resources with one job, which offers its
+#    APIs to the others: elbschloss (the house), tailnet, fleet (Buckle),
+#    timekeeping, ceph, labk3s, compute-blades, jitsi, schiltach; and
+#    observability, defined in k8s-deployment. Every entity is in exactly one;
+#    a host is in the system it's there for, a general-purpose one in
+#    elbschloss. Systems have no relations of their own: what crosses them is
+#    an API consumed, or a dependsOn on what something runs on.
 #  - Resource: infrastructure something runs on or stores data in (hosts, the
 #    NAS, the UPS, networks, the k3s cluster, Ceph's RBD pool).
 #  - Component: software that runs (a service, an agent on every host, a site).
 #    It dependsOn the Resources it runs on and the Components it can't work
 #    without.
 #  - API: an interface another Component consumes over the network (OIDC, NUT,
-#    NTP, PTP, OTLP, S3, ...). Providers list it in providesApis, consumers in
-#    consumesApis; that is the relation, not a dependsOn on the provider.
+#    NTP, PTP, OTLP, S3, RBD, ...). Providers list it in providesApis, consumers
+#    in consumesApis; that is the relation, not a dependsOn on the provider.
 #  - Fleet-wide agents (alloy, buckle-agent, nut-client, time-sync) don't list
 #    every host they run on: "runs on every Pi" isn't a dependency of the Pi.
 apiVersion: backstage.io/v1alpha1
@@ -20,32 +30,12 @@ metadata:
   description: Every catalog-info.yaml in cedi/homelab.
 spec:
   targets:
+    - ./catalog/systems.yaml
     - ./catalog/hardware.yaml
     - ./catalog/home-assistant.yaml
     - ./tailscale/catalog-info.yaml
     - ./nas/catalog-info.yaml
     - ./modules/*/catalog-info.yaml
----
-apiVersion: backstage.io/v1alpha1
-kind: System
-metadata:
-  name: homelab
-  title: Homelab
-  description: >-
-    The machines at home (Raspberry Pis, compute blades, isa, the NUC, the
-    Synology) and the two VPS hosts, what runs on them, and the cluster and
-    storage they form. Configured by this repo through Buckle. Home
-    Assistant, at home and in Schiltach, is here too: the homelab backs it
-    up and watches it.
-  annotations:
-    github.com/project-slug: cedi/homelab
-  links:
-    - url: https://buckle.sphinx-map.ts.net
-      title: Buckle
-    - url: https://github.com/cedi/homelab
-      title: cedi/homelab
-spec:
-  owner: group:spechtlabs
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Component
@@ -61,5 +51,5 @@ metadata:
 spec:
   type: gitops
   owner: group:spechtlabs
-  system: homelab
+  system: fleet
   lifecycle: production

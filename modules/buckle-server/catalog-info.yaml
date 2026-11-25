@@ -20,7 +20,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: fleet
   lifecycle: production
   providesApis:
     - api:buckle-agent-api
@@ -49,7 +49,7 @@ metadata:
 spec:
   type: grpc
   owner: group:spechtlabs
-  system: homelab
+  system: fleet
   lifecycle: production
   definition: |
     Endpoint: http://buckle.sphinx-map.ts.net:7700 (gRPC)
@@ -70,7 +70,7 @@ metadata:
 spec:
   type: http
   owner: group:spechtlabs
-  system: homelab
+  system: fleet
   lifecycle: production
   definition: |
     Base URL: https://buckle.sphinx-map.ts.net (svc:buckle, tcp:443)

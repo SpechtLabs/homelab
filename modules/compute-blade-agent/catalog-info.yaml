@@ -17,7 +17,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: compute-blades
   lifecycle: production
   providesApis:
     - api:bladectl-api
@@ -44,7 +44,7 @@ metadata:
 spec:
   type: grpc
   owner: group:spechtlabs
-  system: homelab
+  system: compute-blades
   lifecycle: production
   # The proto itself (vendored: $text may only read files in this repo), so
   # the Definition tab shows the BladeAgentService methods and messages.

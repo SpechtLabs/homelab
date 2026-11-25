@@ -14,7 +14,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: elbschloss
   lifecycle: production
   providesApis:
     - api:nut
@@ -39,7 +39,7 @@ metadata:
 spec:
   type: nut
   owner: group:spechtlabs
-  system: homelab
+  system: elbschloss
   lifecycle: production
   definition: |
     Network UPS Tools protocol, TCP 3493 on isa.sphinx-map.ts.net.

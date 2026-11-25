@@ -20,7 +20,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: fleet
   lifecycle: production
   consumesApis:
     - api:buckle-agent-api

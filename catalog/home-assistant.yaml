@@ -14,7 +14,7 @@ metadata:
 spec:
   type: host
   owner: group:spechtlabs
-  system: homelab
+  system: elbschloss
   dependsOn:
     - resource:home-lan
 ---
@@ -29,7 +29,7 @@ metadata:
 spec:
   type: host
   owner: group:spechtlabs
-  system: homelab
+  system: schiltach
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Component
@@ -54,7 +54,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: elbschloss
   lifecycle: production
   providesApis:
     - api:home-assistant-api
@@ -87,7 +87,7 @@ metadata:
 spec:
   type: http
   owner: group:spechtlabs
-  system: homelab
+  system: elbschloss
   lifecycle: production
   definition: |
     Base URL: http://hass.sphinx-map.ts.net:8123 (tag:smarthome, tcp:8123),
@@ -116,7 +116,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: schiltach
   lifecycle: production
   consumesApis:
     - api:loki-push

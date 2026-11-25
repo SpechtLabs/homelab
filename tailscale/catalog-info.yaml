@@ -20,7 +20,7 @@ metadata:
 spec:
   type: network
   owner: group:spechtlabs
-  system: homelab
+  system: tailnet
   dependsOn:
     # Tailscale's coordination service (k8s-deployment catalog/external.yaml).
     - component:tailscale-control-plane

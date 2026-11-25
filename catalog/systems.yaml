@@ -1,0 +1,151 @@
+# Backstage: the homelab Domain and its Systems. A System is a set of
+# Components and Resources with one job; the others reach it through the APIs
+# it offers. The specht-labs and third-party domains, and the observability
+# system the homelab ships its telemetry to, are in SpechtLabs/k8s-deployment
+# (catalog/systems.yaml). Referenced from the Location in the repo-root
+# catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: homelab
+  title: Homelab
+  description: >-
+    Elbschloss, the house, and what runs there or is run from cedi/homelab:
+    the home network, the tailnet, Buckle, the time server, Ceph, the labk3s
+    cluster, the compute blades, Jitsi on its VPS, and Home Assistant in
+    Schiltach.
+  annotations:
+    github.com/project-slug: cedi/homelab
+  links:
+    - url: https://github.com/cedi/homelab
+      title: cedi/homelab
+    - url: https://buckle.sphinx-map.ts.net
+      title: Buckle
+spec:
+  type: site
+  owner: group:spechtlabs
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: elbschloss
+  title: Elbschloss
+  description: >-
+    The house: the home LAN, the UPS and NUT, the Synology with DSM, its NFS
+    shares and Jellyfin, Home Assistant, and the general-purpose hosts (isa,
+    the NUC) that other systems' services run on. Offers NUT, NFS, Jellyfin
+    and Home Assistant's API.
+spec:
+  type: site
+  owner: group:spechtlabs
+  domain: homelab
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: tailnet
+  title: Tailnet
+  description: >-
+    The tailnet sphinx-map.ts.net that ties both sites together: its policy
+    (tailscale/policy.hujson) and capability grants, tsidp as its OIDC
+    provider, the exit node hole and the jumphost. Offers OIDC (tsidp).
+spec:
+  type: network
+  owner: group:spechtlabs
+  domain: homelab
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: fleet
+  title: Fleet management (Buckle)
+  description: >-
+    Buckle: the server on isa, an agent on every host, and this repo as the
+    fleet's configuration. Offers the agent API and the server's HTTP API.
+  links:
+    - url: https://buckle.sphinx-map.ts.net
+      title: Buckle
+spec:
+  type: platform
+  owner: group:spechtlabs
+  domain: homelab
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: timekeeping
+  title: Timekeeping
+  description: >-
+    timepi with its GPS/PPS receiver as the LAN's stratum 1 and PTP
+    grandmaster, and chrony/ptp4l on the hosts that follow it. Offers NTP and
+    PTP.
+spec:
+  type: service
+  owner: group:spechtlabs
+  domain: homelab
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: ceph
+  title: Ceph
+  description: >-
+    Ceph on storagepi-ceph1..3 (cephadm over the tailnet) and its pools.
+    Offers RBD (labk3s's persistent volumes) and S3. See docs/ceph.md.
+spec:
+  type: storage
+  owner: group:spechtlabs
+  domain: homelab
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: labk3s
+  title: labk3s
+  description: >-
+    The k3s cluster on clusterpi-leader and clusterpi-worker1..4: k3s itself
+    (Buckle) and the apps Argo CD deploys to it from SpechtLabs/k8s-deployment
+    (the -labk3s entities there). Offers the Kubernetes API.
+spec:
+  type: kubernetes-cluster
+  owner: group:spechtlabs
+  domain: homelab
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: compute-blades
+  title: Compute blades
+  description: >-
+    blade-pi1..4, CM4s on compute blades, with compute-blade-agent for fans,
+    LEDs and power. Buckle's canary phase. Offers bladectl's API.
+spec:
+  type: hardware
+  owner: group:spechtlabs
+  domain: homelab
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: jitsi
+  title: Jitsi Meet
+  description: >-
+    Jitsi Meet for meet.realschule-rottweil.de on the Hetzner vServer meet,
+    configured by Buckle from this repo.
+spec:
+  type: service
+  owner: group:spechtlabs
+  domain: homelab
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: schiltach
+  title: Schiltach
+  description: >-
+    Home Assistant in Schiltach, reached only over the tailnet. It backs up to
+    the NAS and ships its metrics and logs to the observability system.
+spec:
+  type: site
+  owner: group:spechtlabs
+  domain: homelab

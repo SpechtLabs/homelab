@@ -23,7 +23,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: observability
   lifecycle: production
   consumesApis:
     - api:loki-push
@@ -49,7 +49,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: observability
   lifecycle: production
   subcomponentOf: component:alloy
   providesApis:
@@ -74,7 +74,7 @@ metadata:
 spec:
   type: otlp
   owner: group:spechtlabs
-  system: homelab
+  system: observability
   lifecycle: production
   definition: |
     OpenTelemetry Protocol on isa (tag:o11y-endpoint; who may send is in

@@ -19,7 +19,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: labk3s
   lifecycle: production
   providesApis:
     - api:labk3s-kubernetes-api
@@ -42,7 +42,7 @@ metadata:
 spec:
   type: kubernetes
   owner: group:spechtlabs
-  system: homelab
+  system: labk3s
   lifecycle: production
   definition: |
     Kubernetes API, https://clusterpi-leader.sphinx-map.ts.net:6443
@@ -67,7 +67,7 @@ metadata:
 spec:
   type: kubernetes-cluster
   owner: group:spechtlabs
-  system: homelab
+  system: labk3s
   dependsOn:
     - component:k3s-server
     - component:k3s-agent

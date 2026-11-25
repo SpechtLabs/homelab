@@ -17,7 +17,7 @@ metadata:
 spec:
   type: website
   owner: group:spechtlabs
-  system: homelab
+  system: jitsi
   lifecycle: production
   dependsOn:
     - resource:meet

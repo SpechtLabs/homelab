@@ -24,7 +24,7 @@ metadata:
     an hour at a time.
 spec:
   owner: group:spechtlabs
-  system: homelab
+  system: tailnet
   targets:
     - component:tka
     - component:tka-labk3s
@@ -46,7 +46,7 @@ metadata:
     carry groups ["buckle-admins"], which Buckle's admin_acl checks.
 spec:
   owner: group:spechtlabs
-  system: homelab
+  system: tailnet
   targets:
     - component:tsidp
     - component:buckle-server
@@ -71,7 +71,7 @@ metadata:
     maps it to its Admin role. tsidp unions list claims across grants.
 spec:
   owner: group:spechtlabs
-  system: homelab
+  system: tailnet
   targets:
     - component:tsidp
   src: [group:admins]
@@ -90,7 +90,7 @@ metadata:
   title: Synology users sign in to the NAS through tsidp
 spec:
   owner: group:spechtlabs
-  system: homelab
+  system: tailnet
   targets:
     - component:tsidp
     - component:synology-dsm
@@ -109,7 +109,7 @@ metadata:
   title: SREs sign in to Argo CD through tsidp
 spec:
   owner: group:spechtlabs
-  system: homelab
+  system: tailnet
   targets:
     - component:tsidp
     - component:argocd

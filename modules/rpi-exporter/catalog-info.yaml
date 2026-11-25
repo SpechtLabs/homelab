@@ -16,5 +16,5 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: observability
   lifecycle: production

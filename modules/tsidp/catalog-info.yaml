@@ -18,7 +18,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: tailnet
   lifecycle: production
   providesApis:
     - api:tsidp-oidc
@@ -35,7 +35,7 @@ metadata:
 spec:
   type: openapi
   owner: group:spechtlabs
-  system: homelab
+  system: tailnet
   lifecycle: production
   definition:
     $text: ./tsidp-oidc.openapi.yaml

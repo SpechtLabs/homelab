@@ -16,7 +16,7 @@ metadata:
 spec:
   type: service
   owner: group:spechtlabs
-  system: homelab
+  system: timekeeping
   lifecycle: production
   providesApis:
     - api:ntp
@@ -35,7 +35,7 @@ metadata:
 spec:
   type: ntp
   owner: group:spechtlabs
-  system: homelab
+  system: timekeeping
   lifecycle: production
   definition: |
     NTP, UDP 123 on 192.168.0.109 (timepi's LAN address, a fixed DHCP lease:
@@ -52,7 +52,7 @@ metadata:
 spec:
   type: ptp
   owner: group:spechtlabs
-  system: homelab
+  system: timekeeping
   lifecycle: production
   definition: |
     IEEE 1588 (PTPv2) from timepi's eth0: UDPv4, end-to-end delay,
