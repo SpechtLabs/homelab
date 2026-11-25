@@ -54,6 +54,11 @@
 		"tag:lab-argocd":     ["group:admins", "tag:k3s-operator"], // The labk3s ArgoCD API as a plain TCP device, for Backstage
 		"tag:opencode":       ["group:admins"], // Devices tagged with tag:opencode are running the OpenCode Web UI
 		"tag:buckle-server":  ["group:admins"], // Devices tagged with tag:buckle-server run the Buckle fleet server (github.com/cedi/homelab)
+		// Service hosts: a tag that only the one host allowed to serve a Service
+		// carries, for its autoApprovers. Owned by admins only, so neither k8s
+		// operator can hand it to a proxy (tag:core-infra is on operator proxies).
+		"tag:nas":            ["group:admins"], // The Synology: hosts svc:nas and svc:stream
+		"tag:nut-server":     ["group:admins"], // The NUT server (isa): hosts svc:nut
 	},
 
 	"nodeAttrs": [
@@ -80,7 +85,7 @@
 	"autoApprovers": {
 		"services": {
 			// Jellyfin on the NAS: `tailscale serve --service=svc:stream --https=443 http://localhost:8096`
-			"svc:stream": ["tag:core-infra"],
+			"svc:stream": ["tag:nas", "tag:core-infra"], // tag:core-infra until the host carries tag:nas
 			// Buckle: UI and API on tcp:443, agents' gRPC on tcp:7700 with a PROXY v2
 			// header (bootstrap/README.md).
 			"svc:buckle": ["tag:buckle-server"],
@@ -88,9 +93,9 @@
 			// (HTTPS) and tcp:8123 (plain HTTP, as before the move to a Service).
 			"svc:hass": ["tag:smarthome"],
 			// DSM, Drive and SMB on the NAS (nas/README.md).
-			"svc:nas": ["tag:core-infra"],
+			"svc:nas": ["tag:nas", "tag:core-infra"], // tag:core-infra until the host carries tag:nas
 			// upsd on isa (modules/nut-server), the UPS for every Pi and the NUC.
-			"svc:nut": ["tag:core-infra"],
+			"svc:nut": ["tag:nut-server", "tag:core-infra"], // tag:core-infra until the host carries tag:nut-server
 		},
 	},
 
