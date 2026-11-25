@@ -25,9 +25,9 @@
 
 	// Declare convenient hostname aliases to use in place of IP addresses.
 	"hosts": {
-		"nas":                 "100.71.201.45",
+		"nas-elbschloss":      "100.71.201.45",
 		"clusterpi-leader":    "100.92.89.43",
-		"hass":                "100.75.135.70",
+		"hass-elbschloss":     "100.75.135.70",
 		"nuc":                 "100.122.149.90",
 		"idp":                 "100.77.112.23",
 		"hass-schiltach":      "100.89.41.43",
@@ -84,6 +84,11 @@
 			// Buckle: UI and API on tcp:443, agents' gRPC on tcp:7700 with a PROXY v2
 			// header (bootstrap/README.md).
 			"svc:buckle": ["tag:buckle-server"],
+			// Home Assistant's add-on (`services:` in its config): web UI on tcp:443
+			// (HTTPS) and tcp:8123 (plain HTTP, as before the move to a Service).
+			"svc:hass": ["tag:smarthome"],
+			// DSM, Drive and SMB on the NAS (nas/README.md).
+			"svc:nas": ["tag:core-infra"],
 		},
 	},
 
@@ -258,23 +263,54 @@
 			"dst": ["svc:stream"],
 			"ip":  ["tcp:443"],
 		},
-		// Synology users can reach the NAS over Tailscale. The NAS is not in
-		// tag:core-services, so this is all they get: DSM and Drive. Jellyfin is svc:stream.
+		// Synology users reach DSM and Drive through svc:nas (https://nas.<tailnet>).
+		// The NAS is not in tag:core-services, so this is all they get. Jellyfin is
+		// svc:stream. svc:nas also carries SMB (tcp:445) for Home Assistant's
+		// backups, so these grants list ports instead of "*".
 		{
 			"src": ["group:synology-users"],
-			"dst": ["nas"],
+			"dst": ["svc:nas"],
 			"ip":  [
-				"tcp:443",  // DSM through `tailscale serve` (https://nas.<tailnet>)
+				"tcp:443",  // DSM (https://nas.<tailnet>)
 				"tcp:5001", // DSM HTTPS, which the Synology mobile apps use
 				"tcp:6690", // Synology Drive sync
 			],
 		},
-		// Home Assistant (hass and hass-schiltach) writes its backups to a share on
-		// the NAS (network storage, SMB or NFS).
+		// The same on the device itself, until no client dials nas-elbschloss
+		// directly any more (it was `nas` until the svc:nas switch-over).
+		{
+			"src": ["group:synology-users"],
+			"dst": ["nas-elbschloss"],
+			"ip":  ["tcp:443", "tcp:5001", "tcp:6690"],
+		},
+		// The collector probes DSM for its availability SLO.
+		{
+			"src": ["tag:o11y-collector"],
+			"dst": ["svc:nas"],
+			"ip":  ["tcp:443"],
+		},
+		// Home Assistant (hass-elbschloss and hass-schiltach) writes its backups
+		// to a share on the NAS: SMB through svc:nas, NFS on the device (NFS v3's
+		// portmapper and mountd can't go through a Service).
 		{
 			"src": ["tag:smarthome"],
-			"dst": ["nas"],
+			"dst": ["svc:nas"],
+			"ip":  ["tcp:445"],
+		},
+		{
+			"src": ["tag:smarthome"],
+			"dst": ["nas-elbschloss"],
 			"ip":  ["tcp:445", "tcp:2049"],
+		},
+		// Home Assistant at home, https://hass.<tailnet> and http://hass.<tailnet>:8123,
+		// for every member; the collector probes it for the availability SLO. The
+		// Service has only the web UI's ports, so "*" is all it offers.
+		// (Until hass-elbschloss leaves tag:core-services, that grant still opens
+		// the device itself.)
+		{
+			"src": ["autogroup:member", "tag:o11y-collector"],
+			"dst": ["svc:hass"],
+			"ip":  ["*"],
 		},
 		// Synology users can stream from Jellyfin at https://stream.<tailnet>
 		{
@@ -373,10 +409,10 @@
 			"src":   "cedi@github",
 			"proto": "tcp",
 			"accept": [
-				"nas:5000",
+				"nas-elbschloss:5000",
 				"clusterpi-leader:443",
 				"clusterpi-leader:6443",
-				"hass:8123",
+				"hass-elbschloss:8123",
 				"nuc:1234",
 				"idp:443",
 				"hass-schiltach:8123",
@@ -385,44 +421,44 @@
 		{
 			"src":    "x1bay@github",
 			"proto":  "tcp",
-			"accept": ["nas:443", "nas:5001", "nas:6690", "hass:8123"],
+			"accept": ["nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:6690", "hass-elbschloss:8123"],
 			// Only DSM and Drive on the NAS: no Jellyfin port (svc:stream instead),
 			// plain DSM, SSH or SMB.
-			"deny":   ["hass-schiltach:8123", "nas:8096", "nas:5000", "nas:22", "nas:445"],
+			"deny":   ["hass-schiltach:8123", "nas-elbschloss:8096", "nas-elbschloss:5000", "nas-elbschloss:22", "nas-elbschloss:445"],
 		},
 		// Homelab boxes and Home Assistant get only their own ports on the NAS.
 		{
 			"src":    "tag:homelab",
 			"proto":  "tcp",
-			"accept": ["nas:3493"],
-			"deny":   ["nas:443", "nas:445", "nas:5001", "nas:22"],
+			"accept": ["nas-elbschloss:3493"],
+			"deny":   ["nas-elbschloss:443", "nas-elbschloss:445", "nas-elbschloss:5001", "nas-elbschloss:22"],
 		},
 		{
 			"src":    "tag:smarthome",
 			"proto":  "tcp",
-			"deny":   ["nas:443", "nas:5001", "nas:22"],
+			"deny":   ["nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:22"],
 		},
 		// Backstage's egress reaches the labk3s ArgoCD API and nothing else there.
 		{
 			"src":    "tag:backstage",
 			"proto":  "tcp",
 			"accept": ["tag:lab-argocd:443"],
-			"deny":   ["tag:lab-argocd:22", "tag:homelab:443", "nas:443"],
+			"deny":   ["tag:lab-argocd:22", "tag:homelab:443", "nas-elbschloss:443"],
 		},
 		{
 			"src":    "group:synology-users",
 			"proto":  "tcp",
-			"accept": ["nas:443", "nas:5001", "nas:6690"],
+			"accept": ["nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:6690"],
 		},
 		{
 			"src":    "tag:smarthome",
 			"proto":  "tcp",
-			"accept": ["nas:445", "nas:2049"],
+			"accept": ["nas-elbschloss:445", "nas-elbschloss:2049"],
 		},
 		{
 			"src":    "hass-schiltach",
 			"proto":  "tcp",
-			"accept": ["nas:445", "nas:2049"],
+			"accept": ["nas-elbschloss:445", "nas-elbschloss:2049"],
 		},
 		{
 			"src":   "group:vpn",

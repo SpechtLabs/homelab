@@ -8,8 +8,8 @@ kind: Resource
 metadata:
   name: hass
   description: >-
-    The box Home Assistant runs on at home (tailnet `hass`, tag:smarthome).
-    Not managed by Buckle.
+    The box Home Assistant runs on at home (tailnet `hass-elbschloss`,
+    tag:smarthome). Its Tailscale add-on hosts svc:hass. Not managed by Buckle.
   tags: [smarthome]
 spec:
   type: host
@@ -46,7 +46,7 @@ metadata:
     # The tags its traffic comes from on the tailnet.
     specht-labs.de/tailnet-src: tag:smarthome
   links:
-    - url: http://hass.sphinx-map.ts.net:8123
+    - url: https://hass.sphinx-map.ts.net
       title: Home Assistant (tailnet)
     - url: https://hass.elbschloss.xyz
       title: hass.elbschloss.xyz
@@ -76,22 +76,23 @@ kind: API
 metadata:
   name: home-assistant-api
   title: Home Assistant web and REST API
-  description: Home Assistant's web UI, REST and WebSocket API on hass, port 8123.
+  description: Home Assistant's web UI, REST and WebSocket API, behind the Tailscale Service svc:hass.
   annotations:
     # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
     # Tailscale grants from these annotations (shadow mode: compared with
     # tailscale/policy.hujson, not applied). People's access stays hand-written
     # there.
-    specht-labs.de/tailnet-dst: tag:smarthome
-    specht-labs.de/tailnet-ports: tcp:8123
+    specht-labs.de/tailnet-dst: svc:hass
+    specht-labs.de/tailnet-ports: tcp:443,tcp:8123
 spec:
   type: http
   owner: group:spechtlabs
   system: elbschloss
   lifecycle: production
   definition: |
-    Base URL: http://hass.sphinx-map.ts.net:8123 (tag:smarthome, tcp:8123),
-    plain HTTP on the tailnet.
+    Base URL: https://hass.sphinx-map.ts.net (svc:hass, tcp:443), or plain
+    HTTP on http://hass.sphinx-map.ts.net:8123 (tcp:8123). The Tailscale
+    add-on on hass-elbschloss proxies both to 127.0.0.1:8123.
     /             web UI; the o11y collector probes it for the SLO
     /api/         REST API, bearer token (a long-lived access token)
     /api/websocket  WebSocket API

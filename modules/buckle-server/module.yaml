@@ -7,7 +7,9 @@ vars:
   # The NAS's NFS export for these backups (its own folder: they go into its
   # root). DSM: Shared Folder → NFS Permissions, read/write for this host's
   # tailnet address, no squash. The Synology speaks NFS v3 only (v4 is off).
-  buckle_backup_nfs_export: 'nas.sphinx-map.ts.net:/volume1/homelab/buckle'
+  # The device's own name: nas.<tailnet> is the Tailscale Service svc:nas,
+  # which NFS v3 (portmapper, mountd) can't go through.
+  buckle_backup_nfs_export: 'nas-elbschloss.sphinx-map.ts.net:/volume1/homelab/buckle'
 tasks:
   # sqlite3 for a consistent copy of a live database (.backup), nfs-common to
   # mount the NAS.

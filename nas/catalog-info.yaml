@@ -54,7 +54,9 @@ spec:
   system: elbschloss
   lifecycle: production
   definition: |
-    NFS v3 (v4 is off on the Synology) from nas.sphinx-map.ts.net.
+    NFS v3 (v4 is off on the Synology) from nas-elbschloss.sphinx-map.ts.net,
+    the device's own name: nas.sphinx-map.ts.net is svc:nas, which NFS v3
+    (portmapper, mountd) can't go through.
     Exports are per shared folder (DSM: Shared Folder > NFS Permissions),
     granted to a client's tailnet address.
 

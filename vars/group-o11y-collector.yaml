@@ -5,7 +5,7 @@ alloy_custom_args: --server.http.listen-addr=0.0.0.0:12345
 o11y_remote_scrapes:
   - name: nas_node_exporter
     job: node_exporter
-    targets: ["nas:9100"]
+    targets: ["nas-elbschloss:9100"]
   - name: snmp_exporter
     job: snmp
     targets: ["192.168.0.64:9116"]
@@ -40,5 +40,5 @@ o11y_probes:
   - { name: tsidp, service: tsidp, module: http_oidc_discovery, url: "https://idp.sphinx-map.ts.net/.well-known/openid-configuration" }
   - { name: home-assistant, service: home-assistant, module: http_2xx, url: "http://hass.sphinx-map.ts.net:8123/" }
   - { name: labk3s-api, service: labk3s-api, module: http_401_insecure, url: "https://clusterpi-leader.sphinx-map.ts.net:6443/readyz" }
-  - { name: nas-dsm, service: nas, module: http_2xx, url: "http://nas.sphinx-map.ts.net:5000/" }
+  - { name: nas-dsm, service: nas, module: http_2xx, url: "https://nas.sphinx-map.ts.net/" }
   - { name: jellyfin, service: jellyfin, module: http_2xx, url: "https://stream.sphinx-map.ts.net/health" }
