@@ -52,7 +52,7 @@
 		"tag:o11y-agent":     ["group:admins"], // Devices tagged with tag:o11y-agent can send o11y data to o11y-endpoints
 		"tag:o11y-endpoint":  ["group:admins", "tag:k8s-operator"], // Devices tagged with tag:o11y-endpoint accept o11y data send by o11-collector
 		"tag:jumphost":       ["group:admins"], // Devices tagged with tag:jumphost are allowed to initiate SSH connections via tailscale-ssh
-		"tag:homelab":        ["group:admins", "tag:k3s-operator"], // Devices tagged with tag:homelab should be considered as experimental devices running test workloads
+		"tag:homelab":        ["group:admins", "tag:k3s-operator"], // Homelab hosts: only an SSH target (admins and the jumphost); grants use attribute tags
 		"tag:backstage":      ["group:admins", "tag:k8s-operator"], // Backstage's egress proxies on specht-labs (its view onto the labk3s ArgoCD)
 		"tag:lab-argocd":     ["group:admins", "tag:k3s-operator"], // The labk3s ArgoCD API as a plain TCP device, for Backstage
 		"tag:opencode":       ["group:admins"], // Devices tagged with tag:opencode are running the OpenCode Web UI
@@ -176,12 +176,6 @@
 			"src": ["tag:ceph-client"],
 			"dst": ["tag:ceph"],
 			"ip":  ["tcp:3300", "tcp:6789", "tcp:6800-7568"],
-		},
-		// Allow homelab to homelab
-		{
-			"src":    ["tag:homelab"],
-			"dst":    ["tag:homelab"],
-			"ip":     ["*"],
 		},
 		// Alloy on every Buckle host (modules/alloy in this repo) pushes logs and
 		// metrics to homelab-loki/homelab-mimir on the o11y endpoint, plain HTTP only.
@@ -474,12 +468,25 @@
 			"accept": ["tag:o11y-endpoint:80"],
 			"deny":   ["tag:o11y-endpoint:443", "tag:buckle-server:22"],
 		},
-		// tag:homelab alone is only an SSH target and the homelab mesh: no Alloy
-		// push, no Buckle server.
+		// tag:homelab alone is only an SSH target: no Alloy push, no Buckle
+		// server, no Ceph, nothing on other homelab hosts.
 		{
 			"src":    "tag:homelab",
 			"proto":  "tcp",
-			"deny":   ["tag:o11y-endpoint:80", "tag:buckle-server:7700"],
+			"deny":   ["tag:o11y-endpoint:80", "tag:buckle-server:7700", "tag:ceph:6789", "tag:homelab:10250", "tag:homelab:9100"],
+		},
+		// Ceph: the hosts reach each other including cephadm's sshd; clients
+		// get the mons and OSDs, not cephadm, the dashboard or RGW.
+		{
+			"src":    "tag:ceph",
+			"proto":  "tcp",
+			"accept": ["tag:ceph:2222", "tag:ceph:3300", "tag:ceph:6789", "tag:ceph:6800", "tag:ceph:7568"],
+		},
+		{
+			"src":    "tag:ceph-client",
+			"proto":  "tcp",
+			"accept": ["tag:ceph:3300", "tag:ceph:6789", "tag:ceph:6800", "tag:ceph:7568"],
+			"deny":   ["tag:ceph:2222", "tag:ceph:8443", "tag:ceph:7480", "tag:ceph:9283"],
 		},
 		{
 			"src":    "group:vpn",
