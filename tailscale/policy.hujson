@@ -58,6 +58,8 @@
 		"tag:opencode":       ["group:admins"], // Devices tagged with tag:opencode are running the OpenCode Web UI
 		"tag:buckle-server":  ["group:admins"], // Devices tagged with tag:buckle-server run the Buckle fleet server (github.com/cedi/homelab)
 		"tag:buckle-agent":   ["group:admins"], // Devices tagged with tag:buckle-agent run a Buckle agent: they dial the server, and admins SSH to them
+		"tag:ceph":           ["group:admins"], // Ceph cluster hosts (storagepi-ceph1..3): mons, OSDs, mgr, cephadm
+		"tag:ceph-client":    ["group:admins"], // Ceph clients: the labk3s nodes, where ceph-csi maps RBD volumes
 		"tag:tsidp-client":   ["group:admins", "tag:k8s-operator", "tag:k3s-operator"], // Machines that are tsidp relying parties (token, JWKS, userinfo calls): the Buckle server, the labk3s egress to idp
 		// Service hosts: a tag that only the one host allowed to serve a Service
 		// carries, for its autoApprovers. Owned by admins only, so neither k8s
@@ -159,6 +161,21 @@
 			"src":    ["tag:o11y-collector", "tag:o11y-agent", "tag:smarthome"],
 			"dst":    ["tag:o11y-endpoint"],
 			"ip":     ["*"],
+		},
+		// Ceph speaks only on the tailnet (public_network is 100.64.0.0/10,
+		// modules/ceph): the hosts among themselves (cephadm's sshd on 2222, mons
+		// on 3300/6789, OSDs and mgr on 6800-7568, ms_bind_port_max) and the
+		// labk3s nodes' ceph-csi as clients. Node-scoped: clients reach every OSD
+		// at its own address, so there's no Service in front.
+		{
+			"src": ["tag:ceph"],
+			"dst": ["tag:ceph"],
+			"ip":  ["tcp:2222", "tcp:3300", "tcp:6789", "tcp:6800-7568"],
+		},
+		{
+			"src": ["tag:ceph-client"],
+			"dst": ["tag:ceph"],
+			"ip":  ["tcp:3300", "tcp:6789", "tcp:6800-7568"],
 		},
 		// Allow homelab to homelab
 		{
