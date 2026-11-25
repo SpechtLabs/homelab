@@ -7,6 +7,9 @@ tags: [k3s]
 # first (maintenance in buckle.yaml).
 disrupts: node
 vars:
+  # The Tailscale Service in front of the API: labk3s.<tailnet>:6443. Its
+  # name goes into the serving certificate (tls-san).
+  k3s_service: labk3s
   k3s_disable: [traefik]
   k3s_disable_network_policy: true
 tasks:
@@ -38,6 +41,16 @@ tasks:
     notify: [restart]
   - systemd.unit: { name: k3s, enabled: true, active: true, daemon_reload: true }
 
+  # The API as the Tailscale Service svc:{{ vars.k3s_service }} (tcp:6443,
+  # passed through: k3s terminates TLS, with the name as a tls-san in config.yaml). The policy's
+  # autoApprovers approve a host tagged tag:k3s-server; a second server
+  # would serve it too.
+  - command.run:
+      run: [tailscale, serve, '--service=svc:{{ vars.k3s_service }}', --tcp=6443, 'tcp://localhost:6443']
+      unless: 'tailscale serve get-config --all | grep -q "\"tcp:6443\": \"tcp://localhost:6443\""'
+    id: svc-k3s
+    removal: leave
+
   # Leftovers from k3s-ansible: the token moved into config.yaml, upgrades no
   # longer go through the install script.
   - file.absent: { path: /etc/systemd/system/k3s.service.env }
@@ -59,6 +72,13 @@ health:
     command:
       run: [/usr/local/bin/k3s, kubectl, get, --raw, /readyz]
       expect: { exit: 0, stdout_matches: '^ok' }
+  # ...and through the Service, checking its name in the certificate. Not
+  # required: the host may not be approved yet right after a push.
+  - name: svc-api
+    command:
+      run: [/usr/local/bin/k3s, kubectl, '--server=https://{{ vars.k3s_service }}.{{ vars.tailnet }}:6443', get, --raw, /readyz]
+      expect: { exit: 0, stdout_matches: '^ok' }
+    required: false
   - name: nodes-ready
     command:
       run: "/usr/local/bin/k3s kubectl get nodes --no-headers | awk '$2 != \"Ready\" {bad=1} END {exit bad}'"

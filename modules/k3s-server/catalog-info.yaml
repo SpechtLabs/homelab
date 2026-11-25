@@ -37,7 +37,8 @@ metadata:
     # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
     # Tailscale grants from these annotations (shadow mode: compared with
     # tailscale/policy.hujson, not applied).
-    specht-labs.de/tailnet-dst: tag:homelab
+    # The server directly, or svc:labk3s in front of it (clients move to it).
+    specht-labs.de/tailnet-dst: tag:homelab,svc:labk3s
     specht-labs.de/tailnet-ports: tcp:6443
 spec:
   type: kubernetes
@@ -45,7 +46,8 @@ spec:
   system: labk3s
   lifecycle: production
   definition: |
-    Kubernetes API, https://clusterpi-leader.sphinx-map.ts.net:6443
+    Kubernetes API, https://labk3s.sphinx-map.ts.net:6443 (the Tailscale
+    Service svc:labk3s, passed through to the server's tcp:6443)
     (version: k3s_version in vars/versions.yaml).
     Agents join with K3S_TOKEN. Buckle applies its workloads (the root
     Argo CD Application) through the server's own admin kubeconfig

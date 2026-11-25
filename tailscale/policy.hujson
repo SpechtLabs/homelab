@@ -59,6 +59,7 @@
 		// operator can hand it to a proxy (tag:core-infra is on operator proxies).
 		"tag:nas":            ["group:admins"], // The Synology: hosts svc:nas and svc:stream
 		"tag:nut-server":     ["group:admins"], // The NUT server (isa): hosts svc:nut
+		"tag:k3s-server":     ["group:admins"], // labk3s's k3s server (clusterpi-leader): hosts svc:labk3s
 	},
 
 	"nodeAttrs": [
@@ -96,6 +97,8 @@
 			"svc:nas": ["tag:nas"],
 			// upsd on isa (modules/nut-server), the UPS for every Pi and the NUC.
 			"svc:nut": ["tag:nut-server"],
+			// The labk3s API (modules/k3s-server), tcp:6443 passed through to k3s.
+			"svc:labk3s": ["tag:k3s-server"],
 		},
 	},
 
@@ -270,6 +273,13 @@
 			"src": ["tag:o11y-collector"],
 			"dst": ["svc:stream"],
 			"ip":  ["tcp:443"],
+		},
+		// The labk3s API at https://labk3s.<tailnet>:6443: kubectl for admins, the
+		// collector's probe. The Service has only tcp:6443.
+		{
+			"src": ["group:admins", "tag:o11y-collector"],
+			"dst": ["svc:labk3s"],
+			"ip":  ["*"],
 		},
 		// Synology users reach DSM and Drive through svc:nas (https://nas.<tailnet>).
 		// The NAS is not in tag:core-services, so this is all they get. Jellyfin is
