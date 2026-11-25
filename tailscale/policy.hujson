@@ -263,12 +263,7 @@
 		},
 		// ...and to probe the services the homelab's availability SLOs measure
 		// (vars/group-o11y-collector.yaml, o11y_probes), on the paths users take:
-		// the k3s API like kubectl, Jellyfin through its Tailscale Service.
-		{
-			"src": ["tag:o11y-collector"],
-			"dst": ["tag:homelab"],
-			"ip":  ["tcp:6443"],
-		},
+		// their Tailscale Services (svc:labk3s below, svc:hass, svc:nas).
 		{
 			"src": ["tag:o11y-collector"],
 			"dst": ["svc:stream"],
@@ -511,7 +506,7 @@
 		{
 			"src":   "tag:o11y-collector",
 			"proto": "tcp",
-			"deny":  ["tag:core-infra:443"],
+			"deny":  ["tag:core-infra:443", "tag:homelab:6443"],
 		},
 		{
 			"src":   "group:vpn",

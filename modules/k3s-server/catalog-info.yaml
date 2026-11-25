@@ -37,8 +37,7 @@ metadata:
     # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
     # Tailscale grants from these annotations (shadow mode: compared with
     # tailscale/policy.hujson, not applied).
-    # The server directly, or svc:labk3s in front of it (clients move to it).
-    specht-labs.de/tailnet-dst: tag:homelab,svc:labk3s
+    specht-labs.de/tailnet-dst: svc:labk3s
     specht-labs.de/tailnet-ports: tcp:6443
 spec:
   type: kubernetes
