@@ -79,7 +79,7 @@ metadata:
   title: Admins get cluster-admin through TKA
   description: >-
     group:admins sign in to both clusters through TKA as cluster-admin, for
-    an hour at a time.
+    an hour at a time. Both instances (tka, lab-tka) listen on tcp:8123.
 spec:
   type: grant
   target: tailscale:sphinx-map
@@ -88,7 +88,7 @@ spec:
   appliesTo: [component:tka, component:tka-labk3s]
   src: [group:admins]
   dst: [tag:tka]
-  ip: ['*']
+  ip: ['tcp:8123']
   app:
     specht-labs.de/cap/tka:
       - role: cluster-admin
