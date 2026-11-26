@@ -61,7 +61,7 @@
 		"tag:tsidp-client":   ["group:admins", "tag:k8s-operator", "tag:k3s-operator"],
 		// Host tag owned by the operator too (it mints the proxies' keys), unlike
 		// the admins-only host tags above.
-		"tag:labk3s-ingress": ["group:admins", "tag:k3s-operator"], // The tailnet-ingress ProxyGroup on labk3s (k8s-deployment): hosts svc:labk3s-argocd-api
+		"tag:labk3s-ingress": ["group:admins", "tag:k3s-operator"], // The tailnet-ingress ProxyGroup on labk3s (k8s-deployment): hosts svc:labk3s-argocd-api, svc:lab-argocd
 		"tag:specht-labs-ingress": ["group:admins", "tag:k8s-operator"], // The tailnet-ingress ProxyGroup on specht-labs (k8s-deployment): hosts svc:lgtm, svc:argocd, svc:backstage // Machines that are tsidp relying parties (token, JWKS, userinfo calls): the Buckle server, the labk3s egress to idp
 		// Service hosts: a tag that only the one host allowed to serve a Service
 		// carries, for its autoApprovers. Owned by admins only, so neither k8s
@@ -116,6 +116,9 @@
 			// The labk3s Argo CD API (k8s-deployment
 			// apps/argocd/cluster/labk3s/argocd-api-tailnet.yaml), tcp:443.
 			"svc:labk3s-argocd-api": ["tag:labk3s-ingress"],
+			// The labk3s Argo CD UI (k8s-deployment apps/argocd/cluster/labk3s,
+			// Ingress argocd-server), https://lab-argocd.<tailnet>.
+			"svc:lab-argocd": ["tag:labk3s-ingress"],
 		},
 	},
 
@@ -287,6 +290,13 @@
 					},
 				],
 			},
+		},
+		// The labk3s Argo CD UI, https://lab-argocd.<tailnet> (svc:lab-argocd);
+		// sign-in through tsidp.
+		{
+			"src": ["group:admins", "group:sre"],
+			"dst": ["svc:lab-argocd"],
+			"ip":  ["tcp:443"],
 		},
 		// Backstage on specht-labs reads the labk3s Argo CD API (read-only
 		// account) through its egress proxy (catalog: api:argocd-labk3s-api).
