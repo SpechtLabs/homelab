@@ -40,7 +40,7 @@ spec:
   system: tailnet
   appliesTo: [resource:nas]
   tests:
-    - src: user:x1bay
+    - src: user:moritz
       proto: tcp
       deny:
         - hass-schiltach:8123
