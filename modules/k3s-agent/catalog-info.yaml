@@ -6,7 +6,7 @@ metadata:
   name: k3s-agent
   title: k3s agent
   description: >-
-    k3s on clusterpi-worker1..4, joined to the server through svc:labk3s;
+    k3s on clusterpi-worker1..4, reaching the server only through svc:labk3s;
     node addresses and flannel on the tailnet.
     Rolled one worker at a time after the server, each drained first.
   annotations:
@@ -22,7 +22,6 @@ spec:
     - api:labk3s-node-mesh
   consumesApis:
     - api:labk3s-kubernetes-api
-    - api:labk3s-supervisor
     - api:labk3s-node-mesh
   dependsOn:
     - component:k3s-server

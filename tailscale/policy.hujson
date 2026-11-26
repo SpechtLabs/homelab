@@ -201,19 +201,15 @@
 			"dst": ["tag:ceph"],
 			"ip":  ["tcp:3300", "tcp:6789", "tcp:6800-7479", "tcp:7481-7568"],
 		},
-		// labk3s over the tailnet (node-ip and flannel on tailscale0): agents join
-		// through svc:labk3s, then use the API endpoint Kubernetes advertises (the
-		// server's own tailnet address); flannel's VXLAN, the kubelet API
-		// (exec/logs, metrics-server, Alloy's scrapes) and ceph-csi's metrics run
-		// node to node. Node-scoped like Ceph: every node is a peer.
+		// labk3s over the tailnet (node-ip and flannel on tailscale0). The API
+		// only through svc:labk3s: the server advertises the Service's address,
+		// so the agents' load balancers and pods calling kubernetes.default use
+		// it too. Flannel's VXLAN, the kubelet API (exec/logs, metrics-server,
+		// Alloy's scrapes) and ceph-csi's metrics run node to node: node-scoped
+		// like Ceph, every node is a peer.
 		{
 			"src": ["tag:k3s-node"],
 			"dst": ["svc:labk3s"],
-			"ip":  ["tcp:6443"],
-		},
-		{
-			"src": ["tag:k3s-node"],
-			"dst": ["tag:k3s-server"],
 			"ip":  ["tcp:6443"],
 		},
 		{
@@ -535,6 +531,13 @@
 			"src":    "tag:buckle-agent",
 			"proto":  "tcp",
 			"deny":   ["tag:buckle-server:22", "tag:buckle-server:12345"],
+		},
+		// The labk3s nodes reach the API only through svc:labk3s, not the server.
+		{
+			"src":    "tag:k3s-node",
+			"proto":  "tcp",
+			"accept": ["tag:k3s-node:10250", "tag:k3s-node:8681"],
+			"deny":   ["tag:k3s-server:6443"],
 		},
 		// The compute blades are neither Ceph clients nor labk3s nodes.
 		{

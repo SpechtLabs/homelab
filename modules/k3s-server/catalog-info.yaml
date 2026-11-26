@@ -25,9 +25,10 @@ spec:
   lifecycle: production
   providesApis:
     - api:labk3s-kubernetes-api
-    - api:labk3s-supervisor
     - api:labk3s-node-mesh
+  # Its own kubelet and pods reach the API through svc:labk3s too.
   consumesApis:
+    - api:labk3s-kubernetes-api
     - api:labk3s-node-mesh
   dependsOn:
     - resource:clusterpi-leader
@@ -54,7 +55,9 @@ spec:
     Kubernetes API, https://labk3s.sphinx-map.ts.net:6443 (the Tailscale
     Service svc:labk3s, passed through to the server's tcp:6443)
     (version: k3s_version in vars/versions.yaml).
-    Agents join with K3S_TOKEN. Buckle applies its workloads (the root
+    It is also the API's advertise-address, so the `kubernetes` endpoint
+    is the Service: agents (joined with K3S_TOKEN) and pods calling
+    kubernetes.default reach the API only through it. Buckle applies its workloads (the root
     Argo CD Application) through the server's own admin kubeconfig
     (/etc/rancher/k3s/k3s.yaml). /readyz answers 401 to anonymous callers,
     which the o11y collector's probe counts as up.
@@ -80,27 +83,6 @@ spec:
     - component:k3s-agent
     - component:homelab-config
     - component:k8s-deployment
----
-apiVersion: backstage.io/v1alpha1
-kind: API
-metadata:
-  name: labk3s-supervisor
-  title: labk3s supervisor and API on the server's own address
-  description: >-
-    What the k3s agents dial once joined: the address Kubernetes advertises
-    for the API (the server's tailnet IPv4), not svc:labk3s.
-  annotations:
-    specht-labs.de/tailnet-dst: tag:k3s-server
-    specht-labs.de/tailnet-ports: tcp:6443
-spec:
-  type: kubernetes
-  owner: group:spechtlabs
-  system: labk3s
-  lifecycle: production
-  definition: |
-    https://<clusterpi-leader's tailnet IPv4>:6443, the endpoint of the
-    `kubernetes` Service (advertise-address). Agents join through
-    labk3s.sphinx-map.ts.net, then their load balancer uses this.
 ---
 apiVersion: backstage.io/v1alpha1
 kind: API
