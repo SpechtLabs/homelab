@@ -58,6 +58,11 @@
 		// Compute blades
 		// blade-pi1..4.
 		"tag:compute-blade": ["group:admins"],
+		// Home Assistant at home
+		// hass-elbschloss: hosts svc:hass. Its own tag because tag:smarthome is on
+		// hass-schiltach too, which must not be able to serve svc:hass. The HA Tailscale
+		// add-on advertises it (advertise_tags).
+		"tag:hass-server": ["group:admins"],
 		// Jumphost
 		// Allowed to start Tailscale SSH sessions.
 		"tag:jumphost": ["group:admins"],
@@ -87,13 +92,12 @@
 		// isa: hosts svc:nut.
 		"tag:nut-server": ["group:admins"],
 		// Telemetry senders without a Buckle agent
-		// meet and labk3s's lab-lgtm-egress: push to svc:lgtm.
+		// meet and labk3s's lab-lgtm-egress: push to svc:lgtm. Home Assistant pushes as
+		// tag:smarthome and doesn't need it.
 		"tag:o11y-agent": ["group:admins"],
 		// The o11y collector
 		// isa: scrapes exporters, probes the SLO targets, pushes to svc:lgtm.
 		"tag:o11y-collector": ["group:admins"],
-		// OpenCode web UI
-		"tag:opencode": ["group:admins"],
 		// Smart-home devices
 		// The Home Assistant boxes: tighter access than other hosts.
 		"tag:smarthome": ["group:admins"],
@@ -108,8 +112,11 @@
 		// Allowed to run tsidp with Tailscale Funnel.
 		"tag:tsidp": ["group:admins"],
 		// tsidp relying parties
-		// Machines that call tsidp's token, JWKS and userinfo endpoints: the Buckle
-		// server, the labk3s egress to idp.
+		// Machines that call tsidp's token, JWKS and userinfo endpoints over the
+		// tailnet: isa (the Buckle server), the NAS (DSM's SSO) and labk3s's
+		// k3s-idp-egress (its Argo CD). Every consumesApis: api:tsidp-oidc across the
+		// catalogs is one; the NAS lost DSM sign-in on 2026-11-25 when a retag dropped
+		// this tag.
 		"tag:tsidp-client": ["group:admins", "tag:k8s-operator", "tag:k3s-operator"],
 	},
 
@@ -135,11 +142,12 @@
 		"services": {
 			// The Buckle server serves svc:buckle
 			// UI and API on tcp:443, the agents' gRPC on tcp:7700 with a PROXY v2 header
-			// (bootstrap/README.md).
+			// (fleet docs, reference: "Server and agents").
 			"svc:buckle": ["tag:buckle-server"],
 			// Home Assistant serves svc:hass
-			// The add-on's `services:`: web UI on tcp:443 (HTTPS) and tcp:8123 (plain HTTP).
-			"svc:hass": ["tag:smarthome"],
+			// The add-on's `services:`: web UI on tcp:443 (HTTPS) and tcp:8123 (plain HTTP),
+			// served by hass-elbschloss.
+			"svc:hass": ["tag:hass-server", "tag:smarthome"],
 			// The k3s server serves svc:labk3s
 			// The labk3s API (modules/k3s-server), tcp:6443 passed through to k3s.
 			"svc:labk3s": ["tag:k3s-server"],
@@ -150,8 +158,8 @@
 			"svc:lab-argocd": ["tag:labk3s-ingress"],
 			// The NAS serves svc:nas, svc:stream, svc:node-exporter and svc:nfs
 			// Jellyfin (`tailscale serve --service=svc:stream --https=443
-			// http://localhost:8096`), DSM, Drive and SMB (nas/README.md), the node_exporter
-			// (tcp:9100) and NFS v4.1 (tcp:2049).
+			// http://localhost:8096`), DSM (tcp:443, tcp:5001) and Drive (tcp:6690)
+			// (nas/README.md), the node_exporter (tcp:9100) and NFS v4.1 (tcp:2049).
 			"svc:stream": ["tag:nas"],
 			"svc:nas": ["tag:nas"],
 			"svc:node-exporter": ["tag:nas"],
@@ -430,9 +438,9 @@
 			"ip":  ["tcp:443"],
 		},
 		// From the catalog: nas-nfs
-		// Consumed by buckle-server.
+		// Consumed by nas-backup.
 		{
-			"src": ["tag:buckle-server"],
+			"src": ["tag:buckle-server", "tag:k3s-server"],
 			"dst": ["svc:nfs"],
 			"ip":  ["tcp:2049"],
 		},
@@ -520,9 +528,17 @@
 			"proto": "tcp",
 			"deny":  ["tag:buckle-server:7700"],
 		},
-		// The Buckle server reaches the NAS's NFS only through svc:nfs
+		// The backup hosts reach the NAS's NFS only through svc:nfs
+		// isa (tag:buckle-server) and clusterpi-leader (tag:k3s-server) back up through
+		// svc:nfs (modules/nas-backup); the NAS's own NFS, portmapper and mountd stay
+		// closed to them.
 		{
 			"src":   "tag:buckle-server",
+			"proto": "tcp",
+			"deny":  ["nas-elbschloss:2049", "nas-elbschloss:111", "nas-elbschloss:892"],
+		},
+		{
+			"src":   "tag:k3s-server",
 			"proto": "tcp",
 			"deny":  ["nas-elbschloss:2049", "nas-elbschloss:111", "nas-elbschloss:892"],
 		},
