@@ -1,9 +1,13 @@
 # Tailnet policy
 
-`policy.hujson` is the whole tailnet policy. `.github/workflows/tailscale.yaml`
-tests it on pull requests and applies it on `main`. Tailscale runs the policy's
-`tests` on every save, so a failing test rejects the push and the previous
-policy stays live. Edits in the admin console get overwritten.
+`policy.hujson` is the whole tailnet policy, rendered by Backstage from the
+catalog (`policy/` here and the services' annotations, see "In Backstage"):
+change the catalog, not the file. Backstage keeps a pull request open on the
+branch `backstage/tailnet-policy` with the rendered file;
+`.github/workflows/tailscale.yaml` tests it on that pull request and applies
+it once it's merged to `main`. Tailscale runs the policy's `tests` on every
+save, so a failing test rejects the push and the previous policy stays live.
+Edits in the admin console get overwritten.
 
 ## The model
 
@@ -74,8 +78,8 @@ device:
 it (`policy.yaml`), one entity per tag, SSH rule, node attribute and set of
 auto approvers, the tests grouped by concern, and the few grants the services
 can't say themselves (`grants.yaml`: break-glass, exit nodes, capability
-grants). Groups and their members are Backstage
-Groups and Users (SpechtLabs/backstage `catalog/org.yaml`).
+grants). Groups and their members are Backstage Groups and Users (the
+private SpechtLabs/backstage_resources).
 
 Every other grant comes from the services' own annotations, on the API:
 
@@ -91,25 +95,28 @@ traffic comes from. A Component that consumes the API from outside the
 provider's cluster gets a grant to it.
 
 Backstage puts the policy file together from these (Tailscale page, and the
-Policy tab of `tailscale:sphinx-map`) and keeps a pull request open with it in
-SpechtLabs/tailnet-policy-sandbox. It allows what `policy.hujson` allows,
-which is still what gets applied: change both until the rendered file
-replaces it.
+Policy tab of `tailscale:sphinx-map`) and publishes it where `policy.yaml`'s
+`spec.publish` says: a pull request against this repo, from the branch
+`backstage/tailnet-policy`, which it updates whenever the catalog changes.
+Review it, let the workflow's test pass, merge it. A hand edit to
+`policy.hujson` is overwritten by the next pull request.
 
 ## Adding a Service
 
 1. Define it in the admin console (Services): name and ports. The definition
    is the one piece that doesn't live here.
-2. Add an admin-owned host tag to `tagOwners`, the Service to
-   `autoApprovers.services` with that tag, and the grants. Push.
+2. Add an admin-owned host tag (`policy/tags.yaml`), the Service to an auto
+   approver entity with that tag (`policy/auto-approvers.yaml`), and the
+   API's annotations for the grants (step 5). Push, then merge Backstage's
+   pull request.
 3. Tag the host in the console, then serve every port of the definition on
    it (`tailscale serve --service=svc:<name> ...`, or a module task like
    `modules/nut-server`). A host that misses a port drops out of the Service
    ("required ports are missing").
 4. Move the clients to `<name>.sphinx-map.ts.net`, check, then remove the old
-   device grant in a separate push.
-5. Keep the catalog in step: an API's `specht-labs.de/tailnet-dst` names the
-   Service and `tailnet-allow` the people who use it, a consumer's
+   device grant in a separate change (and pull request).
+5. Grants come from the catalog: an API's `specht-labs.de/tailnet-dst` names
+   the Service and `tailnet-allow` the people who use it, a consumer's
    `tailnet-src` its attribute tag.
 
 ## Gotchas

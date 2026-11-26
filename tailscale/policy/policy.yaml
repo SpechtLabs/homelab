@@ -4,7 +4,7 @@
 # Tailscale entity whose spec.target names it: the files next to this one
 # hold the tags, grants, SSH rules, node attributes, auto approvers and
 # tests. The groups and their members are Backstage Groups and Users
-# (SpechtLabs/backstage catalog/org.yaml); a group:<name> here is the
+# (SpechtLabs/backstage_resources); a group:<name> here is the
 # Group whose specht-labs.de/tailnet-group annotation names it. Grants come
 # from the services' own tailnet annotations wherever they can
 # (catalogGrants); grants.yaml holds the few that can't.
@@ -32,11 +32,13 @@ spec:
   appliesTo: [resource:tailnet]
   # Grants from the services' tailnet annotations (grants.yaml says which).
   catalogGrants: true
-  # Where Backstage writes the rendered file: a pull request kept up to
-  # date in the sandbox, for review. flow: push would commit it directly.
-  # Backstage writes only to repositories its tailscale.allowedRepos lists.
+  # Where Backstage writes the rendered file: a pull request against this
+  # repo, kept up to date on its branch. The tailscale workflow tests it
+  # against the tailnet; merging it applies it. flow: push would commit it
+  # directly. Backstage writes only to repositories its
+  # tailscale.allowedRepos lists (k8s-deployment's Backstage config).
   publish:
-    repo: SpechtLabs/tailnet-policy-sandbox
+    repo: SpechtLabs/homelab
     path: tailscale/policy.hujson
     flow: pullRequest
     pullRequestBranch: backstage/tailnet-policy
