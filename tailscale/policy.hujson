@@ -51,7 +51,6 @@
 		"tag:o11y-agent":     ["group:admins"], // Telemetry senders without a Buckle agent (meet, labk3s's lab-lgtm-egress): push to svc:lgtm
 		"tag:jumphost":       ["group:admins"], // Devices tagged with tag:jumphost are allowed to initiate SSH connections via tailscale-ssh
 		"tag:backstage":      ["group:admins", "tag:k8s-operator"], // Backstage's egress proxies on specht-labs (its view onto the labk3s ArgoCD)
-		"tag:lab-argocd":     ["group:admins", "tag:k3s-operator"], // The labk3s ArgoCD API as a plain TCP device, for Backstage
 		"tag:opencode":       ["group:admins"], // Devices tagged with tag:opencode are running the OpenCode Web UI
 		"tag:buckle-server":  ["group:admins"], // Devices tagged with tag:buckle-server run the Buckle fleet server (github.com/cedi/homelab)
 		"tag:buckle-agent":   ["group:admins"], // Devices tagged with tag:buckle-agent run a Buckle agent: they dial the server, and admins SSH to them
@@ -290,11 +289,10 @@
 			},
 		},
 		// Backstage on specht-labs reads the labk3s Argo CD API (read-only
-		// account) through its egress proxy: the lab-argocd-api device until it's
-		// gone, svc:labk3s-argocd-api after (catalog: api:argocd-labk3s-api).
+		// account) through its egress proxy (catalog: api:argocd-labk3s-api).
 		{
 			"src": ["tag:backstage"],
-			"dst": ["tag:lab-argocd", "svc:labk3s-argocd-api"],
+			"dst": ["svc:labk3s-argocd-api"],
 			"ip":  ["tcp:443"],
 		},
 		// Allow tag:o11y-collector to scrape all prometheus endpoints
@@ -506,8 +504,7 @@
 		{
 			"src":    "tag:backstage",
 			"proto":  "tcp",
-			"accept": ["tag:lab-argocd:443"],
-			"deny":   ["tag:lab-argocd:22", "tag:k3s-node:443", "nas-elbschloss:443"],
+			"deny":   ["tag:k3s-node:443", "tag:k3s-server:6443", "nas-elbschloss:443"],
 		},
 		{
 			"src":    "group:synology-users",
