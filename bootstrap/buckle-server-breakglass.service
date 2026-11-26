@@ -4,7 +4,7 @@
 # stopping it, or 4 hours passing, brings buckle-server back.
 [Unit]
 Description=Buckle fleet server (break-glass: no sign-in, localhost only)
-Documentation=https://github.com/SpechtLabs/homelab/blob/main/bootstrap/README.md
+Documentation=https://backstage.k8s.specht-labs.de/docs/default/system/fleet/how-to/sign-in-when-tsidp-is-down/
 Conflicts=buckle-server.service
 After=buckle-server.service network-online.target tailscaled.service
 Wants=network-online.target

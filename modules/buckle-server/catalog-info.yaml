@@ -88,4 +88,4 @@ spec:
     Sign-in: OIDC through tsidp (scopes openid profile email
     offline_access). Users and admins need "buckle-admins" in the token's
     groups claim, which tsidp adds for group:admins. Callback:
-    /api/v1/auth/callback. Break-glass: bootstrap/README.md.
+    /api/v1/auth/callback. Break-glass: fleet docs, "Sign in when tsidp is down".

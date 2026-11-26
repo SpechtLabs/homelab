@@ -1,0 +1,48 @@
+site_name: Ceph
+site_description: The homelab Ceph cluster on storagepi-ceph1..3 (cephadm over the tailnet) and how labk3s uses it
+repo_url: https://github.com/SpechtLabs/homelab
+edit_uri: edit/main/docs/ceph/docs/
+nav:
+  - Overview: index.md
+  - How-to guides:
+      - how-to/index.md
+      - Respond to a Ceph alert: how-to/respond-to-a-ceph-alert.md
+      - Check cluster health: how-to/check-cluster-health.md
+      - Restart a daemon: how-to/restart-a-daemon.md
+      - Take a host down for maintenance: how-to/take-a-host-down-for-maintenance.md
+      - Add a Ceph host: how-to/add-a-ceph-host.md
+      - Replace a failed OSD or host: how-to/replace-a-failed-osd-or-host.md
+      - Add a pool and a client key: how-to/add-a-pool-and-a-client-key.md
+      - Rotate a client key: how-to/rotate-a-client-key.md
+      - Add an S3 user: how-to/add-an-s3-user.md
+      - Mute or unmute a health check: how-to/mute-or-unmute-a-health-check.md
+      - Upgrade Ceph: how-to/upgrade-ceph.md
+      - Give a Kubernetes cluster RBD access: how-to/give-a-kubernetes-cluster-rbd-access.md
+      - Recover a ceph-csi node plugin: how-to/recover-a-ceph-csi-node-plugin.md
+      - Open the Ceph dashboard: how-to/open-the-ceph-dashboard.md
+  - Reference:
+      - reference/index.md
+      - Hosts and daemons: reference/hosts-and-daemons.md
+      - Network and tailnet: reference/network-and-tailnet.md
+      - Pools, clients and S3 users: reference/pools-and-clients.md
+      - Variables: reference/variables.md
+      - Buckle module: reference/buckle-module.md
+      - Alerts: reference/alerts.md
+      - Dashboards and metrics: reference/dashboards-and-metrics.md
+  - Explanation:
+      - explanation/index.md
+      - Design: explanation/design.md
+      - Keys and ciphers: explanation/keys-and-ciphers.md
+      - Kernel, disk and hardware: explanation/kernel-disk-and-hardware.md
+      - Failure modes seen so far: explanation/failure-modes.md
+plugins:
+  - techdocs-core
+# Explicit heading ids ({#...}): the alert sections keep the anchors the
+# rules' runbook_url points at, whatever the slugifier does with the em dash.
+markdown_extensions:
+  - attr_list
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn

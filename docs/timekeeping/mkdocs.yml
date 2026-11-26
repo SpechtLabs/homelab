@@ -1,0 +1,36 @@
+site_name: Timekeeping
+site_description: timepi as the LAN's GPS stratum 1 and PTP grandmaster, and chrony/ptp4l on every host that follows it
+repo_url: https://github.com/SpechtLabs/homelab
+edit_uri: edit/main/docs/timekeeping/docs/
+nav:
+  - Overview: index.md
+  - Tutorials:
+      - tutorials/index.md
+      - Follow the time from GPS to a client: tutorials/follow-the-time-from-gps-to-a-client.md
+  - How-to guides:
+      - how-to/index.md
+      - Check a host's time sync: how-to/check-a-hosts-time-sync.md
+      - Respond to a time-sync alert: how-to/respond-to-a-time-sync-alert.md
+      - Handle a GPS without a fix: how-to/handle-a-gps-without-a-fix.md
+      - Recover timepi when it doesn't boot: how-to/recover-timepi-when-it-doesnt-boot.md
+      - Reboot timepi safely: how-to/reboot-timepi-safely.md
+      - Add a host as a PTP client: how-to/add-a-host-as-a-ptp-client.md
+  - Reference:
+      - reference/index.md
+      - Hosts and sources: reference/hosts-and-sources.md
+      - Ports and protocols: reference/ports-and-protocols.md
+      - Configuration: reference/configuration.md
+      - Metrics: reference/metrics.md
+      - Alerts, SLOs and dashboards: reference/alerts-slos-and-dashboards.md
+      - Known issues: reference/known-issues.md
+  - Explanation:
+      - explanation/index.md
+      - Design: explanation/design.md
+      - timepi's boot setup: explanation/timepi-boot-setup.md
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+plugins:
+  - techdocs-core

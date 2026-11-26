@@ -30,7 +30,7 @@ metadata:
   title: The Buckle server serves svc:buckle
   description: >-
     UI and API on tcp:443, the agents' gRPC on tcp:7700 with a PROXY v2
-    header (bootstrap/README.md).
+    header (fleet docs, reference: "Server and agents").
 spec:
   type: autoApprovers
   target: tailscale:sphinx-map

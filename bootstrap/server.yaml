@@ -1,4 +1,4 @@
-# /etc/buckle/server.yaml on isa. Installed by hand (see bootstrap/README.md),
+# /etc/buckle/server.yaml on isa. Installed by hand (fleet docs: "Why the server config is installed by hand"),
 # not by Buckle itself: the server shouldn't be able to break its own config.
 listen:
   # isa's tailnet address only. WireGuard encrypts; agents are identified
@@ -23,9 +23,10 @@ agents:
   # own address; the server whois-es the agent address the header carries.
   trusted_proxies: ["100.122.149.90", "100.70.89.41"]   # nuc, isa
   tailscale:
-    # Existing hosts already carry these tags; anything else waits in the UI.
+    # Agents need one of these tags; a device without one is refused, even when
+    # it is already registered (to retag hosts, widen this first).
     allowed_tags: ["tag:buckle-agent"]
-    # Uncomment once the Tailscale OAuth client exists (bootstrap/README.md, step 1):
+    # Uncomment once a Tailscale OAuth client exists (fleet docs: "Enrol a new host"):
     # "Add an agent" then mints a tagged, single-use, pre-approved auth key.
     # provisioning:
     #   flow: client
@@ -40,12 +41,12 @@ agents:
 
 web:
   # Tailscale Service svc:buckle proxies https://buckle.<tailnet> to listen.http
-  # (bootstrap/README.md). tsidp's client for Buckle must list
+  # (fleet docs, reference: "Server and agents"). tsidp's client for Buckle must list
   # <base_url>/api/v1/auth/callback as a redirect URI.
   base_url: https://buckle.sphinx-map.ts.net
   # Sign-in through tsidp. tsidp adds groups=[buckle-admins] to the tokens of
   # group:admins (tailscale/policy.hujson); nobody else may read or act.
-  # tsidp offline? See "Break-glass" in bootstrap/README.md.
+  # tsidp offline? fleet docs: "Sign in when tsidp is down" (break-glass).
   user_acl:  '"buckle-admins" in claims.groups'
   admin_acl: '"buckle-admins" in claims.groups'
   oidc:

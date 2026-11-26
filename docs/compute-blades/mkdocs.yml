@@ -1,0 +1,34 @@
+site_name: Compute blades
+site_description: blade-pi1..4, CM4s on compute blades, with compute-blade-agent for fans, LEDs and power; Buckle's canary phase
+repo_url: https://github.com/SpechtLabs/homelab
+edit_uri: edit/main/docs/compute-blades/docs/
+nav:
+  - Overview: index.md
+  - How-to guides:
+      - how-to/index.md
+      - Set up bladectl on your Mac: how-to/set-up-bladectl-on-your-mac.md
+      - Check fans, temperatures and events: how-to/check-fans-temperatures-and-events.md
+      - Identify a blade: how-to/identify-a-blade.md
+      - Fix a fan reading of 800k RPM: how-to/fix-a-fan-reading-of-800k-rpm.md
+      - Power a blade off and on: how-to/power-a-blade-off-and-on.md
+      - Renew the bladectl certificates: how-to/renew-the-bladectl-certificates.md
+      - Change the agent configuration: how-to/change-the-agent-configuration.md
+      - Upgrade compute-blade-agent: how-to/upgrade-compute-blade-agent.md
+  - Reference:
+      - reference/index.md
+      - Blades: reference/blades.md
+      - bladectl commands: reference/bladectl.md
+      - Agent configuration: reference/agent-configuration.md
+      - Ports, files and health checks: reference/ports-files-and-health-checks.md
+      - Metrics and dashboard: reference/metrics-and-dashboard.md
+  - Explanation:
+      - explanation/index.md
+      - What the agent does: explanation/what-the-agent-does.md
+      - The blades as Buckle's canary: explanation/the-blades-as-buckles-canary.md
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+plugins:
+  - techdocs-core

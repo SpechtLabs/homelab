@@ -1,6 +1,6 @@
 # Backstage catalog entries for the Ceph cluster, its RBD and S3 APIs and the
 # RBD pool labk3s uses (internal to the ceph system: labk3s consumes the API). Not read by Buckle: Backstage reads it through the Location in
-# the repo-root catalog-info.yaml. Runbook: docs/ceph.md.
+# the repo-root catalog-info.yaml. Docs: the ceph System's TechDocs (docs/ceph/).
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
@@ -16,8 +16,10 @@ metadata:
     # The tag its hosts' traffic comes from on the tailnet.
     specht-labs.de/tailnet-src: tag:ceph
   links:
-    - url: https://github.com/SpechtLabs/homelab/blob/main/docs/ceph.md
-      title: Runbook (docs/ceph.md)
+    - url: https://backstage.k8s.specht-labs.de/docs/default/system/ceph/
+      title: Ceph docs (TechDocs)
+    - url: https://backstage.k8s.specht-labs.de/docs/default/system/ceph/how-to/respond-to-a-ceph-alert/
+      title: Respond to a Ceph alert
 spec:
   type: service
   owner: group:spechtlabs
@@ -68,7 +70,8 @@ spec:
   definition: |
     S3-compatible API (Ceph RGW): http://storagepi-ceph2.sphinx-map.ts.net:7480
     Users (ceph_rgw_users in vars/group-ceph.yaml): experiments.
-    Keys: docs/ceph.md ("S3").
+    Keys: the ceph docs, "Add an S3 user"
+    (https://backstage.k8s.specht-labs.de/docs/default/system/ceph/how-to/add-an-s3-user/).
 ---
 apiVersion: backstage.io/v1alpha1
 kind: API

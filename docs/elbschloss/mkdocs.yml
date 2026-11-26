@@ -1,0 +1,40 @@
+site_name: Elbschloss
+site_description: The house's infrastructure, which covers the LAN, the UPS and NUT, the Synology NAS, Home Assistant, isa and the NUC
+repo_url: https://github.com/SpechtLabs/homelab
+edit_uri: edit/main/docs/elbschloss/docs/
+nav:
+  - Overview: index.md
+  - How-to guides:
+      - how-to/index.md
+      - Respond to an availability alert: how-to/respond-to-an-availability-alert.md
+      - Respond to a power cut: how-to/respond-to-a-power-cut.md
+      - Check the UPS and the NUT chain: how-to/check-the-ups-and-the-nut-chain.md
+      - Test the power-loss shutdown: how-to/test-the-power-loss-shutdown.md
+      - Re-create the NAS's Tailscale serve config: how-to/recreate-the-nas-tailscale-serve-config.md
+      - Give a new client NFS access: how-to/give-a-new-client-nfs-access.md
+      - Fix DSM sign-in: how-to/fix-dsm-sign-in.md
+      - Deploy a NAS compose project: how-to/deploy-a-nas-compose-project.md
+      - Reach Home Assistant: how-to/reach-home-assistant.md
+      - Check Home Assistant's backups: how-to/check-home-assistant-backups.md
+      - Replace or rebuild isa: how-to/replace-or-rebuild-isa.md
+      - Get the NUC off its end-of-life Ubuntu: how-to/get-the-nuc-off-its-eol-ubuntu.md
+  - Reference:
+      - reference/index.md
+      - Hosts: reference/hosts.md
+      - Services and ports: reference/services-and-ports.md
+      - UPS and NUT: reference/ups-and-nut.md
+      - Synology NAS: reference/nas.md
+      - Home Assistant: reference/home-assistant.md
+      - Monitoring: reference/monitoring.md
+  - Explanation:
+      - explanation/index.md
+      - isa, and why so much runs on it: explanation/isa.md
+      - How power-loss shutdown is ordered: explanation/power-loss-shutdown.md
+      - The NAS and Tailscale: explanation/nas-and-tailscale.md
+plugins:
+  - techdocs-core
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn

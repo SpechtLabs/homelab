@@ -25,9 +25,10 @@ agents:
   # own address; the server whois-es the agent address the header carries.
   trusted_proxies: ["100.122.149.90", "100.70.89.41"]   # nuc, isa
   tailscale:
-    # Existing hosts already carry these tags; anything else waits in the UI.
+    # Agents need one of these tags; a device without one is refused, even when
+    # it is already registered (to retag hosts, widen this first).
     allowed_tags: ["tag:buckle-agent"]
-    # Uncomment once the Tailscale OAuth client exists (bootstrap/README.md, step 1):
+    # Uncomment once a Tailscale OAuth client exists (fleet docs: "Enrol a new host"):
     # "Add an agent" then mints a tagged, single-use, pre-approved auth key.
     # provisioning:
     #   flow: client

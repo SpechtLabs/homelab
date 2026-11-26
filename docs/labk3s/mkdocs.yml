@@ -1,0 +1,42 @@
+site_name: labk3s
+site_description: The k3s cluster at home (clusterpi-leader and clusterpi-worker1..4), brought up by Buckle, run over the tailnet, deployed by Argo CD
+repo_url: https://github.com/SpechtLabs/homelab
+edit_uri: edit/main/docs/labk3s/docs/
+nav:
+  - Overview: index.md
+  - Tutorials:
+      - tutorials/index.md
+      - Tour the cluster: tutorials/tour-the-cluster.md
+  - How-to guides:
+      - how-to/index.md
+      - Get kubectl access: how-to/get-kubectl-access.md
+      - Deploy or change an app: how-to/deploy-or-change-an-app.md
+      - Reach the labk3s Argo CD: how-to/reach-the-labk3s-argo-cd.md
+      - Respond to a labk3s alert: how-to/respond-to-a-labk3s-alert.md
+      - Upgrade k3s: how-to/upgrade-k3s.md
+      - Drain and reboot a node: how-to/drain-and-reboot-a-node.md
+      - Restart pods after the nodes change address: how-to/restart-pods-after-the-nodes-change-address.md
+      - Expose an app on the tailnet: how-to/expose-an-app-on-the-tailnet.md
+      - Add a worker: how-to/add-a-worker.md
+      - Replace or re-create the server: how-to/replace-or-re-create-the-server.md
+      - Reset k3s: how-to/reset-k3s.md
+  - Reference:
+      - reference/index.md
+      - Nodes: reference/nodes.md
+      - Addresses, ports and Services: reference/network.md
+      - k3s configuration: reference/k3s-configuration.md
+      - Buckle settings: reference/buckle-settings.md
+      - Who owns what: reference/ownership.md
+      - Alerts and dashboards: reference/alerts-and-dashboards.md
+  - Explanation:
+      - explanation/index.md
+      - k3s over the tailnet: explanation/k3s-over-the-tailnet.md
+      - Buckle and Argo CD: explanation/buckle-and-argo-cd.md
+      - History: explanation/history.md
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+plugins:
+  - techdocs-core

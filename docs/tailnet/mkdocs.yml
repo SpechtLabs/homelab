@@ -1,0 +1,48 @@
+site_name: Tailnet
+site_description: The tailnet sphinx-map.ts.net, its access policy, Tailscale Services and tsidp
+repo_url: https://github.com/SpechtLabs/homelab
+edit_uri: edit/main/docs/tailnet/docs/
+nav:
+  - Overview: index.md
+  - Tutorials:
+      - tutorials/index.md
+      - Trace a grant from the catalog to the tailnet: tutorials/trace-a-grant-from-the-catalog-to-the-tailnet.md
+  - How-to guides:
+      - how-to/index.md
+      - Debug "I can't reach X": how-to/debug-cant-reach-a-service.md
+      - Give a group or tag access to a Service: how-to/give-a-group-or-tag-access-to-a-service.md
+      - Add or remove a person: how-to/add-or-remove-a-person.md
+      - Review and merge the policy pull request: how-to/review-and-merge-the-policy-pull-request.md
+      - Check a policy change locally: how-to/check-a-policy-change-locally.md
+      - Add a Tailscale Service on a host: how-to/add-a-tailscale-service-on-a-host.md
+      - Move a Tailscale Service to another host: how-to/move-a-tailscale-service-to-another-host.md
+      - Expose a Kubernetes service on the tailnet: how-to/expose-a-kubernetes-service-on-the-tailnet.md
+      - Change a grant annotations can't express: how-to/change-a-grant-annotations-cant-express.md
+      - Add a policy test: how-to/add-a-policy-test.md
+      - Retag a device: how-to/retag-a-device.md
+      - Add a tsidp relying party: how-to/add-a-tsidp-relying-party.md
+  - Reference:
+      - reference/index.md
+      - Tailscale Services: reference/services.md
+      - Tags: reference/tags.md
+      - Groups: reference/groups.md
+      - Devices: reference/devices.md
+      - Catalog annotations: reference/annotations.md
+      - Capability grants and node attributes: reference/capability-grants.md
+      - SSH rules: reference/ssh-rules.md
+      - Destinations that stay devices: reference/device-destinations.md
+      - Policy pipeline files: reference/policy-pipeline.md
+  - Explanation:
+      - explanation/index.md
+      - The ABAC model: explanation/abac-model.md
+      - Why some destinations stay devices: explanation/why-some-destinations-stay-devices.md
+      - How the catalog becomes the policy: explanation/how-the-catalog-becomes-the-policy.md
+      - tsidp's design: explanation/tsidp-design.md
+      - History: explanation/history.md
+plugins:
+  - techdocs-core
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn

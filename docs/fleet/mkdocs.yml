@@ -1,0 +1,58 @@
+site_name: Fleet management (Buckle)
+site_description: Buckle runs the homelab's hosts from this repo; the server on isa, an agent on every host, health-gated rollouts.
+repo_url: https://github.com/SpechtLabs/homelab
+edit_uri: edit/main/docs/fleet/docs/
+nav:
+  - Overview: index.md
+  - Tutorials:
+      - tutorials/index.md
+      - Your first change: tutorials/your-first-change.md
+  - How-to guides:
+      - how-to/index.md
+      - Call the Buckle API: how-to/call-the-buckle-api.md
+      - Watch a rollout: how-to/watch-a-rollout.md
+      - Fix a paused rollout: how-to/fix-a-paused-rollout.md
+      - Run an action on a host: how-to/run-an-action-on-a-host.md
+      - Reboot a k3s or Ceph host: how-to/reboot-a-k3s-or-ceph-host.md
+      - Pause a host for manual work: how-to/pause-a-host-for-manual-work.md
+      - Enrol a new host: how-to/enrol-a-new-host.md
+      - Update a host's fixture: how-to/update-a-host-fixture.md
+      - Retag or rename a host: how-to/retag-or-rename-a-host.md
+      - Retire a host: how-to/retire-a-host.md
+      - Upgrade Buckle: how-to/upgrade-buckle.md
+      - Bump a pinned version: how-to/bump-a-pinned-version.md
+      - Add or change a secret: how-to/add-or-change-a-secret.md
+      - Add a module: how-to/add-a-module.md
+      - Change the nightly upgrades: how-to/change-the-nightly-upgrades.md
+      - Respond to a backup alert: how-to/respond-to-a-backup-alert.md
+      - Restore the server database: how-to/restore-the-server-database.md
+      - Sign in when tsidp is down: how-to/sign-in-when-tsidp-is-down.md
+      - Move the server to another host: how-to/move-the-server-to-another-host.md
+  - Reference:
+      - reference/index.md
+      - Repo layout: reference/repo-layout.md
+      - Hosts and phases: reference/hosts.md
+      - Modules: reference/modules.md
+      - Groups: reference/groups.md
+      - Rollout policy: reference/rollout-policy.md
+      - Vars: reference/vars.md
+      - Health checks: reference/health-checks.md
+      - Schedules: reference/schedules.md
+      - Server and agents: reference/server-and-agents.md
+      - Buckle API: reference/api.md
+      - CI and Renovate: reference/ci-and-renovate.md
+      - Alerts and SLO: reference/alerts.md
+  - Explanation:
+      - explanation/index.md
+      - How a revision becomes a rollout: explanation/how-a-revision-becomes-a-rollout.md
+      - Why the server's config is installed by hand: explanation/why-the-server-config-is-installed-by-hand.md
+      - Facts over hostnames: explanation/facts-over-hostnames.md
+      - From Ansible to Buckle: explanation/from-ansible-to-buckle.md
+      - Known issues: explanation/known-issues.md
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+plugins:
+  - techdocs-core
