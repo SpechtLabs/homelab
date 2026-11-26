@@ -27,10 +27,11 @@
   "tailscale": {
     "hostname": "isa.sphinx-map.ts.net",
     "tags": [
+      "tag:buckle-agent",
       "tag:buckle-server",
-      "tag:core-infra",
+      "tag:nut-server",
       "tag:o11y-collector",
-      "tag:o11y-endpoint"
+      "tag:tsidp-client"
     ],
     "online": true,
     "backend_state": "Running",

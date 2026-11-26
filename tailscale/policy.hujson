@@ -49,7 +49,6 @@
 		"tag:k3s":            ["tag:k3s-operator"], // Devices tagged with tag:k8s are services exposed by the k8s-operator
 		"tag:o11y-collector": ["group:admins"], // The o11y collector (isa): scrapes exporters, probes the SLO targets, pushes to svc:lgtm
 		"tag:o11y-agent":     ["group:admins"], // Telemetry senders without a Buckle agent (meet, labk3s's lab-lgtm-egress): push to svc:lgtm
-		"tag:o11y-endpoint":  ["group:admins"], // Retired: in no grant (LGTM is svc:lgtm); goes once isa no longer carries it
 		"tag:jumphost":       ["group:admins"], // Devices tagged with tag:jumphost are allowed to initiate SSH connections via tailscale-ssh
 		"tag:backstage":      ["group:admins", "tag:k8s-operator"], // Backstage's egress proxies on specht-labs (its view onto the labk3s ArgoCD)
 		"tag:lab-argocd":     ["group:admins", "tag:k3s-operator"], // The labk3s ArgoCD API as a plain TCP device, for Backstage

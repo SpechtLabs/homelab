@@ -77,9 +77,9 @@ spec:
   system: observability
   lifecycle: production
   definition: |
-    OpenTelemetry Protocol on isa (tag:o11y-endpoint; who may send is in
-    tailscale/policy.hujson):
-      gRPC  isa.sphinx-map.ts.net:4317
-      HTTP  isa.sphinx-map.ts.net:4318
+    OpenTelemetry Protocol on isa, for local and LAN senders only (no
+    tailnet grant; Home Assistant sends over the LAN):
+      gRPC  192.168.0.118:4317, localhost:4317
+      HTTP  192.168.0.118:4318
     Traces go to Tempo's homelab tenant (otlphttp). No auth; tenancy is
     injected by the endpoint.
