@@ -6,11 +6,14 @@ needs: [base, 'group:k3s-server']
 tags: [k3s]
 # A change here restarts k3s under the node's pods: labk3s drains the node
 # first (maintenance in buckle.yaml).
-disrupts: node
+# TEMPORARY for the switch to the tailnet: no drain, so all nodes switch
+# within minutes instead of leaving a LAN/tailnet mix for half an hour
+# (flannel can't bridge the two). Restored by the next commit.
+# disrupts: node
 # One worker at a time, whatever changes on it (a Buckle limit counts every
 # host that runs the module while its plan changes anything): the other
 # three, and the server, take the drained node's pods.
-parallel: 1
+parallel: 4   # TEMPORARY (see above); normally 1
 vars:
   # The Tailscale Service in front of the API (modules/k3s-server).
   k3s_server: 'labk3s.{{ vars.tailnet }}'
