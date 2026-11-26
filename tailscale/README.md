@@ -38,7 +38,10 @@ A grant says *who* (an attribute) may reach *what* (a Service):
 Some traffic belongs to one machine by nature, so its grant names a tag or a
 device:
 
-- SSH (the `ssh` rules: `tag:homelab` and `tag:buckle-agent` as targets).
+- SSH (the `ssh` rules): admins and the jumphost to every Buckle host, the
+  Ceph hosts, the labk3s nodes, the compute blades and the Home Assistant
+  boxes; `group:sre` to the Ceph hosts, the compute blades and the labk3s
+  nodes. Root on the Pi clusters directly, elsewhere in check mode.
 - Scraping exporters (`tag:o11y-collector` -> `*` on the exporter ports).
 - Exit nodes, `autogroup:self`, the tailscaled web UI on 5252.
 - tsidp and tka: they read capability grants matched on their own address,

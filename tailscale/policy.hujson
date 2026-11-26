@@ -52,7 +52,6 @@
 		"tag:o11y-agent":     ["group:admins"], // Devices tagged with tag:o11y-agent can send o11y data to o11y-endpoints
 		"tag:o11y-endpoint":  ["group:admins", "tag:k8s-operator"], // Devices tagged with tag:o11y-endpoint accept o11y data send by o11-collector
 		"tag:jumphost":       ["group:admins"], // Devices tagged with tag:jumphost are allowed to initiate SSH connections via tailscale-ssh
-		"tag:homelab":        ["group:admins", "tag:k3s-operator"], // Homelab hosts: only an SSH target (admins and the jumphost); grants use attribute tags
 		"tag:backstage":      ["group:admins", "tag:k8s-operator"], // Backstage's egress proxies on specht-labs (its view onto the labk3s ArgoCD)
 		"tag:lab-argocd":     ["group:admins", "tag:k3s-operator"], // The labk3s ArgoCD API as a plain TCP device, for Backstage
 		"tag:opencode":       ["group:admins"], // Devices tagged with tag:opencode are running the OpenCode Web UI
@@ -126,7 +125,7 @@
 		{
 			"action": "accept",
 			"src":    ["group:admins", "tag:jumphost"],
-			"dst":    ["tag:ceph", "tag:k3s-node", "tag:compute-blade", "tag:smarthome", "tag:homelab"],
+			"dst":    ["tag:ceph", "tag:k3s-node", "tag:compute-blade", "tag:smarthome"],
 			"users":  ["autogroup:nonroot", "root"],
 		},
 		{
@@ -493,9 +492,9 @@
 			// on the devices themselves.
 			"deny":   ["hass-schiltach:8123", "nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:6690", "nas-elbschloss:8096", "nas-elbschloss:5000", "nas-elbschloss:22", "nas-elbschloss:445", "hass-elbschloss:8123", "hass-elbschloss:22"],
 		},
-		// Homelab boxes and Home Assistant get only their own ports on the NAS.
+		// Buckle hosts and Home Assistant get only their own ports on the NAS.
 		{
-			"src":    "tag:homelab",
+			"src":    "tag:buckle-agent",
 			"proto":  "tcp",
 			"deny":   ["nas-elbschloss:443", "nas-elbschloss:445", "nas-elbschloss:5001", "nas-elbschloss:22", "nas-elbschloss:3493"],
 		},
@@ -509,7 +508,7 @@
 			"src":    "tag:backstage",
 			"proto":  "tcp",
 			"accept": ["tag:lab-argocd:443"],
-			"deny":   ["tag:lab-argocd:22", "tag:homelab:443", "nas-elbschloss:443"],
+			"deny":   ["tag:lab-argocd:22", "tag:k3s-node:443", "nas-elbschloss:443"],
 		},
 		{
 			"src":    "group:synology-users",
@@ -524,7 +523,7 @@
 		{
 			"src":   "group:vpn",
 			"proto": "tcp",
-			"deny":  ["tag:homelab:443", "tag:homelab:80"],
+			"deny":  ["tag:buckle-agent:443", "tag:buckle-agent:80"],
 		},
 		{
 			"src":    "tag:buckle-agent",
@@ -532,12 +531,11 @@
 			"accept": ["tag:o11y-endpoint:80"],
 			"deny":   ["tag:o11y-endpoint:443", "tag:buckle-server:22"],
 		},
-		// tag:homelab alone is only an SSH target: no Alloy push, no Buckle
-		// server, no Ceph, nothing on other homelab hosts.
+		// The compute blades are neither Ceph clients nor labk3s nodes.
 		{
-			"src":    "tag:homelab",
+			"src":    "tag:compute-blade",
 			"proto":  "tcp",
-			"deny":   ["tag:o11y-endpoint:80", "tag:buckle-server:7700", "tag:ceph:6789", "tag:homelab:10250", "tag:homelab:9100"],
+			"deny":   ["tag:ceph:6789", "tag:k3s-node:10250", "tag:k3s-server:6443"],
 		},
 		// Ceph: the hosts reach each other including cephadm's sshd; clients
 		// get the mons and OSDs, not cephadm, the dashboard or RGW.
@@ -570,12 +568,12 @@
 		{
 			"src":    "tag:o11y-collector",
 			"proto":  "tcp",
-			"accept": ["tag:homelab:9100"],
+			"accept": ["tag:buckle-agent:9100"],
 		},
 		{
 			"src":   "tag:o11y-collector",
 			"proto": "tcp",
-			"deny":  ["nas-elbschloss:443", "tag:homelab:6443"],
+			"deny":  ["nas-elbschloss:443", "tag:k3s-server:6443"],
 		},
 		{
 			"src":   "group:vpn",
