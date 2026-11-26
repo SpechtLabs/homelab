@@ -8,6 +8,8 @@ metadata:
 spec:
   type: test
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   sshTests:
     - src: user:cedi
       dst: [nuc]

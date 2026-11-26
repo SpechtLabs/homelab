@@ -7,6 +7,8 @@ metadata:
 spec:
   type: nodeAttr
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   nodes: [tag:k8s-operator, tag:k3s-operator]
   attr: [funnel]
 ---
@@ -18,6 +20,8 @@ metadata:
 spec:
   type: nodeAttr
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   appliesTo: [component:tsidp]
   nodes: [tag:tsidp]
   attr: [funnel]
@@ -30,5 +34,7 @@ metadata:
 spec:
   type: nodeAttr
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   nodes: [group:vpn]
   attr: [mullvad]

@@ -11,6 +11,8 @@ metadata:
 spec:
   type: ssh
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   action: accept
   src: [group:admins, tag:jumphost]
   dst: [tag:ceph, tag:k3s-node, tag:compute-blade, tag:smarthome]
@@ -26,6 +28,8 @@ metadata:
 spec:
   type: ssh
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   action: accept
   src: [group:admins, tag:jumphost]
   dst: [tag:buckle-agent]
@@ -42,6 +46,8 @@ metadata:
 spec:
   type: ssh
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   action: check
   checkPeriod: 8h
   src: [group:admins]
@@ -56,6 +62,8 @@ metadata:
 spec:
   type: ssh
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   action: accept
   src: [group:sre]
   dst: [tag:ceph, tag:compute-blade, tag:k3s-node]
@@ -69,6 +77,8 @@ metadata:
 spec:
   type: ssh
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   action: check
   checkPeriod: 8h
   src: [group:sre]
@@ -83,6 +93,8 @@ metadata:
 spec:
   type: ssh
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   action: accept
   src: [autogroup:member]
   dst: [autogroup:self]
@@ -96,6 +108,8 @@ metadata:
 spec:
   type: ssh
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   action: check
   src: [autogroup:member]
   dst: [autogroup:self]

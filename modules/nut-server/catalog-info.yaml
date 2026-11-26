@@ -31,9 +31,8 @@ metadata:
   title: NUT (UPS status)
   description: Network UPS Tools on isa, proxying the UPS Tower.
   annotations:
-    # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
-    # Tailscale grants from these annotations (shadow mode: compared with
-    # tailscale/policy.hujson, not applied).
+    # Where tailnet consumers reach it. Backstage renders the tailnet
+    # policy's grants from these (tailscale/policy/).
     specht-labs.de/tailnet-dst: svc:nut
     specht-labs.de/tailnet-ports: tcp:3493
 spec:

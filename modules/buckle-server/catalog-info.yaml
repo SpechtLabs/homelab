@@ -42,10 +42,9 @@ metadata:
   title: Buckle agent API
   description: The gRPC endpoint Buckle agents connect to.
   annotations:
-    # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
-    # Tailscale grants from these annotations (shadow mode: compared with
-    # tailscale/policy.hujson, not applied).
-    # svc:buckle, which forwards tcp:7700 to the server's host.
+    # Where tailnet consumers reach it: svc:buckle, which forwards tcp:7700 to
+    # the server's host. Backstage renders the tailnet policy's grants from
+    # these (tailscale/policy/).
     specht-labs.de/tailnet-dst: svc:buckle
     specht-labs.de/tailnet-ports: tcp:7700
 spec:
@@ -69,6 +68,13 @@ metadata:
   name: buckle-api
   title: Buckle UI and API
   description: Buckle's web UI and HTTP API, for people and the buckle CLI.
+  annotations:
+    # Admins and SREs reach it; signing in still needs the buckle-admins
+    # claim (server.yaml's user_acl). Backstage renders the tailnet policy's
+    # grants from these (tailscale/policy/).
+    specht-labs.de/tailnet-dst: svc:buckle
+    specht-labs.de/tailnet-ports: tcp:443
+    specht-labs.de/tailnet-allow: group:admins, group:sre
 spec:
   type: http
   owner: group:spechtlabs

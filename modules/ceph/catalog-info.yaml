@@ -78,8 +78,8 @@ metadata:
   description: Block devices from the Ceph cluster's RBD pools, through its monitors.
   annotations:
     # Where tailnet consumers reach it: the Ceph hosts themselves (clients
-    # reach every OSD at its own address, so no Service). Backstage's
-    # tailnet-policy plugin renders grants from these (shadow mode). The OSD
+    # reach every OSD at its own address, so no Service). Backstage renders
+    # the tailnet policy's grants from these (tailscale/policy/). The OSD
     # range skips 7480, RGW's port.
     specht-labs.de/tailnet-dst: tag:ceph
     specht-labs.de/tailnet-ports: tcp:3300,tcp:6789,tcp:6800-7479,tcp:7481-7568
@@ -107,9 +107,9 @@ metadata:
   title: Ceph cluster traffic
   description: What the Ceph hosts speak among themselves, over the tailnet.
   annotations:
-    # Backstage's tailnet-policy plugin renders grants from these (shadow
-    # mode): the hosts reach each other on cephadm's sshd, the mons and the
-    # OSD/mgr range, which skips 7480 (RGW).
+    # Backstage renders the tailnet policy's grants from these
+    # (tailscale/policy/): the hosts reach each other on cephadm's sshd, the
+    # mons and the OSD/mgr range, which skips 7480 (RGW).
     specht-labs.de/tailnet-dst: tag:ceph
     specht-labs.de/tailnet-ports: tcp:2222,tcp:3300,tcp:6789,tcp:6800-7479,tcp:7481-7568
 spec:

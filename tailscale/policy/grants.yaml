@@ -1,12 +1,14 @@
-# Grants: who may reach what, and with which capabilities. Sources are
-# attributes (a group, or a tag that says what a device does), destinations
-# Tailscale Services where they can be: a Service maps its ports to whichever
-# host serves it, so the host can move without touching a grant.
+# Grants that the services' annotations can't express: the admins'
+# break-glass access to everything, exit nodes, and grants that carry
+# application capabilities (the tailscaled web UI, TKA, tsidp's claims), whose
+# values don't fit an annotation; and the collector's scrapes, whose
+# destination is every device rather than a service.
 #
-# Service-to-service traffic isn't here: Backstage renders a grant for every
-# Component that consumes an API across the tailnet (the policy's
-# catalogGrants, from the specht-labs.de/tailnet-* annotations). These are
-# the rest: people, capabilities, and what is no API.
+# Everything else comes from the catalog (the policy's catalogGrants): an
+# API's specht-labs.de/tailnet-dst and -ports say where it is reached, every
+# Component consuming it across the tailnet reaches it as its tailnet-src (or
+# the API's tailnet-client-tag), and its tailnet-allow names who else may use
+# it, people included. Add a grant here only when it can't be said there.
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
 metadata:
@@ -15,25 +17,11 @@ metadata:
 spec:
   type: grant
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   src: [group:admins]
   dst: ['*']
   ip: ['*']
----
-apiVersion: specht-labs.de/v1alpha1
-kind: Tailscale
-metadata:
-  name: grant-admins-specht-labs-uis
-  title: Admins use Argo CD and Backstage on specht-labs
-  description: >-
-    argocd.k8s.specht-labs.de and backstage.k8s.specht-labs.de; the admins'
-    "*" grant covers them too.
-spec:
-  type: grant
-  target: tailscale:sphinx-map
-  appliesTo: [component:argocd, component:backstage]
-  src: [group:admins]
-  dst: [svc:argocd, svc:backstage]
-  ip: [tcp:443]
 ---
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
@@ -43,6 +31,8 @@ metadata:
 spec:
   type: grant
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   src: [group:vpn]
   dst: [autogroup:internet]
   ip: ['*']
@@ -55,6 +45,8 @@ metadata:
 spec:
   type: grant
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   src: [group:admins]
   dst: [tag:smarthome]
   ip: ['5252']
@@ -72,6 +64,8 @@ metadata:
 spec:
   type: grant
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   src: [autogroup:member]
   dst: [autogroup:self]
   ip: ['5252']
@@ -90,6 +84,8 @@ metadata:
 spec:
   type: grant
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   appliesTo: [component:tka, component:tka-labk3s]
   src: [group:admins]
   dst: [tag:tka]
@@ -102,21 +98,6 @@ spec:
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
 metadata:
-  name: grant-lab-argocd
-  title: Admins and SREs use the labk3s Argo CD
-  description: >-
-    https://lab-argocd.<tailnet> (svc:lab-argocd); sign-in through tsidp.
-spec:
-  type: grant
-  target: tailscale:sphinx-map
-  appliesTo: [component:argocd-labk3s]
-  src: [group:admins, group:sre]
-  dst: [svc:lab-argocd]
-  ip: [tcp:443]
----
-apiVersion: specht-labs.de/v1alpha1
-kind: Tailscale
-metadata:
   name: grant-o11y-scrape
   title: The collector scrapes every exporter
   description: >-
@@ -125,90 +106,12 @@ metadata:
 spec:
   type: grant
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   appliesTo: [component:o11y-collector]
   src: [tag:o11y-collector]
   dst: ['*']
   ip: ['9100', '9243', '9116', '8123', '5252', '9666']
----
-apiVersion: specht-labs.de/v1alpha1
-kind: Tailscale
-metadata:
-  name: grant-admins-labk3s-api
-  title: Admins run kubectl against labk3s
-  description: >-
-    https://labk3s.<tailnet>:6443. The Service has only tcp:6443.
-spec:
-  type: grant
-  target: tailscale:sphinx-map
-  appliesTo: [component:k3s-server]
-  src: [group:admins]
-  dst: [svc:labk3s]
-  ip: ['*']
----
-apiVersion: specht-labs.de/v1alpha1
-kind: Tailscale
-metadata:
-  name: grant-synology-nas
-  title: Synology users reach DSM and Drive
-  description: >-
-    Through svc:nas (https://nas.<tailnet>), and nothing else on the NAS.
-    The NAS's Service address passes every port through, so this lists
-    them: DSM 443, DSM HTTPS for the mobile apps 5001, Drive sync 6690.
-spec:
-  type: grant
-  target: tailscale:sphinx-map
-  appliesTo: [component:synology-dsm]
-  src: [group:synology-users]
-  dst: [svc:nas]
-  ip: [tcp:443, tcp:5001, tcp:6690]
----
-apiVersion: specht-labs.de/v1alpha1
-kind: Tailscale
-metadata:
-  name: grant-synology-stream
-  title: Synology users stream from Jellyfin
-  description: https://stream.<tailnet>
-spec:
-  type: grant
-  target: tailscale:sphinx-map
-  appliesTo: [component:jellyfin]
-  src: [group:synology-users]
-  dst: [svc:stream]
-  ip: [tcp:443]
----
-apiVersion: specht-labs.de/v1alpha1
-kind: Tailscale
-metadata:
-  name: grant-hass-users
-  title: Home Assistant users reach Home Assistant at home
-  description: >-
-    https://hass.<tailnet> and http://hass.<tailnet>:8123. The Service has
-    only the web UI's ports, so "*" is all it offers.
-spec:
-  type: grant
-  target: tailscale:sphinx-map
-  appliesTo: [component:home-assistant]
-  src: [group:hass-users]
-  dst: [svc:hass]
-  ip: ['*']
----
-apiVersion: specht-labs.de/v1alpha1
-kind: Tailscale
-metadata:
-  name: grant-tsidp-sign-in
-  title: Everyone signs in through tsidp
-  description: >-
-    https://idp.<tailnet>: every member, the relying parties
-    (tag:tsidp-client) and the collector's probe. tsidp stays a device, not
-    a Service: it relies on Funnel and on capability grants matched on its
-    own address. The grants below add capabilities per group.
-spec:
-  type: grant
-  target: tailscale:sphinx-map
-  appliesTo: [component:tsidp]
-  src: [autogroup:member, tag:tsidp-client, tag:o11y-collector]
-  dst: [tag:tsidp]
-  ip: [tcp:443]
 ---
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
@@ -222,6 +125,8 @@ metadata:
 spec:
   type: grant
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   appliesTo: [component:tsidp, component:buckle-server]
   src: [group:admins]
   dst: [tag:tsidp]
@@ -246,6 +151,8 @@ metadata:
 spec:
   type: grant
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   appliesTo: [component:tsidp]
   src: [group:admins]
   dst: [tag:tsidp]
@@ -264,6 +171,8 @@ metadata:
 spec:
   type: grant
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   appliesTo: [component:tsidp, component:synology-dsm]
   src: [group:synology-users]
   dst: [tag:tsidp]
@@ -281,6 +190,8 @@ metadata:
 spec:
   type: grant
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   appliesTo: [component:tsidp, component:argocd, component:argocd-labk3s]
   src: [group:sre]
   dst: [tag:tsidp]
@@ -289,19 +200,3 @@ spec:
     tailscale.com/cap/tsidp:
       - users: [group:sre]
         resources: [argocd]
----
-apiVersion: specht-labs.de/v1alpha1
-kind: Tailscale
-metadata:
-  name: grant-buckle-ui
-  title: Admins and SREs use Buckle
-  description: >-
-    The UI and API at https://buckle.<tailnet>. Signing in still needs the
-    buckle-admins claim (server.yaml's user_acl).
-spec:
-  type: grant
-  target: tailscale:sphinx-map
-  appliesTo: [component:buckle-server]
-  src: [group:admins, group:sre]
-  dst: [svc:buckle]
-  ip: [tcp:443]

@@ -32,6 +32,16 @@ metadata:
   name: tsidp-oidc
   title: tsidp OIDC
   description: OpenID Connect provider for the tailnet's users, public through Funnel.
+  annotations:
+    # https://idp.<tailnet>: a device, not a Service (it relies on Funnel and
+    # on capability grants matched on its own address). Every member signs in
+    # here; relying parties call it as tag:tsidp-client, whatever else they
+    # are; the o11y collector probes it. Backstage renders the tailnet
+    # policy's grants from these (tailscale/policy/).
+    specht-labs.de/tailnet-dst: tag:tsidp
+    specht-labs.de/tailnet-ports: tcp:443
+    specht-labs.de/tailnet-client-tag: tag:tsidp-client
+    specht-labs.de/tailnet-allow: autogroup:member, tag:o11y-collector
 spec:
   type: openapi
   owner: group:spechtlabs

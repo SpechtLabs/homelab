@@ -70,18 +70,31 @@ device:
 ## In Backstage
 
 `policy/` holds the same policy as Backstage catalog entities (kind
-`Tailscale`): the policy itself with its hosts (`policy.yaml`), one entity per
-tag, grant, SSH rule, node attribute and set of auto approvers, and the tests
-grouped by concern. Groups and their members are Backstage Groups and Users
-(SpechtLabs/backstage `catalog/org.yaml`). Grants for service-to-service
-traffic aren't there: Backstage renders one for every Component that consumes
-an API across the tailnet, from the `specht-labs.de/tailnet-*` annotations.
+`Tailscale`): the policy itself with its hosts and where Backstage publishes
+it (`policy.yaml`), one entity per tag, SSH rule, node attribute and set of
+auto approvers, the tests grouped by concern, and the few grants the services
+can't say themselves (`grants.yaml`: break-glass, exit nodes, capability
+grants, the collector's scrapes). Groups and their members are Backstage
+Groups and Users (SpechtLabs/backstage `catalog/org.yaml`).
+
+Every other grant comes from the services' own annotations, on the API:
+
+| Annotation | Says |
+|---|---|
+| `specht-labs.de/tailnet-dst` | where it is reached: a Service, or a tag |
+| `specht-labs.de/tailnet-ports` | on which ports |
+| `specht-labs.de/tailnet-allow` | who else may use it: groups, users, autogroups, tags |
+| `specht-labs.de/tailnet-client-tag` | the tag its consumers reach it as (`tag:tsidp-client`) |
+
+and on the consuming Component, `specht-labs.de/tailnet-src`: the tags its
+traffic comes from. A Component that consumes the API from outside the
+provider's cluster gets a grant to it.
 
 Backstage puts the policy file together from these (Tailscale page, and the
 Policy tab of `tailscale:sphinx-map`) and keeps a pull request open with it in
-SpechtLabs/tailnet-policy-sandbox. It renders to a policy equivalent to
-`policy.hujson`, which is still what gets applied: change both until the
-rendered file replaces it.
+SpechtLabs/tailnet-policy-sandbox. It allows what `policy.hujson` allows,
+which is still what gets applied: change both until the rendered file
+replaces it.
 
 ## Adding a Service
 
@@ -96,7 +109,8 @@ rendered file replaces it.
 4. Move the clients to `<name>.sphinx-map.ts.net`, check, then remove the old
    device grant in a separate push.
 5. Keep the catalog in step: an API's `specht-labs.de/tailnet-dst` names the
-   Service, a consumer's `tailnet-src` its attribute tag.
+   Service and `tailnet-allow` the people who use it, a consumer's
+   `tailnet-src` its attribute tag.
 
 ## Gotchas
 

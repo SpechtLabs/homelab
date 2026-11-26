@@ -12,6 +12,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:tsidp
   owners: [group:admins]
   appliesTo: [component:tsidp]
@@ -26,6 +28,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:smarthome
   owners: [group:admins]
   appliesTo: [resource:hass, resource:hass-schiltach]
@@ -38,6 +42,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:k8s-operator
   owners: [group:admins]
 ---
@@ -49,6 +55,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:k3s-operator
   owners: [group:admins]
 ---
@@ -60,6 +68,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:k8s
   owners: [tag:k8s-operator]
 ---
@@ -73,6 +83,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:tka
   owners: [tag:k8s-operator, group:admins]
   appliesTo: [component:tka, component:tka-labk3s]
@@ -85,6 +97,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:k3s
   owners: [tag:k3s-operator]
 ---
@@ -98,6 +112,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:o11y-collector
   owners: [group:admins]
   appliesTo: [resource:isa]
@@ -112,6 +128,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:o11y-agent
   owners: [group:admins]
   appliesTo: [resource:meet]
@@ -125,6 +143,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:jumphost
   owners: [group:admins]
   appliesTo: [resource:jumphost]
@@ -138,6 +158,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:backstage
   owners: [group:admins, tag:k8s-operator]
   appliesTo: [component:backstage]
@@ -150,6 +172,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:opencode
   owners: [group:admins]
 ---
@@ -163,6 +187,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:buckle-server
   owners: [group:admins]
   appliesTo: [component:buckle-server]
@@ -177,6 +203,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:buckle-agent
   owners: [group:admins]
   appliesTo: [component:buckle-agent]
@@ -191,6 +219,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:ceph
   owners: [group:admins]
   appliesTo: [resource:storagepi-ceph1, resource:storagepi-ceph2, resource:storagepi-ceph3]
@@ -204,6 +234,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:ceph-client
   owners: [group:admins]
   appliesTo: [resource:clusterpi-leader, resource:clusterpi-worker1, resource:clusterpi-worker2, resource:clusterpi-worker3, resource:clusterpi-worker4]
@@ -217,6 +249,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:compute-blade
   owners: [group:admins]
   appliesTo: [resource:blade-pi1, resource:blade-pi2, resource:blade-pi3, resource:blade-pi4]
@@ -231,6 +265,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:k3s-node
   owners: [group:admins]
   appliesTo: [resource:clusterpi-leader, resource:clusterpi-worker1, resource:clusterpi-worker2, resource:clusterpi-worker3, resource:clusterpi-worker4]
@@ -245,6 +281,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:tsidp-client
   owners: [group:admins, tag:k8s-operator, tag:k3s-operator]
 ---
@@ -258,6 +296,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:labk3s-ingress
   owners: [group:admins, tag:k3s-operator]
 ---
@@ -271,6 +311,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:specht-labs-ingress
   owners: [group:admins, tag:k8s-operator]
 ---
@@ -284,6 +326,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:nas
   owners: [group:admins]
   appliesTo: [resource:nas]
@@ -298,6 +342,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:nut-server
   owners: [group:admins]
   appliesTo: [component:nut-server]
@@ -312,6 +358,8 @@ metadata:
 spec:
   type: tag
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   tag: tag:k3s-server
   owners: [group:admins]
   appliesTo: [resource:clusterpi-leader]

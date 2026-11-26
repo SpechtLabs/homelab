@@ -5,9 +5,9 @@
 # hold the tags, grants, SSH rules, node attributes, auto approvers and
 # tests. The groups and their members are Backstage Groups and Users
 # (SpechtLabs/backstage catalog/org.yaml); a group:<name> here is the
-# Group whose specht-labs.de/tailnet-group annotation names it. Grants for
-# service-to-service traffic come from the catalog itself (catalogGrants):
-# every Component that consumes an API across the tailnet.
+# Group whose specht-labs.de/tailnet-group annotation names it. Grants come
+# from the services' own tailnet annotations wherever they can
+# (catalogGrants); grants.yaml holds the few that can't.
 #
 # Backstage reads this directory as a catalog location of its own, the only
 # one allowed to define kind Tailscale (k8s-deployment's Backstage config).
@@ -30,7 +30,16 @@ spec:
   system: tailnet
   tailnet: sphinx-map.ts.net
   appliesTo: [resource:tailnet]
+  # Grants from the services' tailnet annotations (grants.yaml says which).
   catalogGrants: true
+  # Where Backstage writes the rendered file: a pull request kept up to
+  # date in the sandbox, for review. flow: push would commit it directly.
+  # Backstage writes only to repositories its tailscale.allowedRepos lists.
+  publish:
+    repo: SpechtLabs/tailnet-policy-sandbox
+    path: tailscale/policy.hujson
+    flow: pullRequest
+    pullRequestBranch: backstage/tailnet-policy
   # Aliases for the tests: they name devices, not Services.
   hosts:
     nas-elbschloss: 100.71.201.45

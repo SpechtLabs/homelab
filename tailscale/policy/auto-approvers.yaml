@@ -13,6 +13,8 @@ metadata:
 spec:
   type: autoApprovers
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   appliesTo: [resource:nas]
   services:
     svc:stream: [tag:nas]
@@ -29,6 +31,8 @@ metadata:
 spec:
   type: autoApprovers
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   appliesTo: [component:buckle-server]
   services:
     svc:buckle: [tag:buckle-server]
@@ -44,6 +48,8 @@ metadata:
 spec:
   type: autoApprovers
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   appliesTo: [component:home-assistant]
   services:
     svc:hass: [tag:smarthome]
@@ -58,6 +64,8 @@ metadata:
 spec:
   type: autoApprovers
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   appliesTo: [component:nut-server]
   services:
     svc:nut: [tag:nut-server]
@@ -72,6 +80,8 @@ metadata:
 spec:
   type: autoApprovers
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   appliesTo: [component:k3s-server]
   services:
     svc:labk3s: [tag:k3s-server]
@@ -86,6 +96,8 @@ metadata:
 spec:
   type: autoApprovers
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   services:
     svc:lgtm: [tag:specht-labs-ingress]
     svc:argocd: [tag:specht-labs-ingress]
@@ -102,6 +114,8 @@ metadata:
 spec:
   type: autoApprovers
   target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
   appliesTo: [component:argocd-labk3s]
   services:
     svc:labk3s-argocd-api: [tag:labk3s-ingress]

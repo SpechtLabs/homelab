@@ -37,6 +37,8 @@ spec:
   providesApis:
     - api:nas-nfs
     - api:synology-dsm-web
+    - api:synology-dsm-https
+    - api:synology-drive
   consumesApis:
     - api:tsidp-oidc
   dependsOn:
@@ -51,8 +53,8 @@ metadata:
   description: NFS v3 shares on the Synology.
   annotations:
     # On the device itself (tag:nas, which only the NAS carries): NFS v3's
-    # portmapper and mountd can't go through a Service. Backstage's
-    # tailnet-policy plugin renders grants from these (shadow mode).
+    # portmapper and mountd can't go through a Service. Backstage renders the
+    # tailnet policy's grants from these (tailscale/policy/).
     specht-labs.de/tailnet-dst: tag:nas
     specht-labs.de/tailnet-ports: tcp:111,tcp:662,tcp:892,tcp:2049,tcp:4045
 spec:
@@ -77,10 +79,13 @@ metadata:
   title: DSM web UI
   description: DSM's web UI and API through the Tailscale Service svc:nas.
   annotations:
-    # Where tailnet consumers (the o11y collector's probe) reach it. People's
-    # access to svc:nas (DSM on 5001, Drive on 6690 too) stays hand-written.
+    # Where tailnet consumers (the o11y collector's probe) reach it, and who
+    # else may: Backstage renders the tailnet policy's grants from these
+    # (tailscale/policy/). svc:nas passes every port through to the NAS, so
+    # each port is an API of its own: 443 here, 5001 and 6690 below.
     specht-labs.de/tailnet-dst: svc:nas
     specht-labs.de/tailnet-ports: tcp:443
+    specht-labs.de/tailnet-allow: group:synology-users
 spec:
   type: http
   owner: group:spechtlabs
@@ -89,6 +94,44 @@ spec:
   definition: |
     https://nas.sphinx-map.ts.net (svc:nas, tcp:443 -> DSM on 5001). Sign-in
     through tsidp (SSO). The o11y collector probes / for the DSM SLO.
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: synology-dsm-https
+  title: DSM HTTPS port
+  description: DSM's own HTTPS port through svc:nas, which the Synology mobile apps use.
+  annotations:
+    specht-labs.de/tailnet-dst: svc:nas
+    specht-labs.de/tailnet-ports: tcp:5001
+    specht-labs.de/tailnet-allow: group:synology-users
+spec:
+  type: http
+  owner: group:spechtlabs
+  system: elbschloss
+  lifecycle: production
+  definition: |
+    https://nas.sphinx-map.ts.net:5001 (svc:nas, tcp:5001): DSM itself, as
+    the Synology mobile apps reach it.
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: synology-drive
+  title: Synology Drive sync
+  description: Synology Drive's sync protocol through svc:nas.
+  annotations:
+    specht-labs.de/tailnet-dst: svc:nas
+    specht-labs.de/tailnet-ports: tcp:6690
+    specht-labs.de/tailnet-allow: group:synology-users
+spec:
+  type: tcp
+  owner: group:spechtlabs
+  system: elbschloss
+  lifecycle: production
+  definition: |
+    nas.sphinx-map.ts.net:6690 (svc:nas, tcp:6690): the Synology Drive
+    desktop client's sync.
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Component
@@ -121,12 +164,11 @@ metadata:
   title: Jellyfin web
   description: Jellyfin's web UI and HTTP API, behind the Tailscale Service svc:stream.
   annotations:
-    # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
-    # Tailscale grants from these annotations (shadow mode: compared with
-    # tailscale/policy.hujson, not applied). People's access (group:synology-users)
-    # stays hand-written there.
+    # Where tailnet consumers reach it, and who else may. Backstage renders the
+    # tailnet policy's grants from these (tailscale/policy/).
     specht-labs.de/tailnet-dst: svc:stream
     specht-labs.de/tailnet-ports: tcp:443
+    specht-labs.de/tailnet-allow: group:synology-users
 spec:
   type: http
   owner: group:spechtlabs

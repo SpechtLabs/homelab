@@ -69,7 +69,7 @@ spec:
     - component:synology-dsm
     # UPS status from isa's NUT proxy, over the LAN: there is no tailnet grant
     # from tag:smarthome to NUT. Listing api:nut in consumesApis would make
-    # Backstage's tailnet-policy plugin render one.
+    # Backstage render a tailnet grant for it.
     - component:nut-server
 ---
 apiVersion: backstage.io/v1alpha1
@@ -79,12 +79,11 @@ metadata:
   title: Home Assistant web and REST API
   description: Home Assistant's web UI, REST and WebSocket API, behind the Tailscale Service svc:hass.
   annotations:
-    # Where tailnet consumers reach it. Backstage's tailnet-policy plugin renders
-    # Tailscale grants from these annotations (shadow mode: compared with
-    # tailscale/policy.hujson, not applied). People's access stays hand-written
-    # there.
+    # Where tailnet consumers reach it, and who else may. Backstage renders the
+    # tailnet policy's grants from these (tailscale/policy/).
     specht-labs.de/tailnet-dst: svc:hass
     specht-labs.de/tailnet-ports: tcp:443,tcp:8123
+    specht-labs.de/tailnet-allow: group:hass-users
 spec:
   type: http
   owner: group:spechtlabs
