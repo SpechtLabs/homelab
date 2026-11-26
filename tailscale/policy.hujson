@@ -375,13 +375,14 @@
 			"dst": ["svc:stream"],
 			"ip":  ["tcp:443"],
 		},
-		// Every member signs in through tsidp (https://idp.<tailnet>); the grants
-		// below add capabilities per group. tsidp stays a device, not a Service:
-		// it relies on Funnel and on capability grants matched on its own address.
-		// Machines that are relying parties (tag:tsidp-client) and the collector's
-		// probe reach it the same way.
+		// Every member signs in through tsidp (https://idp.<tailnet>), and machines
+		// that are relying parties (tag:tsidp-client) call it; that includes isa,
+		// so the collector's probe needs no grant of its own. tsidp stays a device,
+		// not a Service: it relies on Funnel and on capability grants matched on
+		// its own address. The grants below add capabilities per group, on the
+		// same port: they open nothing more.
 		{
-			"src": ["autogroup:member", "tag:tsidp-client", "tag:o11y-collector"],
+			"src": ["autogroup:member", "tag:tsidp-client"],
 			"dst": ["tag:tsidp"],
 			"ip":  ["tcp:443"],
 		},
@@ -398,7 +399,7 @@
 		{
 			"src": ["group:admins"],
 			"dst": ["tag:tsidp"],
-			"ip":  ["*"],
+			"ip":  ["tcp:443"],
 			"app": {
 				"tailscale.com/cap/tsidp": [
 					{
@@ -416,7 +417,7 @@
 		{
 			"src": ["group:admins"],
 			"dst": ["tag:tsidp"],
-			"ip":  ["*"],
+			"ip":  ["tcp:443"],
 			"app": {
 				"tailscale.com/cap/tsidp": [
 					{
@@ -430,7 +431,7 @@
 		{
 			"src": ["group:synology-users"],
 			"dst": ["tag:tsidp"],
-			"ip":  ["*"],
+			"ip":  ["tcp:443"],
 			"app": {
 				"tailscale.com/cap/tsidp": [
 					{
@@ -444,7 +445,7 @@
 		{
 			"src": ["group:sre"],
 			"dst": ["tag:tsidp"],
-			"ip":  ["*"],
+			"ip":  ["tcp:443"],
 			"app": {
 				"tailscale.com/cap/tsidp": [
 					{

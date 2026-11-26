@@ -111,7 +111,7 @@ spec:
   appliesTo: [component:tsidp, component:buckle-server]
   src: [group:admins]
   dst: [tag:tsidp]
-  ip: ['*']
+  ip: ['tcp:443']
   app:
     tailscale.com/cap/tsidp:
       - allow_admin_ui: true
@@ -137,7 +137,7 @@ spec:
   appliesTo: [component:tsidp]
   src: [group:admins]
   dst: [tag:tsidp]
-  ip: ['*']
+  ip: ['tcp:443']
   app:
     tailscale.com/cap/tsidp:
       - extraClaims:
@@ -157,7 +157,7 @@ spec:
   appliesTo: [component:tsidp, component:synology-dsm]
   src: [group:synology-users]
   dst: [tag:tsidp]
-  ip: ['*']
+  ip: ['tcp:443']
   app:
     tailscale.com/cap/tsidp:
       - users: [group:synology-users]
@@ -176,7 +176,7 @@ spec:
   appliesTo: [component:tsidp, component:argocd, component:argocd-labk3s]
   src: [group:sre]
   dst: [tag:tsidp]
-  ip: ['*']
+  ip: ['tcp:443']
   app:
     tailscale.com/cap/tsidp:
       - users: [group:sre]
