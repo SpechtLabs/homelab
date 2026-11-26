@@ -5,11 +5,12 @@ needs: [alloy]               # the textfile directory the backup's metric goes t
 tags: [buckle]
 vars:
   # The NAS's NFS export for these backups (its own folder: they go into its
-  # root). DSM: Shared Folder → NFS Permissions, read/write for this host's
-  # tailnet address, no squash. The Synology speaks NFS v3 only (v4 is off).
-  # The device's own name: nas.<tailnet> is the Tailscale Service svc:nas,
-  # which NFS v3 (portmapper, mountd) can't go through.
-  buckle_backup_nfs_export: 'nas-elbschloss.sphinx-map.ts.net:/volume1/homelab/buckle'
+  # root), NFS v4.1 through the Tailscale Service svc:nfs (tcp:2049 only).
+  # The NAS's tailscaled forwards it from localhost, so DSM's rule (Shared
+  # Folder → NFS Permissions) is for 127.0.0.1: read/write, no squash,
+  # non-privileged ports allowed. The policy grants svc:nfs to
+  # tag:buckle-server alone.
+  buckle_backup_nfs_export: 'nfs.{{ vars.tailnet }}:/volume1/homelab/buckle'
 tasks:
   # sqlite3 for a consistent copy of a live database (.backup), nfs-common to
   # mount the NAS.
@@ -20,7 +21,7 @@ tasks:
       src: mnt-nas-backups.mount.j2
       dest: /etc/systemd/system/mnt-nas-backups.mount
       mode: "0644"
-    notify: [daemon-reload]
+    notify: [remount]
   - file.template:
       src: buckle-backup.service.j2
       dest: /etc/systemd/system/buckle-backup.service
@@ -32,6 +33,11 @@ tasks:
 
 handlers:
   daemon-reload: { systemd.daemon_reload: {} }
+  # The share stays mounted between backups: a changed unit only takes effect
+  # once it is mounted again.
+  remount:
+    command.run:
+      run: "systemctl daemon-reload && if mountpoint -q /mnt/nas/backups; then systemctl restart mnt-nas-backups.mount; fi"
 
 health:
   # Informational: a missed night mustn't hold a rollout. Grafana alerts when
