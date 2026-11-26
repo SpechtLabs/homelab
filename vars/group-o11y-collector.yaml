@@ -3,9 +3,11 @@
 o11y_otlp_receiver: true
 alloy_custom_args: --server.http.listen-addr=0.0.0.0:12345
 o11y_remote_scrapes:
+  # Through svc:node-exporter; the series keep the device's instance label.
   - name: nas_node_exporter
     job: node_exporter
-    targets: ["nas-elbschloss:9100"]
+    targets: ["node-exporter.{{ vars.tailnet }}:9100"]
+    instance: "nas-elbschloss:9100"
   - name: snmp_exporter
     job: snmp
     targets: ["192.168.0.64:9116"]
