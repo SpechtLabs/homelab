@@ -104,6 +104,10 @@
 			"svc:hass": ["tag:smarthome"],
 			// DSM, Drive and SMB on the NAS (nas/README.md).
 			"svc:nas": ["tag:nas"],
+			// The NAS's node_exporter (tcp:9100) and NFS v4.1 (tcp:2049), each
+			// `tailscale serve --service=svc:<name> --tcp=<port> tcp://localhost:<port>`.
+			"svc:nas-exporter": ["tag:nas"],
+			"svc:nas-nfs":      ["tag:nas"],
 			// upsd on isa (modules/nut-server), the UPS for every Pi and the NUC.
 			"svc:nut": ["tag:nut-server"],
 			// The labk3s API (modules/k3s-server), tcp:6443 passed through to k3s.
@@ -347,6 +351,12 @@
 				"tcp:6690", // Synology Drive sync
 			],
 		},
+		// The collector scrapes the NAS's node_exporter through svc:nas-exporter.
+		{
+			"src": ["tag:o11y-collector"],
+			"dst": ["svc:nas-exporter"],
+			"ip":  ["tcp:9100"],
+		},
 		// The collector probes DSM for its availability SLO.
 		{
 			"src": ["tag:o11y-collector"],
@@ -385,7 +395,14 @@
 			"dst": ["tag:tsidp"],
 			"ip":  ["tcp:443"],
 		},
-		// The Buckle server's nightly backup goes to the NAS over NFS v3, which
+		// The Buckle server's nightly backup goes to the NAS over NFS v4.1, through
+		// svc:nas-nfs (tcp:2049 only).
+		{
+			"src": ["tag:buckle-server"],
+			"dst": ["svc:nas-nfs"],
+			"ip":  ["tcp:2049"],
+		},
+		// Until the mount moves to svc:nas-nfs: NFS v3, which
 		// can't go through a Service: portmapper, status, mountd, nfs, nlockmgr
 		// (rpcinfo -p on the NAS). tag:nas is the NAS itself, the only device
 		// carrying it.

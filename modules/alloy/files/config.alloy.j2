@@ -97,6 +97,14 @@ prometheus.scrape "node_exporter" {
   targets    = discovery.relabel.node.output
   forward_to = [prometheus.remote_write.mimir.receiver]
 }
+
+// tailscaled's own metrics, at the quad-100 address only this host reaches:
+// no tailnet grant, no web client port.
+prometheus.scrape "tailscale_exporter" {
+  job_name   = "tailscale_exporter"
+  targets    = [{"__address__" = "100.100.100.100:80", "instance" = "{{ host.id }}"}]
+  forward_to = [prometheus.remote_write.mimir.receiver]
+}
 {% for scrape in vars.o11y_local_scrapes %}
 prometheus.scrape "{{ scrape.job }}" {
   job_name = "{{ scrape.job }}"
@@ -118,7 +126,7 @@ prometheus.scrape "{{ scrape.name }}" {
   job_name = "{{ scrape.job }}"
   targets  = [
 {%- for target in scrape.targets %}
-    {"__address__" = "{{ target }}"},
+    {"__address__" = "{{ target }}"{% if scrape.instance is defined %}, "instance" = "{{ scrape.instance }}"{% endif %}},
 {%- endfor %}
   ]
 {%- if scrape.path is defined %}

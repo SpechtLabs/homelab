@@ -14,21 +14,6 @@ o11y_remote_scrapes:
   - name: cadvisor
     job: cadvisor
     targets: ["192.168.0.64:8123"]
-  # tailscaled metrics. 100.100.100.100 is this node's own; the :5252 ones are
-  # copied as-is from the Ansible config: they are not Buckle agents.
-  - name: tailscale_exporter
-    job: tailscale_exporter
-    targets:
-      - "100.100.100.100"
-      - "100.92.89.43:5252"
-      - "100.94.152.81:5252"
-      - "100.123.236.103:5252"
-      - "100.126.248.78:5252"
-      - "100.103.254.83:5252"
-      - "100.95.24.14:5252"
-      - "100.122.149.90:5252"
-      - "100.83.246.57:5252"
-      - "100.85.86.18:5252"
 
 # Availability SLIs: probe_success per service, every 30 s (SLOs in
 # SpechtLabs/k8s-deployment grafana/slos/). Each URL is what users reach:

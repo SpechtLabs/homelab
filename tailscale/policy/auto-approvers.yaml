@@ -6,10 +6,11 @@ apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
 metadata:
   name: approve-nas
-  title: The NAS serves svc:nas and svc:stream
+  title: The NAS serves svc:nas, svc:stream, svc:nas-exporter and svc:nas-nfs
   description: >-
     Jellyfin (`tailscale serve --service=svc:stream --https=443
-    http://localhost:8096`), and DSM, Drive and SMB (nas/README.md).
+    http://localhost:8096`), DSM, Drive and SMB (nas/README.md), the
+    node_exporter (tcp:9100) and NFS v4.1 (tcp:2049).
 spec:
   type: autoApprovers
   target: tailscale:sphinx-map
@@ -19,6 +20,8 @@ spec:
   services:
     svc:stream: [tag:nas]
     svc:nas: [tag:nas]
+    svc:nas-exporter: [tag:nas]
+    svc:nas-nfs: [tag:nas]
 ---
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
