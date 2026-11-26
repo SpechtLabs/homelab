@@ -1,0 +1,18 @@
+# SSH tests: who may open a shell where, as whom, checked on every save.
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: test-ssh-nuc
+  title: cedi gets a shell on the nuc
+  description: As cedi directly, as root in check mode.
+spec:
+  type: test
+  target: tailscale:sphinx-map
+  sshTests:
+    - src: user:cedi
+      dst: [nuc]
+      accept: [cedi]
+    - src: user:cedi
+      dst: [nuc]
+      accept: [cedi]
+      check: [root]

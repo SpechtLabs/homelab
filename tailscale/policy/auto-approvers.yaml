@@ -1,0 +1,108 @@
+# Auto approvers: the Tailscale Services a host may advertise without
+# approval in the admin console. Each Service has one host tag, owned by
+# admins only. Never approve a Service for a broad tag: the k8s operators'
+# proxies carry such tags too.
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: approve-nas
+  title: The NAS serves svc:nas and svc:stream
+  description: >-
+    Jellyfin (`tailscale serve --service=svc:stream --https=443
+    http://localhost:8096`), and DSM, Drive and SMB (nas/README.md).
+spec:
+  type: autoApprovers
+  target: tailscale:sphinx-map
+  appliesTo: [resource:nas]
+  services:
+    svc:stream: [tag:nas]
+    svc:nas: [tag:nas]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: approve-buckle
+  title: The Buckle server serves svc:buckle
+  description: >-
+    UI and API on tcp:443, the agents' gRPC on tcp:7700 with a PROXY v2
+    header (bootstrap/README.md).
+spec:
+  type: autoApprovers
+  target: tailscale:sphinx-map
+  appliesTo: [component:buckle-server]
+  services:
+    svc:buckle: [tag:buckle-server]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: approve-hass
+  title: Home Assistant serves svc:hass
+  description: >-
+    The add-on's `services:`: web UI on tcp:443 (HTTPS) and tcp:8123 (plain
+    HTTP).
+spec:
+  type: autoApprovers
+  target: tailscale:sphinx-map
+  appliesTo: [component:home-assistant]
+  services:
+    svc:hass: [tag:smarthome]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: approve-nut
+  title: isa serves svc:nut
+  description: >-
+    upsd (modules/nut-server), the UPS for every Pi and the NUC.
+spec:
+  type: autoApprovers
+  target: tailscale:sphinx-map
+  appliesTo: [component:nut-server]
+  services:
+    svc:nut: [tag:nut-server]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: approve-labk3s
+  title: The k3s server serves svc:labk3s
+  description: >-
+    The labk3s API (modules/k3s-server), tcp:6443 passed through to k3s.
+spec:
+  type: autoApprovers
+  target: tailscale:sphinx-map
+  appliesTo: [component:k3s-server]
+  services:
+    svc:labk3s: [tag:k3s-server]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: approve-specht-labs-ingress
+  title: The specht-labs tailnet Gateway serves LGTM, Argo CD and Backstage
+  description: >-
+    k8s-deployment apps/envoy-gateway/cluster/specht-labs/tailnet-services.yaml.
+spec:
+  type: autoApprovers
+  target: tailscale:sphinx-map
+  services:
+    svc:lgtm: [tag:specht-labs-ingress]
+    svc:argocd: [tag:specht-labs-ingress]
+    svc:backstage: [tag:specht-labs-ingress]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: approve-labk3s-ingress
+  title: The labk3s ingress serves the labk3s Argo CD
+  description: >-
+    The API (apps/argocd/cluster/labk3s/argocd-api-tailnet.yaml, tcp:443) and
+    the UI (Ingress argocd-server, https://lab-argocd.<tailnet>).
+spec:
+  type: autoApprovers
+  target: tailscale:sphinx-map
+  appliesTo: [component:argocd-labk3s]
+  services:
+    svc:labk3s-argocd-api: [tag:labk3s-ingress]
+    svc:lab-argocd: [tag:labk3s-ingress]

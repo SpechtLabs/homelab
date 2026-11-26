@@ -67,6 +67,22 @@ device:
   address until their containers restart, and the scrape fails ("Ceph CSI —
   node plugin missing").
 
+## In Backstage
+
+`policy/` holds the same policy as Backstage catalog entities (kind
+`Tailscale`): the policy itself with its hosts (`policy.yaml`), one entity per
+tag, grant, SSH rule, node attribute and set of auto approvers, and the tests
+grouped by concern. Groups and their members are Backstage Groups and Users
+(SpechtLabs/backstage `catalog/org.yaml`). Grants for service-to-service
+traffic aren't there: Backstage renders one for every Component that consumes
+an API across the tailnet, from the `specht-labs.de/tailnet-*` annotations.
+
+Backstage puts the policy file together from these (Tailscale page, and the
+Policy tab of `tailscale:sphinx-map`) and keeps a pull request open with it in
+SpechtLabs/tailnet-policy-sandbox. It renders to a policy equivalent to
+`policy.hujson`, which is still what gets applied: change both until the
+rendered file replaces it.
+
 ## Adding a Service
 
 1. Define it in the admin console (Services): name and ports. The definition

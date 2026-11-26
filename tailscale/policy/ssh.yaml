@@ -1,0 +1,102 @@
+# Tailscale SSH: who may open a shell where, as whom. Root is in check mode
+# (a fresh sign-in) except on the Pi clusters and Home Assistant boxes.
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: ssh-admins-infra-root
+  title: Admins SSH to the Pi clusters and Home Assistant as anyone
+  description: >-
+    Admins and the jumphost: the Ceph hosts, the labk3s nodes, the compute
+    blades and the Home Assistant boxes, as any user including root.
+spec:
+  type: ssh
+  target: tailscale:sphinx-map
+  action: accept
+  src: [group:admins, tag:jumphost]
+  dst: [tag:ceph, tag:k3s-node, tag:compute-blade, tag:smarthome]
+  users: [autogroup:nonroot, root]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: ssh-admins-buckle-hosts
+  title: Admins SSH to every Buckle host
+  description: >-
+    Admins and the jumphost, as any user but root.
+spec:
+  type: ssh
+  target: tailscale:sphinx-map
+  action: accept
+  src: [group:admins, tag:jumphost]
+  dst: [tag:buckle-agent]
+  users: [autogroup:nonroot]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: ssh-admins-buckle-hosts-root
+  title: Admins are root on the Buckle hosts in check mode
+  description: >-
+    isa, nuc, timepi, the jumphost, meet: root after a fresh sign-in, at
+    most every 8 hours.
+spec:
+  type: ssh
+  target: tailscale:sphinx-map
+  action: check
+  checkPeriod: 8h
+  src: [group:admins]
+  dst: [tag:buckle-agent]
+  users: [root]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: ssh-sre-infra
+  title: SREs SSH to Ceph, the compute blades and labk3s
+spec:
+  type: ssh
+  target: tailscale:sphinx-map
+  action: accept
+  src: [group:sre]
+  dst: [tag:ceph, tag:compute-blade, tag:k3s-node]
+  users: [autogroup:nonroot]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: ssh-sre-infra-root
+  title: SREs are root on Ceph, the compute blades and labk3s in check mode
+spec:
+  type: ssh
+  target: tailscale:sphinx-map
+  action: check
+  checkPeriod: 8h
+  src: [group:sre]
+  dst: [tag:ceph, tag:compute-blade, tag:k3s-node]
+  users: [root]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: ssh-members-own-devices
+  title: Members SSH to their own devices
+spec:
+  type: ssh
+  target: tailscale:sphinx-map
+  action: accept
+  src: [autogroup:member]
+  dst: [autogroup:self]
+  users: [autogroup:nonroot]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: ssh-members-own-devices-root
+  title: Members are root on their own devices in check mode
+spec:
+  type: ssh
+  target: tailscale:sphinx-map
+  action: check
+  src: [autogroup:member]
+  dst: [autogroup:self]
+  users: [root]

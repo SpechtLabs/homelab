@@ -1,0 +1,204 @@
+# Tests: Tailscale runs them on every save of the policy, and a failing one
+# rejects it, so the previous policy stays live. Each entity holds the tests
+# for one concern; one test or a list. Sources may be Backstage users
+# (user:cedi) and groups.
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: test-admin-reach
+  title: Admins reach the devices
+spec:
+  type: test
+  target: tailscale:sphinx-map
+  tests:
+    src: user:cedi
+    proto: tcp
+    accept:
+      - nas-elbschloss:5000
+      - clusterpi-leader:443
+      - clusterpi-leader:6443
+      - hass-elbschloss:8123
+      - nuc:1234
+      - idp:443
+      - hass-schiltach:8123
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: test-nas-isolation
+  title: The NAS only through its Services
+  description: >-
+    Synology users get DSM and Drive only through svc:nas and Home Assistant
+    not at all: nothing on the devices themselves. Buckle hosts and Home
+    Assistant get only their own ports on the NAS.
+spec:
+  type: test
+  target: tailscale:sphinx-map
+  appliesTo: [resource:nas]
+  tests:
+    - src: user:x1bay
+      proto: tcp
+      deny:
+        - hass-schiltach:8123
+        - nas-elbschloss:443
+        - nas-elbschloss:5001
+        - nas-elbschloss:6690
+        - nas-elbschloss:8096
+        - nas-elbschloss:5000
+        - nas-elbschloss:22
+        - nas-elbschloss:445
+        - hass-elbschloss:8123
+        - hass-elbschloss:22
+    - src: group:synology-users
+      proto: tcp
+      deny: [nas-elbschloss:443, nas-elbschloss:5001, nas-elbschloss:6690]
+    - src: tag:buckle-agent
+      proto: tcp
+      deny:
+        - nas-elbschloss:443
+        - nas-elbschloss:445
+        - nas-elbschloss:5001
+        - nas-elbschloss:22
+        - nas-elbschloss:3493
+    - src: tag:smarthome
+      proto: tcp
+      deny: [nas-elbschloss:443, nas-elbschloss:5001, nas-elbschloss:22]
+    - src: tag:smarthome
+      proto: tcp
+      deny: [nas-elbschloss:445, nas-elbschloss:2049, nas-elbschloss:6690]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: test-backstage
+  title: Backstage reaches the labk3s Argo CD API and nothing else there
+spec:
+  type: test
+  target: tailscale:sphinx-map
+  appliesTo: [component:backstage]
+  tests:
+    src: tag:backstage
+    proto: tcp
+    deny: ['tag:k3s-node:443', 'tag:k3s-server:6443', 'nas-elbschloss:443']
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: test-vpn
+  title: VPN users get the internet, not the homelab
+spec:
+  type: test
+  target: tailscale:sphinx-map
+  tests:
+    - src: group:vpn
+      proto: tcp
+      accept: ['1.1.1.1:443']
+    - src: group:vpn
+      proto: tcp
+      deny: ['tag:buckle-agent:443', 'tag:buckle-agent:80']
+    - src: group:vpn
+      proto: tcp
+      deny: ['tag:smarthome:8123']
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: test-buckle
+  title: Buckle agents reach the server only through svc:buckle
+spec:
+  type: test
+  target: tailscale:sphinx-map
+  appliesTo: [component:buckle-server]
+  tests:
+    - src: tag:buckle-agent
+      proto: tcp
+      deny: ['tag:buckle-server:22', 'tag:buckle-server:12345']
+    - src: tag:buckle-agent
+      proto: tcp
+      deny: ['tag:buckle-server:7700']
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: test-labk3s
+  title: The labk3s nodes reach the API only through svc:labk3s
+spec:
+  type: test
+  target: tailscale:sphinx-map
+  appliesTo: [component:k3s-server]
+  tests:
+    src: tag:k3s-node
+    proto: tcp
+    accept: ['tag:k3s-node:10250', 'tag:k3s-node:8681']
+    deny: ['tag:k3s-server:6443']
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: test-compute-blades
+  title: The compute blades are neither Ceph clients nor labk3s nodes
+spec:
+  type: test
+  target: tailscale:sphinx-map
+  tests:
+    src: tag:compute-blade
+    proto: tcp
+    deny: ['tag:ceph:6789', 'tag:k3s-node:10250', 'tag:k3s-server:6443']
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: test-ceph
+  title: Ceph's hosts and clients
+  description: >-
+    The hosts reach each other including cephadm's sshd; clients get the
+    mons and OSDs, not cephadm, the dashboard or RGW.
+spec:
+  type: test
+  target: tailscale:sphinx-map
+  appliesTo: [component:ceph]
+  tests:
+    - src: tag:ceph
+      proto: tcp
+      accept:
+        - tag:ceph:2222
+        - tag:ceph:3300
+        - tag:ceph:6789
+        - tag:ceph:6800
+        - tag:ceph:7568
+    - src: tag:ceph-client
+      proto: tcp
+      accept: ['tag:ceph:3300', 'tag:ceph:6789', 'tag:ceph:6800', 'tag:ceph:7568']
+      deny: ['tag:ceph:2222', 'tag:ceph:8443', 'tag:ceph:7480', 'tag:ceph:9283']
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: test-o11y-collector
+  title: The collector scrapes, but reaches the NAS and labk3s only through their Services
+spec:
+  type: test
+  target: tailscale:sphinx-map
+  appliesTo: [component:o11y-collector]
+  tests:
+    - src: tag:o11y-collector
+      proto: tcp
+      accept: ['tag:buckle-agent:9100']
+    - src: tag:o11y-collector
+      proto: tcp
+      deny: ['nas-elbschloss:443', 'tag:k3s-server:6443']
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: test-nut
+  title: NUT goes through svc:nut
+  description: The server's own address is closed to the clients.
+spec:
+  type: test
+  target: tailscale:sphinx-map
+  appliesTo: [component:nut-server]
+  tests:
+    src: clusterpi-leader
+    proto: tcp
+    deny: ['tag:nut-server:3493']

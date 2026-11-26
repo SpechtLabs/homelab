@@ -1,0 +1,34 @@
+# Node attributes: features a device gets by tag or by its user's group.
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: attr-operators-funnel
+  title: The k8s operators may enable Funnel
+spec:
+  type: nodeAttr
+  target: tailscale:sphinx-map
+  nodes: [tag:k8s-operator, tag:k3s-operator]
+  attr: [funnel]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: attr-tsidp-funnel
+  title: tsidp may enable Funnel
+spec:
+  type: nodeAttr
+  target: tailscale:sphinx-map
+  appliesTo: [component:tsidp]
+  nodes: [tag:tsidp]
+  attr: [funnel]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: attr-vpn-mullvad
+  title: VPN users get the Mullvad exit nodes
+spec:
+  type: nodeAttr
+  target: tailscale:sphinx-map
+  nodes: [group:vpn]
+  attr: [mullvad]

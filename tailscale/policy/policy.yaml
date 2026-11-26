@@ -1,0 +1,41 @@
+# The tailnet policy as Backstage catalog entities (kind: Tailscale).
+#
+# Backstage puts the policy file together from this entity and every
+# Tailscale entity whose spec.target names it: the files next to this one
+# hold the tags, grants, SSH rules, node attributes, auto approvers and
+# tests. The groups and their members are Backstage Groups and Users
+# (SpechtLabs/backstage catalog/org.yaml); a group:<name> here is the
+# Group whose specht-labs.de/tailnet-group annotation names it. Grants for
+# service-to-service traffic come from the catalog itself (catalogGrants):
+# every Component that consumes an API across the tailnet.
+#
+# Backstage reads this directory as a catalog location of its own, the only
+# one allowed to define kind Tailscale (k8s-deployment's Backstage config).
+# Keep it out of the repo-root catalog-info.yaml's Location.
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: sphinx-map
+  title: Homelab tailnet
+  description: >-
+    The tailnet every homelab host, both clusters' proxies and the family's
+    devices join. Sources are attributes (groups, what-it-does tags),
+    destinations Tailscale Services where they can be.
+  links:
+    - url: https://login.tailscale.com/admin/acls/file
+      title: Access controls in the admin console
+spec:
+  type: policy
+  owner: group:spechtlabs
+  system: tailnet
+  tailnet: sphinx-map.ts.net
+  appliesTo: [resource:tailnet]
+  catalogGrants: true
+  # Aliases for the tests: they name devices, not Services.
+  hosts:
+    nas-elbschloss: 100.71.201.45
+    clusterpi-leader: 100.92.89.43
+    hass-elbschloss: 100.75.135.70
+    nuc: 100.122.149.90
+    idp: 100.77.112.23
+    hass-schiltach: 100.89.41.43

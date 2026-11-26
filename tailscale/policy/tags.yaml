@@ -1,0 +1,317 @@
+# Tags: tagOwners in the policy file. A tag says what a device is or does.
+# spec.appliesTo names what carries it, so its catalog page shows the
+# tailnet access that comes with it. Service hosts (tag:nas, tag:nut-server,
+# tag:k3s-server, tag:buckle-server) are owned by admins only: a Service's
+# only auto approver, which neither k8s operator can hand to a proxy.
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-tsidp
+  title: tsidp, the tailnet's OIDC provider
+  description: Allowed to run tsidp with Tailscale Funnel.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:tsidp
+  owners: [group:admins]
+  appliesTo: [component:tsidp]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-smarthome
+  title: Smart-home devices
+  description: >-
+    The Home Assistant boxes: tighter access than other hosts.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:smarthome
+  owners: [group:admins]
+  appliesTo: [resource:hass, resource:hass-schiltach]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-k8s-operator
+  title: Tailscale operator on specht-labs
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:k8s-operator
+  owners: [group:admins]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-k3s-operator
+  title: Tailscale operator on labk3s
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:k3s-operator
+  owners: [group:admins]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-k8s
+  title: Services the specht-labs operator exposes
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:k8s
+  owners: [tag:k8s-operator]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-tka
+  title: tailscale-k8s-auth
+  description: >-
+    TKA's services: cluster sign-in through the tailnet.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:tka
+  owners: [tag:k8s-operator, group:admins]
+  appliesTo: [component:tka, component:tka-labk3s]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-k3s
+  title: Services the labk3s operator exposes
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:k3s
+  owners: [tag:k3s-operator]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-o11y-collector
+  title: The o11y collector
+  description: >-
+    isa: scrapes exporters, probes the SLO targets, pushes to svc:lgtm.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:o11y-collector
+  owners: [group:admins]
+  appliesTo: [resource:isa]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-o11y-agent
+  title: Telemetry senders without a Buckle agent
+  description: >-
+    meet and labk3s's lab-lgtm-egress: push to svc:lgtm.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:o11y-agent
+  owners: [group:admins]
+  appliesTo: [resource:meet]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-jumphost
+  title: Jumphost
+  description: Allowed to start Tailscale SSH sessions.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:jumphost
+  owners: [group:admins]
+  appliesTo: [resource:jumphost]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-backstage
+  title: Backstage's egress proxies
+  description: Backstage on specht-labs, and its view onto the labk3s Argo CD.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:backstage
+  owners: [group:admins, tag:k8s-operator]
+  appliesTo: [component:backstage]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-opencode
+  title: OpenCode web UI
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:opencode
+  owners: [group:admins]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-buckle-server
+  title: Buckle fleet server
+  description: >-
+    Hosts svc:buckle.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:buckle-server
+  owners: [group:admins]
+  appliesTo: [component:buckle-server]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-buckle-agent
+  title: Buckle agents
+  description: >-
+    Every host Buckle manages: they dial the server, and admins SSH to them.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:buckle-agent
+  owners: [group:admins]
+  appliesTo: [component:buckle-agent]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-ceph
+  title: Ceph cluster hosts
+  description: >-
+    storagepi-ceph1..3: mons, OSDs, mgr, cephadm.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:ceph
+  owners: [group:admins]
+  appliesTo: [resource:storagepi-ceph1, resource:storagepi-ceph2, resource:storagepi-ceph3]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-ceph-client
+  title: Ceph clients
+  description: The labk3s nodes, where ceph-csi maps RBD volumes.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:ceph-client
+  owners: [group:admins]
+  appliesTo: [resource:clusterpi-leader, resource:clusterpi-worker1, resource:clusterpi-worker2, resource:clusterpi-worker3, resource:clusterpi-worker4]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-compute-blade
+  title: Compute blades
+  description: blade-pi1..4.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:compute-blade
+  owners: [group:admins]
+  appliesTo: [resource:blade-pi1, resource:blade-pi2, resource:blade-pi3, resource:blade-pi4]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-k3s-node
+  title: labk3s nodes
+  description: >-
+    clusterpi-leader and clusterpi-worker1..4: k3s runs over the tailnet.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:k3s-node
+  owners: [group:admins]
+  appliesTo: [resource:clusterpi-leader, resource:clusterpi-worker1, resource:clusterpi-worker2, resource:clusterpi-worker3, resource:clusterpi-worker4]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-tsidp-client
+  title: tsidp relying parties
+  description: >-
+    Machines that call tsidp's token, JWKS and userinfo endpoints: the Buckle server, the labk3s egress to idp.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:tsidp-client
+  owners: [group:admins, tag:k8s-operator, tag:k3s-operator]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-labk3s-ingress
+  title: labk3s tailnet ingress
+  description: >-
+    The tailnet-ingress ProxyGroup on labk3s: hosts svc:labk3s-argocd-api and svc:lab-argocd. The operator owns it too: it mints the proxies' keys.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:labk3s-ingress
+  owners: [group:admins, tag:k3s-operator]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-specht-labs-ingress
+  title: specht-labs tailnet ingress
+  description: >-
+    The tailnet-ingress ProxyGroup on specht-labs: hosts svc:lgtm, svc:argocd and svc:backstage.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:specht-labs-ingress
+  owners: [group:admins, tag:k8s-operator]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-nas
+  title: The Synology
+  description: >-
+    Hosts svc:nas and svc:stream. Admins only, so neither k8s operator can hand it to a proxy.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:nas
+  owners: [group:admins]
+  appliesTo: [resource:nas]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-nut-server
+  title: The NUT server
+  description: >-
+    isa: hosts svc:nut.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:nut-server
+  owners: [group:admins]
+  appliesTo: [component:nut-server]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-k3s-server
+  title: labk3s's k3s server
+  description: >-
+    clusterpi-leader: hosts svc:labk3s.
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  tag: tag:k3s-server
+  owners: [group:admins]
+  appliesTo: [resource:clusterpi-leader]
