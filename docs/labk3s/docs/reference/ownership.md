@@ -31,8 +31,19 @@ Chart versions as of 2026-11-26; they're pinned in each `kustomization.yaml` and
 
 ## k3s itself
 
-k3s ships CoreDNS, metrics-server, local-path-provisioner (the default StorageClass `local-path`) and its manifests under `/var/lib/rancher/k3s/server/manifests`; Traefik is off.
+k3s ships CoreDNS, metrics-server and local-path-provisioner, with manifests under `/var/lib/rancher/k3s/server/manifests`; Traefik is off. The bundled StorageClass `local-path` is the cluster's **default**, so a PVC without `storageClassName` lands in a directory on one node's root filesystem. `ceph-rbd` must be named explicitly. As of 2026-11-27 the only PVCs are TKA's two `tsnet-state` volumes, both `local-path`.
 
 ## Nobody (yet)
 
-These namespaces exist on labk3s but no Application in `argo-apps/labk3s/` deploys them: `capi-system`, `chaos-mesh`, `gossip`, `observability`, `opentelemetry-operator-system`, `tka-dev` (seen 2026-11-26). Leftovers from before; check before relying on or deleting anything there.
+No Application in `argo-apps/labk3s/` deploys these, and nothing else in either repo does. Contents as of 2026-11-27:
+
+| Namespace | What's in it | Cluster-wide leftovers |
+|---|---|---|
+| `capi-system` | Deployment `capi-controller-manager` (cluster-api v1.13.2), its webhook Service and cert (cert-manager `Certificate capi-serving-cert`); no `Cluster` objects anywhere | cluster-api, CAPH and kubeadm CRDs; validating and mutating webhooks for `capi`, `capi-kubeadm-bootstrap`, `capi-kubeadm-control-plane` and `caph`, whose `caph-system` and `capi-kubeadm-*-system` Services no longer exist (`failurePolicy: Fail`, scoped to those CRDs) |
+| `chaos-mesh` | Chaos Mesh v2.7.0: controller-manager (3), dashboard, DNS server, `chaos-daemon` DaemonSet on all nodes | Chaos Mesh CRDs and webhooks; a `NetworkChaos` `gossip/test1` (partition, 2024-11-03, stopped) |
+| `gossip` | DaemonSet `gossip-testing` (`ghcr.io/cedi/gossip-experiment:main`) on all five nodes, Service `gossip` | |
+| `observability` | nothing but `kube-root-ca.crt` | |
+| `opentelemetry-operator-system` | only the operator's webhook cert Secret | OpenTelemetry operator CRDs |
+| `tka-dev` | nothing but `kube-root-ca.crt` | |
+
+None has a PVC or a secret beyond webhook certificates. They're experiments from before the cluster was GitOps-managed; nothing on labk3s depends on them.

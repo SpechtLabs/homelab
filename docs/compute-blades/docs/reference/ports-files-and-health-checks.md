@@ -40,7 +40,7 @@ From [`modules/compute-blade-agent/module.yaml`](https://github.com/SpechtLabs/h
 
 ## Health checks
 
-All four are required: a failure on any blade pauses the rollout in the canary phase.
+The first four are required: a failure on any blade pauses the rollout in the canary phase. `mdns-name` only shows in the Buckle UI.
 
 | Check | Passes when |
 |-------|-------------|
@@ -48,3 +48,4 @@ All four are required: a failure on any blade pauses the rollout in the canary p
 | `packaged-binary` | the running process is `/usr/bin/compute-blade-agent` |
 | `metrics` | `http://127.0.0.1:9666/metrics` answers |
 | `api-certificate` | `server.pem` valid for 14 more days or longer |
+| `mdns-name` (informational) | avahi announces the blade under `$(hostname -s)`, not `blade-piN-2` ([Fix the blade's mDNS name](../how-to/fix-the-blades-mdns-name.md)) |

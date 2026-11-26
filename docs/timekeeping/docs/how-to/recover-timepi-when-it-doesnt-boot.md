@@ -9,7 +9,7 @@ Use this when timepi doesn't come back after a reboot or power loss, or you susp
 | Boot files (`/boot/firmware`) | `mmcblk0p1`, PARTUUID `5c8ad903-01`: **used** | `nvme0n1p1`, `2ec0a0c9-01`: unused copy |
 | Root filesystem | `mmcblk0p2`, `5c8ad903-02`: fallback, frozen at 2026-11-19 | `nvme0n1p2`, `2ec0a0c9-02`: **live** |
 
-The bootloader reads only the SD card (`BOOT_ORDER=0xf1`). `cmdline.txt` on the SD card points the kernel at the NVMe root. `cmdline-sd.txt` next to it points at the SD root instead, and `tryboot.txt` is `config.txt` plus `cmdline=cmdline-sd.txt`.
+The bootloader reads only the SD card (`BOOT_ORDER=0xf1`). `cmdline.txt` on the SD card points the kernel at the NVMe root. `cmdline-sd.txt` next to it points at the SD root instead, and `tryboot.txt` is `config.txt` plus `cmdline=cmdline-sd.txt`. Buckle (`pi-firmware`, task `rpi-sd-fallback`) keeps both in step with the live `config.txt` and `cmdline.txt`, so the fallback boots with the same overlays and kernel options.
 
 While timepi is down, the LAN keeps time: NTP clients fall back to the public pool, and PTP clients' chrony falls back to it too once ptp4l loses the grandmaster.
 

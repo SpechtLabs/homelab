@@ -34,11 +34,25 @@ tasks:
       target: /etc/apparmor.d/usr.sbin.ptp4l
     id: ptp4l-apparmor-disabled
     when: 'host.groups contains "ptp-client" && host.facts.systemd.active contains "apparmor.service"'
-  # A ptp4l still confined (the profile was loaded when it started) is
-  # unloaded and restarted: a socket keeps the label it was created with.
+  # disable/ only covers boot (apparmor.service skips it). linuxptp's postinst
+  # reloads the profile on every package upgrade regardless (dh_apparmor:
+  # `apparmor_parser -r` whenever AppArmor is enabled), and the next ptp4l
+  # start is confined again: pmc can't reach it and time-client-metrics
+  # reports ptp4l_port_slave 0 while it's locked (isa, 34 minutes on
+  # 2026-11-24 before disable/ was in place). So: unload a loaded
+  # profile before anything restarts ptp4l under it, and restart a ptp4l
+  # already confined (a socket keeps the label it was created with).
   - command.run:
-      run: [sh, -c, 'apparmor_parser -R /etc/apparmor.d/usr.sbin.ptp4l; systemctl restart ptp4l@{{ host.facts.script.ptp.interface }} && systemctl restart chrony']
-      only_if: 'pid=$(pgrep -x ptp4l) && grep -q "^ptp4l " /proc/$pid/attr/current'
+      run:
+        - sh
+        - -c
+        - >-
+          apparmor_parser -R /etc/apparmor.d/usr.sbin.ptp4l 2>/dev/null;
+          pid=$(pgrep -x ptp4l) && grep -q "^ptp4l " /proc/$pid/attr/current || exit 0;
+          systemctl restart ptp4l@{{ host.facts.script.ptp.interface }} && systemctl restart chrony
+      only_if: >-
+        grep -q '^ptp4l ' /sys/kernel/security/apparmor/profiles ||
+        { pid=$(pgrep -x ptp4l) && grep -q "^ptp4l " /proc/$pid/attr/current; }
     id: ptp4l-unconfined
     when: 'host.groups contains "ptp-client" && host.facts.systemd.active contains "apparmor.service"'
     removal: leave

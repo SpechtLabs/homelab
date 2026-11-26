@@ -24,7 +24,7 @@ Nothing on the blades changes; the task only reads each blade's client config.
    ```
 
    followed by the discovery table and `try: bladectl -A get fan; bladectl -A events`.
-2. If it printed `no blades found`, discovery heard nothing within its 3 s and you had no config yet. Run it again; on 2026-11-26 the first `discover --wait 3s` from the Mac found nothing while a 6 s wait found all four.
+2. If it printed `no blades found`, discovery heard nothing within its 6 s and you had no config yet. Run it again. (It waited 3 s until 2026-11-27, which missed all four blades on the first try from the Mac.)
 
 ## Check it worked
 
@@ -45,8 +45,4 @@ Four lines like `blade-pi1: 5177 RPM (58%)`. Inside the checkout mise puts `blad
 
   Each should read `blade-piN:8081`. The server certificate names `blade-piN`, `blade-piN.local`, `localhost` and the blade's IP addresses at the time it was made.
 
-!!! warning "Unverified: blade-pi3 announces itself as `blade-pi3-2.local`"
-    On 2026-11-26 avahi on blade-pi3 had renamed it to `blade-pi3-2.local` (a host name conflict), and `bladectl discover` showed blade-pi3 as `address changed`. The task's last step, `bladectl discover --save`, updates the address of configured blades, so it may write `blade-pi3-2.local:8081`, a name the certificate doesn't contain. It hadn't happened in the config on this Mac (still `blade-pi3:8081`). If blade-pi3 fails with a certificate error, set the address back:
-    ```sh
-    yq -i '(.blades[] | select(.name == "blade-pi3") | .blade.server) = "blade-pi3:8081"' ~/.config/bladectl/config.yaml
-    ```
+- `bladectl discover` lists a blade as `address changed` with a server like `blade-pi3-2.local:8081`: avahi on that blade renamed itself, and the certificate doesn't carry the new name. The task's last step, `bladectl discover --save`, may then write that address into your config. Fix the name on the blade ([Fix the blade's mDNS name](fix-the-blades-mdns-name.md)), then rerun `mise run bladectl-config`, which sets every server back to `blade-piN:8081` before it saves.

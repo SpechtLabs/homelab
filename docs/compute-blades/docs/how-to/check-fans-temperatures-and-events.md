@@ -57,4 +57,4 @@ The [Compute Blade dashboard](https://spechtlabs.grafana.net/d/compute-blades) (
 - `undervoltage` or `power_limit`: the blade isn't getting 802.3at PoE+. `bladectl -A get power_status` should say `poe+`; anything else means the switch port or cable delivers 802.3af or less, and the agent caps the CPU at 1200 MHz meanwhile (lowest clock during under-voltage).
 - Critical mode often: airflow. Look at **SoC above airflow** on the dashboard.
 
-There are no Grafana alerts for the blades; the dashboard and the canary health checks are what you have.
+Grafana alerts on the same conditions (fan stall, critical temperature, under-voltage, PoE+, throttling, a missed fan unit, missing metrics); see [Respond to a blade alert](respond-to-a-blade-alert.md).

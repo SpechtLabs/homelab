@@ -18,7 +18,7 @@ flowchart LR
   ntpsec -. "NTP fallback" .-> chrony
 ```
 
-Measured accuracy: PTP clients sit within ~10-70 ns of timepi, NTP clients within microseconds. timepi itself is within ~1 µs of GPS while the receiver has a fix and drops to ~1 ms (PTB's servers over the internet) when it doesn't, which happens several times a day because the antenna sees little sky.
+Measured accuracy over a week: PTP clients a median 11-25 ns from timepi, NTP clients 0.2-0.3 µs (95% under 2.6 µs). timepi itself is within ~1 µs of GPS while the receiver has a fix and drops to ~1 ms (PTB's servers over the internet) when it doesn't, which happens several times a day because the antenna sees little sky.
 
 ## The parts
 

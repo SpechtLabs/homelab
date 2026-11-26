@@ -14,15 +14,14 @@ with `tailscale status --json | jq -r '.Peer[] | select(.Tags) | [.HostName, (.T
 | `tag:ceph-client` | admins | clusterpi-leader, clusterpi-worker1..4 | source to `tag:ceph` (ceph-csi) |
 | `tag:k3s-node` | admins | clusterpi-leader, clusterpi-worker1..4 | labk3s node mesh, source for `svc:labk3s`; SSH destination |
 | `tag:compute-blade` | admins | blade-pi1..4 | SSH destination |
-| `tag:smarthome` | admins | hass-elbschloss, hass-schiltach | source for `svc:lgtm`; SSH destination; web UI (5252) destination; approver of `svc:hass` |
+| `tag:smarthome` | admins | hass-elbschloss, hass-schiltach | source for `svc:lgtm`; SSH destination; web UI (5252) destination |
 | `tag:o11y-collector` | admins | isa | source: scrapes and probes through Services |
-| `tag:o11y-agent` | admins | meet, monitoring-lab-lgtm-egress, hass-elbschloss | source for `svc:lgtm` |
+| `tag:o11y-agent` | admins | meet, monitoring-lab-lgtm-egress | source for `svc:lgtm` (Home Assistant pushes as `tag:smarthome`) |
 | `tag:tsidp-client` | admins, `tag:k8s-operator`, `tag:k3s-operator` | isa, nas-elbschloss, tailscale-k3s-idp-egress | source to `tag:tsidp` (relying parties) |
 | `tag:backstage` | admins, `tag:k8s-operator` | backstage-lab-argocd (Backstage's egress proxy) | source for `svc:labk3s-argocd-api` |
 | `tag:jumphost` | admins | jumphost | SSH source |
 | `tag:tsidp` | admins | idp | capability target; Funnel |
 | `tag:tka` | `tag:k8s-operator`, admins | tka, lab-tka | capability target (tcp:8123) |
-| `tag:opencode` | admins | no device today | in no rule |
 
 ## Service host tags: who may serve a Service
 
@@ -36,11 +35,14 @@ the exception, because their operator mints the proxies' keys.
 | `tag:nut-server` | admins | isa | `svc:nut` |
 | `tag:nas` | admins | nas-elbschloss | `svc:nas`, `svc:stream`, `svc:node-exporter`, `svc:nfs` |
 | `tag:k3s-server` | admins | clusterpi-leader | `svc:labk3s` |
+| `tag:hass-server` | admins | hass-elbschloss (advertised by the Home Assistant Tailscale add-on's `advertise_tags`) | `svc:hass` |
 | `tag:specht-labs-ingress` | admins, `tag:k8s-operator` | specht-labs-ingress-0, -1 | `svc:lgtm`, `svc:argocd`, `svc:backstage` |
 | `tag:labk3s-ingress` | admins, `tag:k3s-operator` | labk3s-ingress-0, -1 | `svc:labk3s-argocd-api`, `svc:lab-argocd` |
 
-`svc:hass` is approved for `tag:smarthome`, which both Home Assistant boxes
-carry, not a host tag of its own.
+`svc:hass` had `tag:smarthome` as its approver until 2026-11-27, which
+hass-schiltach carries too. `approve-hass` lists both tags while
+hass-elbschloss changes over; once it carries `tag:hass-server`,
+`tag:smarthome` comes out of the approver.
 
 ## Operator tags
 
@@ -53,6 +55,6 @@ carry, not a host tag of its own.
 
 ## Retired
 
-`tag:core-services`, `tag:core-infra`, `tag:homelab`, `tag:o11y-endpoint` and
-`tag:lab-argocd` are gone from the policy and from every device
+`tag:core-services`, `tag:core-infra`, `tag:homelab`, `tag:o11y-endpoint`,
+`tag:lab-argocd` and `tag:opencode` are gone from the policy and from every device
 ([History](../explanation/history.md)).

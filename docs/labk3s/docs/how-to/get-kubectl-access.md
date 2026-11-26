@@ -50,8 +50,7 @@ TKA (`lab-tka`, tcp:8123 on the tailnet, app `tka` in [k8s-deployment](https://g
 
    `tka shell` with the same flags gives a subshell whose access ends when you exit; `tka signout` ends a `login` session.
 
-!!! note
-    The kubeconfig TKA hands out points at `https://clusterpi-leader:6443` (`clusterInfo.apiEndpoint` in [`tka-config.patch.yaml`](https://github.com/SpechtLabs/k8s-deployment/blob/main/apps/tka/cluster/labk3s/tka-config.patch.yaml)), the node, not `svc:labk3s`. Admins reach it through their `*` grant; nobody else would.
+The kubeconfig TKA hands out points at `https://labk3s.sphinx-map.ts.net:6443`, like the admin one (`clusterInfo.apiEndpoint` in [`tka-config.patch.yaml`](https://github.com/SpechtLabs/k8s-deployment/blob/main/apps/tka/cluster/labk3s/tka-config.patch.yaml), with the cluster CA as `caData`).
 
 ## The `KUBECONFIG` trap
 

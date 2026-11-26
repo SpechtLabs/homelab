@@ -18,6 +18,7 @@ Membership is a hardware fact: `buckle.yaml` puts every host with `host.facts.ha
 
 ## Where to start
 
+- An alert fired: [Respond to a blade alert](how-to/respond-to-a-blade-alert.md).
 - First time on this Mac: [Set up bladectl on your Mac](how-to/set-up-bladectl-on-your-mac.md).
 - Something looks hot or loud: [Check fans, temperatures and events](how-to/check-fans-temperatures-and-events.md); a fan at ~800,000 RPM has [its own page](how-to/fix-a-fan-reading-of-800k-rpm.md).
 - Which blade is which in the rack: [Identify a blade](how-to/identify-a-blade.md).

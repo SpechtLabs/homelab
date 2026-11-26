@@ -14,6 +14,10 @@ vars:
   # GPS/PPS board wiring (UART, I2C, SPI, PPS on GPIO 18); set per host.
   rpi_gps_pps: false
   rpi_pps_gpio: 18
+  # A one-shot fallback to the SD card's own root filesystem, for a Pi whose
+  # cmdline.txt mounts its root from elsewhere (timepi: NVMe). The SD root's
+  # PARTUUID=..., set per host; empty: none. See rpi-sd-fallback below.
+  rpi_sd_fallback_root: ''
   # Kernel image to boot instead of the firmware's default; set per group.
   # On a Pi 5, kernel8.img is the 4K-page kernel (the default kernel_2712.img
   # uses 16K pages, which some software can't run on: Ceph's BlueStore).
@@ -126,6 +130,24 @@ tasks:
     when: 'vars.rpi_gps_pps == true'
     notify: [reboot]
 
+  # The SD-root fallback (rpi_sd_fallback_root): tryboot.txt is config.txt
+  # plus `cmdline=cmdline-sd.txt`, cmdline-sd.txt is cmdline.txt with the SD's
+  # root=, so `reboot '0 tryboot'` boots the SD root once. Both are derived
+  # from the live files after the tasks above have edited them, so the
+  # fallback always carries the same overlays and tokens (it was hand-made on
+  # 2026-11-19 and drifted with every config.txt change). Nothing reboots for
+  # it: tryboot.txt is read only when asked for. The script writes only these
+  # two files and refuses a root that doesn't exist.
+  - file.copy: { src: rpi-sd-fallback.sh, dest: /usr/local/sbin/rpi-sd-fallback, mode: "0755" }
+    id: rpi-sd-fallback-script
+    when: 'vars.rpi_sd_fallback_root != ""'
+  - command.run:
+      run: [/usr/local/sbin/rpi-sd-fallback, '{{ vars.rpi_sd_fallback_root }}']
+      unless: [/usr/local/sbin/rpi-sd-fallback, '{{ vars.rpi_sd_fallback_root }}', --check]
+    id: rpi-sd-fallback
+    when: 'vars.rpi_sd_fallback_root != ""'
+    removal: leave
+
   # Hardware watchdog. clusterpi-worker3 froze hard on 2026-11-23 (no ping, no
   # log, kernel and all) and stayed down until power-cycled; systemd only armed
   # the watchdog for shutdowns. Applied with daemon-reexec, which services
@@ -146,6 +168,24 @@ handlers:
   reboot: { system.reboot: { delay: 10s, timeout: 5m } }
 
 health:
+  # A Pi with an SD-root fallback boots from the SD card only. timepi's NVMe
+  # hangs the kernel whenever the bootloader touched it first (2026-11-19:
+  # BOOT_ORDER with NVMe, 6, and PCIE_PROBE=1 took the LAN's only stratum 1
+  # down). This can't stop anyone flashing the EEPROM, but a rollout stops
+  # here instead of the next reboot finding out. A no-op on the other Pis.
+  - name: sd-boot-only
+    command:
+      run:
+        - sh
+        - -c
+        - >-
+          test -z '{{ vars.rpi_sd_fallback_root }}' || {
+          c=$(rpi-eeprom-config) &&
+          o=$(printf '%s\n' "$c" | sed -n 's/^BOOT_ORDER=0x//p') &&
+          test -n "$o" &&
+          case "$o" in *6*) false ;; esac &&
+          ! printf '%s\n' "$c" | grep -q '^PCIE_PROBE=1'; }
+      expect: { exit: 0 }
   - name: watchdog-armed
     command:
       run: [systemctl, show, -p, RuntimeWatchdogUSec, --value]

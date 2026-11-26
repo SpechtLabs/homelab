@@ -19,7 +19,7 @@ not listed here.
 | storagepi-ceph1..3 | 100.105.212.35, 100.107.71.68, 100.118.224.54 | buckle-agent, ceph | Ceph |
 | blade-pi1..4 | 100.127.89.27, 100.105.166.24, 100.123.23.104, 100.97.100.127 | buckle-agent, compute-blade | compute blades |
 | nas-elbschloss | 100.71.201.45 | nas, tsidp-client | the Synology; serves four Services; offers itself as an exit node |
-| hass-elbschloss | 100.75.135.70 | o11y-agent, smarthome | Home Assistant at home, serves `svc:hass` |
+| hass-elbschloss | 100.75.135.70 | hass-server, smarthome | Home Assistant at home, serves `svc:hass`; tags from the add-on's `advertise_tags` |
 | hass-schiltach | 100.89.41.43 | smarthome | Home Assistant in Schiltach |
 | tka | 100.82.255.26 | tka | TKA on specht-labs |
 | lab-tka | 100.119.91.34 | tka | TKA on labk3s |
@@ -34,8 +34,14 @@ not listed here.
 ## Exit nodes
 
 - The Mullvad exit nodes, for `group:vpn` only (node attribute `mullvad`).
-- nas-elbschloss advertises itself as an exit node (`ExitNodeOption` in
-  `tailscale status --json`). Nothing in the repos sets or documents it.
+- nas-elbschloss is an exit node: its tailscaled (DSM's Tailscale package)
+  advertises `0.0.0.0/0` and `::/0`, set in the package, not by any repo.
+  `tailscale status` lists it as "offers exit node". Traffic through it
+  leaves from the home LAN. Who uses it isn't visible in the NAS's
+  `tailscale status` or prefs; clients choose an exit node on their side. Check
+  with
+  `sudo /var/packages/Tailscale/target/bin/tailscale --socket /var/packages/Tailscale/var/tailscaled.sock debug prefs | grep -A3 AdvertiseRoutes`
+  on the NAS.
 - `modules/tailscale` can make a Buckle host an exit node
   (`tailscale_exit_node: true`); no host sets it today.
 

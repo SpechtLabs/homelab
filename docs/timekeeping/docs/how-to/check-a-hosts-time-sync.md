@@ -27,7 +27,7 @@ Use this when you want to know whether a host keeps time, which source it follow
    sudo chronyc -n tracking
    ```
 
-   `System time` is the current offset. Expect well under 1 µs on PTP clients (`0.000000052 seconds` on isa, 2026-11-26) and some µs on NTP clients (`0.000009368` on clusterpi-worker1 the same day). `Leap status : Normal` means synchronised; that's what Buckle's `time-sync: synchronized` health check looks for.
+   `System time` is the current offset. Expect well under 1 µs on PTP clients (`0.000000052 seconds` on isa, 2026-11-26) and under ~3 µs on NTP clients (median 0.2-0.3 µs over a week; a single `0.000009368` on clusterpi-worker1 the same day is still fine). `Leap status : Normal` means synchronised; that's what Buckle's `time-sync: synchronized` health check looks for.
 
 3. On a PTP client, ask ptp4l directly:
 

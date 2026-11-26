@@ -42,4 +42,16 @@ The **Raspberry Pi Fleet** dashboard in the same folder has blade fan speed and 
 
 ## Alerts
 
-None. No Grafana alert rule in SpechtLabs/k8s-deployment uses `computeblade_*` or `blade_exporter`; the Buckle health checks gate rollouts, and the LEDs show problems at the rack.
+Rule group `compute-blades` in `grafanaalertrules-blades.yaml` in [`apps/grafana-operator/cluster/specht-labs/`](https://github.com/SpechtLabs/k8s-deployment/tree/main/apps/grafana-operator/cluster/specht-labs) (SpechtLabs/k8s-deployment), folder Infrastructure > Providers, evaluated every minute on `mimir-homelab`. All `severity=warning`, `service=compute-blades`, one alert per blade. Runbooks: [Respond to a blade alert](../how-to/respond-to-a-blade-alert.md).
+
+| Title | UID | Fires when | For |
+|-------|-----|-----------|-----|
+| Blade — agent metrics missing | `blade-agent-down` | a blade's `up{job="blade_exporter"}` was there in the last day but isn't 1 now | 10m |
+| Blade — fan stalled | `blade-fan-stall` | `computeblade_state_state{state="fan_stall"}` is 1 | 5m |
+| Blade — smart fan unit not detected | `blade-fan-unit-misdetected` | `computeblade_fan_unit` with a type other than `smart`, or `computeblade_fan_speed` above 20,000 | 5m |
+| Blade — critical temperature | `blade-critical-temperature` | `computeblade_state_state{state="critical"}` is 1 | 10m |
+| Blade — under-voltage | `blade-undervoltage` | `computeblade_state_state{state="undervoltage"}` is 1 | 5m |
+| Blade — not on PoE+ | `blade-not-on-poe-plus` | the `computeblade_power_status` series for `poe+` (or `type="1"`, its label before 0.11.5) is 0 | 15m |
+| Blade — CPU throttled | `blade-throttled` | `computeblade_state_state{state="throttled"}` is 1 | 15m |
+
+No data counts as OK everywhere; `blade-agent-down` exists for exactly that gap.

@@ -19,7 +19,7 @@ placement:
 {%- endfor %}
 ---
 # A mgr on every host: one active, the others standby. Each serves the
-# prometheus module on :9283 (standbys answer with an error, see ceph_config),
+# prometheus module on :9283 (standbys with an empty body, see ceph_config),
 # so every host's Alloy scrapes its own and exactly one returns metrics.
 service_type: mgr
 placement:

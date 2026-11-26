@@ -38,5 +38,7 @@ validation:
   absolute_links: warn
   unrecognized_links: warn
   anchors: warn
+markdown_extensions:
+  - attr_list
 plugins:
   - techdocs-core

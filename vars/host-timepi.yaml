@@ -1,3 +1,6 @@
 # GPS/PPS board: UART, I2C, I2S, SPI and the PPS GPIO overlay (modules/pi-firmware).
 admin_user: cedi
 rpi_gps_pps: true
+# Root on the NVMe, boot files on the SD card (2026-11-19); the SD's own root
+# stays as the tryboot fallback (modules/pi-firmware, rpi-sd-fallback).
+rpi_sd_fallback_root: PARTUUID=5c8ad903-02

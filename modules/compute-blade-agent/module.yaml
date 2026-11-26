@@ -80,6 +80,17 @@ health:
       expect: { exit: 0 }
   - name: metrics
     http: { url: 'http://127.0.0.1:9666/metrics' }
+  # Informational: avahi announces the blade under its own host name. After a
+  # link flap avahi can take its own stale record for another host and rename
+  # itself (blade-pi3 became blade-pi3-2.local on 2026-11-24 at 02:46 UTC and
+  # stayed so), and bladectl discover then reports a name the API certificate
+  # doesn't carry. Fix: restart avahi-daemon, then the agent (it registers the
+  # service through avahi), see the compute-blades docs.
+  - name: mdns-name
+    command:
+      run: [sh, -c, 'test "$(busctl call org.freedesktop.Avahi / org.freedesktop.Avahi.Server GetHostName)" = "s \"$(hostname -s)\""']
+      expect: { exit: 0 }
+    required: false
   - name: api-certificate
     command:
       run: [openssl, x509, -checkend, "1209600", -noout, -in, /etc/compute-blade-agent/server.pem]

@@ -1,9 +1,12 @@
 #!/bin/sh
 # Managed by Buckle (modules/ptp-server). Announces over PTP what timepi's
 # clock is locked to right now, from ntpsec's selection:
-#   PPS selected       clockClass 6   (primary reference)  ±100 ns  GPS
-#   network NTP        clockClass 52  (degraded)           ±10 ms   NTP
-#   nothing selected   clockClass 248 (default)            unknown  oscillator
+#   PPS selected       clockClass 6   (primary reference)  0x21 100 ns  GPS
+#   network NTP        clockClass 52  (degraded)           0x2B 10 ms   NTP
+#   nothing selected   clockClass 248 (default)            0xFE unknown oscillator
+# clockAccuracy codes are IEEE 1588's table: 0x20 25 ns, 0x21 100 ns, ...
+# 0x29 1 ms, 0x2B 10 ms, ... 0x31 more than 10 s. (Until 2026-11-27 the NTP
+# case announced 0x31, "worse than 10 s", for PTB's ~1 ms.)
 # Only sets the grandmaster settings when they differ, and logs each change.
 # Usage: ptp-gm-quality TAI_UTC_OFFSET
 set -u
@@ -13,7 +16,7 @@ peers=$(ntpq -pn 2>/dev/null) || exit 0
 if printf '%s\n' "$peers" | grep -qE '^[*o]SHM\(1\)'; then
     state=gps class=6 accuracy=0x21 source=0x20 traceable=1
 elif printf '%s\n' "$peers" | grep -q '^\*'; then
-    state=ntp class=52 accuracy=0x31 source=0x50 traceable=1
+    state=ntp class=52 accuracy=0x2b source=0x50 traceable=1
 else
     state=free-running class=248 accuracy=0xfe source=0xa0 traceable=0
 fi

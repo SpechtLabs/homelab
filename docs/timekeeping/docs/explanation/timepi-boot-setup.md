@@ -32,7 +32,9 @@ The same evening, with the owner's approval, timepi moved to what it runs now:
 - The NVMe's fstab mounts `/boot/firmware` from the SD card (`5c8ad903-01`), so kernel and firmware updates land where the bootloader reads them.
 - The fallback stays: `tryboot.txt` is `config.txt` plus `cmdline=cmdline-sd.txt`, and `cmdline-sd.txt` points at the SD's own root. `reboot '0 tryboot'` boots it once. It was tested that way before the NVMe root became the default.
 
-Buckle's `pi-firmware` only adds and removes individual tokens in `cmdline.txt` (cgroups, NVMe power states, no serial console) and never touches `root=`, so it can't undo this. It doesn't manage `tryboot.txt` or `cmdline-sd.txt` either: they're hand-made, and a later change to `config.txt` doesn't reach `tryboot.txt` by itself. On 2026-11-26 the two still differed only by the `cmdline=` line.
+Buckle's `pi-firmware` only adds and removes individual tokens in `cmdline.txt` (cgroups, NVMe power states, no serial console) and never touches `root=`, so it can't undo this. The fallback files started out hand-made, so every later change to `config.txt` would have left `tryboot.txt` behind. Since 2026-11-27 `pi-firmware` derives both from the live files on every run (`rpi-sd-fallback`, enabled by `rpi_sd_fallback_root` in `vars/host-timepi.yaml`): `tryboot.txt` is `config.txt` plus `[all]` and `cmdline=cmdline-sd.txt`, `cmdline-sd.txt` is `cmdline.txt` with the SD's `root=`. The script writes only those two files and refuses a root partition that doesn't exist. Its first run changed nothing: the hand-made files matched byte for byte.
+
+`pi-firmware` also checks the rule below on timepi: its `sd-boot-only` health check fails when the EEPROM's `BOOT_ORDER` contains NVMe (6) or `PCIE_PROBE=1` is set, which pauses a rollout. It can't stop anyone flashing the EEPROM, but the next rollout says so before the next reboot finds out.
 
 ## The rule that follows
 

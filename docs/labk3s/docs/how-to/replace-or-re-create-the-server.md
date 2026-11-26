@@ -23,11 +23,12 @@ The `k3s-server` group is `host.id == "clusterpi-leader"`, so a Pi enrolled unde
     None of this has been done on labk3s. From the config, expect at least these to break and need fixing by hand:
 
     - **The workers.** They hold the old cluster's CA and node credentials under `/var/lib/rancher/k3s/agent`. Whether they rejoin with the same `K3S_TOKEN` or need a [reset](reset-k3s.md) first isn't known.
-    - **In-cluster `*.ts.net` lookups.** [`coredns-custom.cm.yaml`](https://github.com/SpechtLabs/k8s-deployment/blob/main/apps/coredns/cluster/labk3s/coredns-custom.cm.yaml) forwards `ts.net` to the Tailscale nameserver's ClusterIP, pinned as `10.43.37.229`. A new cluster allocates a new one; update the ConfigMap.
-    - **TKA.** `caData` and `apiEndpoint` in [`tka-config.patch.yaml`](https://github.com/SpechtLabs/k8s-deployment/blob/main/apps/tka/cluster/labk3s/tka-config.patch.yaml) are the old cluster's CA and `https://clusterpi-leader:6443`.
+    - **TKA.** `caData` in [`tka-config.patch.yaml`](https://github.com/SpechtLabs/k8s-deployment/blob/main/apps/tka/cluster/labk3s/tka-config.patch.yaml) is the old cluster's CA (`k3s-server-ca@1730506209`); put the new one there. The `apiEndpoint`, `svc:labk3s`, stays.
     - **Backstage's Argo CD cards.** The labk3s `backstage` account's token (`ARGOCD_LABK3S_TOKEN`, `apps/backstage/cluster/specht-labs/argocd.secret.yaml` in k8s-deployment) belongs to the old Argo CD.
     - **The Tailscale operator's devices.** Its proxies' state lived in Secrets in the old cluster. New proxies join as new devices; whether `svc:lab-argocd` and `svc:labk3s-argocd-api` keep their VIPs isn't known.
     - **Volumes.** The RBD images stay in Ceph's `k3s` pool, but the PV objects that pointed at them are gone, and `ceph-rbd` has `reclaimPolicy: Delete`.
+
+In-cluster `*.ts.net` lookups survive: CoreDNS forwards `ts.net` to `10.43.37.229`, and the DNSConfig pins the Tailscale nameserver's Service to that same ClusterIP (`nameserver.service.clusterIP` in [`dns-config.yaml`](https://github.com/SpechtLabs/k8s-deployment/blob/main/apps/tailscale/cluster/labk3s/dns-config.yaml)), so a fresh cluster gets the address the forward expects, as long as nothing else takes it first.
 
 ## Check it worked
 

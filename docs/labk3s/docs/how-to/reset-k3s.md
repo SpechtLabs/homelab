@@ -32,4 +32,4 @@ The uninstall scripts from k3s's installer are on the nodes: `/usr/local/bin/k3s
 
 ## If it didn't
 
-The `k3s-server` and `k3s-agent` checks in Buckle say which host is stuck. Then go through the list in [Replace or re-create the server](replace-or-re-create-the-server.md#steps): CoreDNS's pinned nameserver IP, TKA's CA, Backstage's token.
+The `k3s-server` and `k3s-agent` checks in Buckle say which host is stuck. Then go through the list in [Replace or re-create the server](replace-or-re-create-the-server.md#steps): the workers, TKA's CA, Backstage's token.

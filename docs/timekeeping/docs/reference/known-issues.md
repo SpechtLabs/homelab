@@ -10,7 +10,9 @@ Traps that have bitten this setup, and what in the repo handles each. The backgr
 
 **Cause:** linuxptp's AppArmor profile (`/etc/apparmor.d/usr.sbin.ptp4l`) lacks `attach_disconnected`, and the package's `ptp4l@` unit runs ptp4l in its own mount namespace. Inside that sandbox every client socket is a "disconnected path" to the profile, so it denies them.
 
-**Handled by:** `time-sync` symlinks the profile into `/etc/apparmor.d/disable/` (task `ptp4l-apparmor-disabled`), and task `ptp4l-unconfined` unloads it and restarts ptp4l and chrony if a ptp4l is still confined (`/proc/<pid>/attr/current` starts with `ptp4l `). The systemd sandbox stays. ptp4l logs to stdout (`use_syslog 0`, `verbose 1`) for the same reason. The Pis run without AppArmor.
+**When:** isa ran confined for 34 minutes on 2026-11-24, right after it became a PTP client, before the fix below was in place. The disable/ link only covers boot: linuxptp's postinst reloads the profile on every package upgrade (`apparmor_parser -r` whenever AppArmor is enabled), and the next ptp4l start after that is confined again.
+
+**Handled by:** `time-sync` symlinks the profile into `/etc/apparmor.d/disable/` (task `ptp4l-apparmor-disabled`) for boot. Task `ptp4l-unconfined` covers the rest on every run: it unloads the profile whenever it's loaded (`/sys/kernel/security/apparmor/profiles` lists `ptp4l`), and restarts ptp4l and chrony if a ptp4l is already confined (`/proc/<pid>/attr/current` starts with `ptp4l `). The systemd sandbox stays. ptp4l logs to stdout (`use_syslog 0`, `verbose 1`) for the same reason. The Pis run without AppArmor.
 
 ## The GPS only pulses with a fix
 
@@ -35,10 +37,6 @@ isa's I219 latches one receive timestamp at a time. With every client sending De
 ## Debian has no leap-second zone
 
 PTP runs on TAI and chrony's `tai` option needs a `right/UTC` zone with leap data, which Debian's tzdata no longer ships. TAI-UTC is the constant `time_tai_utc_offset: 37` instead; no leap second is scheduled and they end by 2035.
-
-## The fallback clockAccuracy says "more than 10 s"
-
-`ptp-gm-quality` announces `clockAccuracy 0x31` while timepi is on network time, and its comment calls that ±10 ms. In IEEE 1588's table 0x31 means "greater than 10 s"; 10 ms would be 0x2B. Clients don't act on it (they're `slaveOnly` with a single grandmaster), so it only affects what the dashboard and `pmc` show.
 
 ## chronyc needs sudo
 

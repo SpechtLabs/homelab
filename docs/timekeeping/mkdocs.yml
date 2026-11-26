@@ -27,6 +27,8 @@ nav:
       - explanation/index.md
       - Design: explanation/design.md
       - timepi's boot setup: explanation/timepi-boot-setup.md
+markdown_extensions:
+  - attr_list
 validation:
   omitted_files: warn
   absolute_links: warn

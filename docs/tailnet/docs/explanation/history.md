@@ -45,6 +45,13 @@ request (2d087d1, 22:44), and TKA's capability grant narrows to tcp:8123
 (004d883). The first rendered policy, pull request #20 (28 grants, 7 SSH
 rules, 21 tests), merges at 23:00.
 
+**2026-11-27.** `svc:hass` gets a host tag of its own, `tag:hass-server` on
+hass-elbschloss, so hass-schiltach (also `tag:smarthome`) can't serve it.
+hass-elbschloss drops `tag:o11y-agent`, which only duplicated what
+`tag:smarthome` already gets, and the unused `tag:opencode` (carried over
+from the admin console's policy on 2026-11-17, never on a device or in a
+rule) leaves the policy.
+
 ## Retired tags
 
 | Tag | Retired | Notes |
@@ -54,3 +61,4 @@ rules, 21 tests), merges at 23:00.
 | `tag:homelab` | 2026-11-26 | had become only an SSH target; SSH rules now name attribute tags |
 | `tag:o11y-endpoint` | 2026-11-26 | no device carried it |
 | `tag:lab-argocd` | 2026-11-26 | Backstage reaches the labk3s Argo CD API only through `svc:labk3s-argocd-api` |
+| `tag:opencode` | 2026-11-27 | for an OpenCode web UI; no device ever carried it here and no rule named it |

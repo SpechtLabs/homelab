@@ -29,8 +29,9 @@ ceph_hosts:
   storagepi-ceph2: 100.107.71.68
   storagepi-ceph3: 100.118.224.54
 
-# Hosts that run the S3 gateway (RGW), on ceph_rgw_port: one, for experiments,
-# away from the host with the active mgr.
+# Hosts that run the S3 gateway (RGW), on ceph_rgw_port: one, for experiments.
+# The active mgr moves on every failover and may land on this host too (it was
+# storagepi-ceph2 on 2026-11-26); 8 GB holds both.
 ceph_rgw_hosts: [storagepi-ceph2]
 
 # `ceph mon set <key> <value>`. Tentacle allows only aes256k cephx keys;
@@ -55,8 +56,10 @@ ceph_mgr_modules: [prometheus]
 # `ceph config set <who> <key> <value>` (modules/ceph, files/resources.sh.j2).
 ceph_config:
   mgr:
-    # Standby mgrs answer /metrics with an error instead of redirecting to the
-    # active one: Alloy would follow and record its metrics a second time.
+    # Standby mgrs must not redirect /metrics to the active one: Alloy would
+    # follow and record its metrics a second time. With `error` a standby
+    # answers / with a 500 and /metrics with an empty 200 (checked 2026-11-26),
+    # so every host's scrape stays up and only the active mgr's carries series.
     mgr/prometheus/standby_behaviour: error
     # Per-image RBD metrics (RBD dashboards) for the k3s pool.
     mgr/prometheus/rbd_stats_pools: k3s

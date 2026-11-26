@@ -1,8 +1,9 @@
 # Tags: tagOwners in the policy file. A tag says what a device is or does.
 # spec.appliesTo names what carries it, so its catalog page shows the
 # tailnet access that comes with it. Service hosts (tag:nas, tag:nut-server,
-# tag:k3s-server, tag:buckle-server) are owned by admins only: a Service's
-# only auto approver, which neither k8s operator can hand to a proxy.
+# tag:k3s-server, tag:buckle-server, tag:hass-server) are owned by admins
+# only: a Service's only auto approver, which neither k8s operator can hand
+# to a proxy.
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
 metadata:
@@ -124,7 +125,8 @@ metadata:
   name: tag-o11y-agent
   title: Telemetry senders without a Buckle agent
   description: >-
-    meet and labk3s's lab-lgtm-egress: push to svc:lgtm.
+    meet and labk3s's lab-lgtm-egress: push to svc:lgtm. Home Assistant
+    pushes as tag:smarthome and doesn't need it.
 spec:
   type: tag
   target: tailscale:sphinx-map
@@ -132,7 +134,7 @@ spec:
   system: tailnet
   tag: tag:o11y-agent
   owners: [group:admins]
-  appliesTo: [resource:meet]
+  appliesTo: [resource:meet, component:grafana-k8s-monitoring-labk3s]
 ---
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
@@ -163,19 +165,6 @@ spec:
   tag: tag:backstage
   owners: [group:admins, tag:k8s-operator]
   appliesTo: [component:backstage]
----
-apiVersion: specht-labs.de/v1alpha1
-kind: Tailscale
-metadata:
-  name: tag-opencode
-  title: OpenCode web UI
-spec:
-  type: tag
-  target: tailscale:sphinx-map
-  owner: group:spechtlabs
-  system: tailnet
-  tag: tag:opencode
-  owners: [group:admins]
 ---
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
@@ -277,7 +266,11 @@ metadata:
   name: tag-tsidp-client
   title: tsidp relying parties
   description: >-
-    Machines that call tsidp's token, JWKS and userinfo endpoints: the Buckle server, the labk3s egress to idp.
+    Machines that call tsidp's token, JWKS and userinfo endpoints over the
+    tailnet: isa (the Buckle server), the NAS (DSM's SSO) and labk3s's
+    k3s-idp-egress (its Argo CD). Every consumesApis: api:tsidp-oidc
+    across the catalogs is one; the NAS lost DSM sign-in on 2026-11-25 when
+    a retag dropped this tag.
 spec:
   type: tag
   target: tailscale:sphinx-map
@@ -285,6 +278,7 @@ spec:
   system: tailnet
   tag: tag:tsidp-client
   owners: [group:admins, tag:k8s-operator, tag:k3s-operator]
+  appliesTo: [resource:isa, resource:nas, component:tailscale-labk3s]
 ---
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
@@ -331,6 +325,24 @@ spec:
   tag: tag:nas
   owners: [group:admins]
   appliesTo: [resource:nas]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: tag-hass-server
+  title: Home Assistant at home
+  description: >-
+    hass-elbschloss: hosts svc:hass. Its own tag because tag:smarthome is on
+    hass-schiltach too, which must not be able to serve svc:hass. The HA
+    Tailscale add-on advertises it (advertise_tags).
+spec:
+  type: tag
+  target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
+  tag: tag:hass-server
+  owners: [group:admins]
+  appliesTo: [resource:hass]
 ---
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale

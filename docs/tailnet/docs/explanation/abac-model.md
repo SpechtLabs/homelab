@@ -34,13 +34,16 @@ about a Service grant on `*`.
 Something has to decide which devices may serve a Service. The policy's
 `autoApprovers` do, and each Service has exactly one approving tag: a tag
 only that host carries, owned by `group:admins` alone (`tag:nas`,
-`tag:nut-server`, `tag:k3s-server`, `tag:buckle-server`). The ownership is
+`tag:nut-server`, `tag:k3s-server`, `tag:buckle-server`, `tag:hass-server`). The ownership is
 the point: a tag the Kubernetes operators may hand out could end up on a
 proxy, and that proxy could then advertise the Service and receive its
 traffic. The two ingress tags (`tag:specht-labs-ingress`,
 `tag:labk3s-ingress`) are owned by their operator as well, because it mints
-the ProxyGroup replicas' keys; nothing else carries them. `svc:hass` is still
-approved for `tag:smarthome`, which both Home Assistant boxes carry.
+the ProxyGroup replicas' keys; nothing else carries them. `svc:hass` broke
+the rule until 2026-11-27: its approver was `tag:smarthome`, which
+hass-schiltach carries as well, so the Schiltach box could have advertised
+`svc:hass` too. hass-elbschloss now has
+`tag:hass-server` for it.
 
 ## Tags are identity
 

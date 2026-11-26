@@ -64,7 +64,7 @@ Within a few minutes the host appears under **via PTP** in the **Fleet clients**
 
 ## When ptp-facts says no
 
-- **`hardware: false`**: the NIC can't do PTP in hardware. The Pi 4 workers and the NUC are like that. The host stays an NTP client, a few µs off timepi, which the NTP SLO (within 100 µs) covers. There's no var to force PTP; the only way onto it is a NIC that passes step 2.
+- **`hardware: false`**: the NIC can't do PTP in hardware. The Pi 4 workers and the NUC are like that. The host stays an NTP client, a median 0.2-0.3 µs off timepi, which the NTP SLO (within 100 µs) covers. There's no var to force PTP; the only way onto it is a NIC that passes step 2.
 - **`lan: false`**: the route to `192.168.0.109` goes through a gateway (a VPS like meet, or a host on another subnet), or the host is timepi itself. `time-sync` doesn't touch it, so it keeps its distribution's own time sync.
 - **`interface` is the wrong NIC**: the fact takes the interface the route to timepi leaves by. Fix the routing (or the cabling) rather than the fact.
 - **The fact looks right but no ptp4l**: the agent hasn't re-planned yet, or the run failed. Check the host's last run in the Buckle UI.

@@ -64,6 +64,25 @@ This covers egress proxies (`tailscale.com/tailnet-fqdn`, for example
     deletes the Service and its VIP ([Expose a Kubernetes service](expose-a-kubernetes-service-on-the-tailnet.md)).
     The ProxyGroup replicas' own tag is fixed when a replica first joins.
 
+## A Home Assistant box
+
+The Home Assistant Tailscale add-on (`a0d7b954_tailscale`) advertises the
+box's tags from its `advertise_tags` option; hass-elbschloss has
+`[tag:smarthome, tag:hass-server]`. Change the tags in the admin console as
+for a host, then set `advertise_tags` to the same list in the Tailscale
+add-on's Configuration tab in Home Assistant, so the add-on doesn't ask for
+the old ones at its next start. The option takes effect at that next start;
+with the console already changed there's no need to restart it now, and a
+restart drops `svc:hass` until the add-on is back, because the add-on
+serves the Service too.
+
+To read the current options without the UI, Tailscale SSH to the box as
+root lands in the SSH add-on, where:
+
+```sh
+ha apps info a0d7b954_tailscale --raw-json | jq '.data.options.advertise_tags'
+```
+
 ## tsidp
 
 tsidp advertises its tag itself (`tsidp_advertise_tags: "tag:tsidp"` in

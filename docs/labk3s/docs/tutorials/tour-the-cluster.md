@@ -60,7 +60,7 @@ kubectl --context labk3s -n ceph-csi-rbd get pods -o wide
 
 ## 7. Find the alerts
 
-In Grafana (<https://spechtlabs.grafana.net>), open **Alerting > Alert rules** and search for `labk3s`. You'll find the burn-rate alerts of the SLO *Homelab — labk3s API availability* and, under *Infrastructure > Ceph*, the four `Ceph CSI —` rules. [Alerts and dashboards](../reference/alerts-and-dashboards.md) lists them all.
+In Grafana (<https://spechtlabs.grafana.net>), open **Alerting > Alert rules** and search for `labk3s`. You'll find the cluster's own group `labk3s-platform` (nodes, pods, volumes, Argo CD apps, telemetry) under *Infrastructure > Kubernetes Platform*, the burn-rate alerts of the SLO *Homelab — labk3s API availability*, and the four `Ceph CSI —` rules under *Infrastructure > Ceph*. [Alerts and dashboards](../reference/alerts-and-dashboards.md) lists them all.
 
 ## Where next
 

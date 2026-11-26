@@ -2,7 +2,7 @@
 
 Group `ceph-health` in Grafana folder Infrastructure > Ceph, evaluated every minute against the homelab Mimir tenant (datasource `mimir-homelab`). Source: SpechtLabs/k8s-deployment [`apps/grafana-operator/cluster/specht-labs/grafanaalertrules-ceph.yaml`](https://github.com/SpechtLabs/k8s-deployment/blob/main/apps/grafana-operator/cluster/specht-labs/grafanaalertrules-ceph.yaml). Notifications route by labels `service` (`ceph`, `ceph-csi`) and `severity` to Grafana IRM.
 
-The Ceph rules fire once per daemon, OSD, mon or health check and carry its `hostname`. They link to the *Ceph - Status* dashboard (uid `ceph-status`) at the panel listed.
+The Ceph rules fire once per daemon, OSD, mon or health check and carry its `hostname`. They link to the *Ceph - Status* dashboard (uid `ceph-status`) at the panel listed; the ceph-csi rules link to *Ceph CSI (RBD)* (uid `ceph-csi-rbd`).
 
 | Rule (uid) | Fires when | For | Severity | No data | Panel |
 |---|---|---|---|---|---|
@@ -14,10 +14,10 @@ The Ceph rules fire once per daemon, OSD, mon or health check and carry its `hos
 | Ceph — monitor out of quorum (`ceph-mon-quorum`) | `ceph_mon_quorum_status` < 1 | 5m | warning | OK | 12 Monitors |
 | Ceph — OSD over 75% full (`ceph-osd-nearfull`) | `ceph_osd_stat_bytes_used / ceph_osd_stat_bytes` > 0.75 | 15m | warning | OK | 11 |
 | Ceph — daemon not running (`ceph-daemon-down`) | `ceph_cephadm_daemon_status` != 1 | 10m | warning | OK | 10 Daemons |
-| Ceph CSI — no provisioner (`csi-provisioner-down`) | `sum(csi_liveness{job="ceph-csi-rbd/provisioner"})` < 1 | 5m | critical | **Alerting** | |
-| Ceph CSI — node plugin missing (`csi-nodeplugin-missing`) | nodes minus live node plugins > 0 | 10m | warning | OK | |
-| Ceph CSI — volume operations failing (`csi-operation-errors`) | rate of non-OK `csi_sidecar_operations_seconds_count` > 0 (10m window) | 15m | warning | OK | |
-| Ceph CSI — PVC over 85% full (`csi-pvc-nearfull`) | `kubelet_volume_stats_used_bytes / capacity` > 0.85 for `ceph-rbd` PVCs | 15m | warning | OK | |
+| Ceph CSI — no provisioner (`csi-provisioner-down`) | `sum(csi_liveness{job="ceph-csi-rbd/provisioner"})` < 1 | 5m | critical | **Alerting** | CSI 3 Provisioners live |
+| Ceph CSI — node plugin missing (`csi-nodeplugin-missing`) | nodes minus live node plugins > 0 | 10m | warning | OK | CSI 2 Node plugins live |
+| Ceph CSI — volume operations failing (`csi-operation-errors`) | rate of non-OK `csi_sidecar_operations_seconds_count` > 0 (10m window) | 15m | warning | OK | CSI 10 Errors |
+| Ceph CSI — PVC over 85% full (`csi-pvc-nearfull`) | `kubelet_volume_stats_used_bytes / capacity` > 0.85 for `ceph-rbd` PVCs | 15m | warning | OK | CSI 15 Mounted volumes |
 
 Ceph rules select `cluster="homelab-ceph"`, ceph-csi rules `cluster="labk3s"`.
 

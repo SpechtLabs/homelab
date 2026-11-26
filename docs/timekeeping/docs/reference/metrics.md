@@ -17,7 +17,8 @@ None of the time daemons export Prometheus metrics, so two scripts read them eve
 | `chrony_tracking_leap_normal` | 1 while synchronised with no leap second pending |
 | `ptp4l_master_offset_seconds` | PTP clients: NIC clock minus the grandmaster |
 | `ptp4l_mean_path_delay_seconds` | PTP clients: one-way delay to timepi |
-| `ptp4l_port_slave` | PTP clients: 1 while SLAVE. 0 also when `pmc` gets no answer |
+| `ptp4l_port_slave` | PTP clients: 1 while SLAVE; 0 when not, when `pmc` gets no answer, and when ptp4l isn't running (always written on PTP clients since 2026-11-27, so a dead ptp4l fires an alert instead of turning into no data) |
+| `ptp4l_service_active` | PTP clients: 1 while `ptp4l@<interface>` is active |
 | `ptp4l_gm_present` | PTP clients: 1 while a grandmaster is visible |
 | `time_client_metrics_up{source}`, source `chrony` or `ptp4l` | 1 if the daemon answered; the `ptp4l` series exists only while `ptp4l@<interface>` is active |
 

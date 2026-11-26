@@ -16,7 +16,7 @@ Taken from each host's `host.facts.script.ptp` fact (snapshots in [`fixtures/fac
 | nuc | Intel NUC | NTP | enp3s0, no PHC | `cedi@nuc` |
 | meet | Hetzner vServer | not managed (`lan: false`) | | |
 
-Measured: PTP clients ~10-70 ns system offset (RMS 20-60 ns; isa 35-90 ns with rare ~10 µs outliers, since Intel AMT shares its NIC), NTP clients a few µs (9 µs on clusterpi-worker1, 2026-11-26).
+Measured over the 7 days to 2026-11-26 (the absolute value of `chrony_tracking_system_offset_seconds`): PTP clients median 11-25 ns (isa has rare ~10 µs outliers; Intel AMT shares its NIC), NTP clients median 0.2-0.3 µs with 95% under 2.6 µs. Single readings swing more: clusterpi-worker1 read 9 µs once on 2026-11-26.
 
 ## Sources on timepi (ntpsec)
 
@@ -49,5 +49,5 @@ A PTP client shows stratum 1 in `chronyc tracking` (the PHC is a stratum 0 refcl
 | ntpsec follows | clockClass | clockAccuracy | timeSource | timeTraceable |
 |----------------|-----------|---------------|------------|---------------|
 | PPS (`*SHM(1)` or `oSHM(1)`) | 6 | 0x21 (100 ns) | 0x20 GPS | 1 |
-| a network server | 52 | 0x31 (meant as 10 ms, see [Known issues](known-issues.md#the-fallback-clockaccuracy-says-more-than-10-s)) | 0x50 NTP | 1 |
+| a network server | 52 | 0x2b (10 ms; 0x31 until 2026-11-27) | 0x50 NTP | 1 |
 | nothing | 248 | 0xfe (unknown) | 0xa0 oscillator | 0 |

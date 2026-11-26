@@ -11,6 +11,7 @@ Change any of this in the repo and let Buckle roll it out; files on the hosts ca
 | `time_tai_utc_offset` | `37` | `vars/defaults.yaml` | chrony's PHC `offset`, the grandmaster's `currentUtcOffset` |
 | `o11y_textfile_dir` | `/var/lib/prometheus/node-exporter` | `vars/defaults.yaml` | both metrics scripts; empty turns them off |
 | `rpi_gps_pps` | `true` on timepi (default `false`) | [`vars/host-timepi.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/host-timepi.yaml) | `pi-firmware`: the GPS/PPS `config.txt` lines |
+| `rpi_sd_fallback_root` | `PARTUUID=5c8ad903-02` on timepi (default empty: off) | `vars/host-timepi.yaml` | `pi-firmware`: `tryboot.txt`, `cmdline-sd.txt`, the `sd-boot-only` check |
 | `rpi_pps_gpio` | `18` | [`modules/pi-firmware`](https://github.com/SpechtLabs/homelab/blob/main/modules/pi-firmware/module.yaml) | the `pps-gpio` overlay's pin |
 | `ptp_enabled` | `true` | [`modules/ptp-server`](https://github.com/SpechtLabs/homelab/blob/main/modules/ptp-server/module.yaml) | ptp4l, phc2sys, `ptp-gm-quality` on timepi |
 | `ptp_interface` | `eth0` | `modules/ptp-server` | the grandmaster's port |
@@ -44,7 +45,7 @@ From [`buckle.yaml`](https://github.com/SpechtLabs/homelab/blob/main/buckle.yaml
 | `time-metrics.timer` (30 s) | `/usr/local/sbin/time-metrics --dir ... --pps-device /dev/pps0 --ptp-interface eth0` |
 | `/boot/firmware/config.txt` | `dtoverlay=pps-gpio,gpiopin=18`, `dtparam=uart0=on`, `enable_uart=1`, i2c/i2s/spi on |
 | `/boot/firmware/cmdline.txt` | `root=PARTUUID=2ec0a0c9-02`; no `console=serial0` (it would fight gpsd for the UART) |
-| `/boot/firmware/tryboot.txt`, `cmdline-sd.txt` | the SD-root fallback; not managed by Buckle |
+| `/boot/firmware/tryboot.txt`, `cmdline-sd.txt` | the SD-root fallback, derived from `config.txt` and `cmdline.txt` by `/usr/local/sbin/rpi-sd-fallback` (`pi-firmware`) |
 
 ## Files and units on the clients
 
@@ -68,6 +69,7 @@ From [`buckle.yaml`](https://github.com/SpechtLabs/homelab/blob/main/buckle.yaml
 | `ptp-server: ptp4l-master` | yes | `portState MASTER` |
 | `ptp-server: phc2sys` | yes | `phc2sys-eth0` active 30 s |
 | `ptp-server: metrics` | no | `ntpsec.prom` younger than 3 min with `time_metrics_up{source="ntpsec"} 1` |
+| `pi-firmware: sd-boot-only` | yes | where `rpi_sd_fallback_root` is set: EEPROM `BOOT_ORDER` has no 6 (NVMe) and no `PCIE_PROBE=1` |
 | `time-sync: synchronized` | yes | `Leap status : Normal` |
 | `time-sync: source` | no | `#* PTP` on PTP clients, `^* 192.168.0.109` elsewhere |
 

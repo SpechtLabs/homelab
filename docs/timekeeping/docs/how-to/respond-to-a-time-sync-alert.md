@@ -4,13 +4,13 @@ Use this when a Grafana alert from the rule group `time-sync` (folder Infrastruc
 
 **Before you start:** SSH to timepi (`cedi@timepi`) and to the host the alert names (`instance` label, e.g. `blade-pi2:9100`; log in as `pi` on the Pis, `cedi` on isa and the NUC). Keep the [Time Server dashboard](https://spechtlabs.grafana.net/d/stratum1) open.
 
-## timepi — GPS PPS lost
+## timepi — GPS PPS lost {#timepi-gps-pps-lost}
 
 **Warning, after 30 min.** ntpsec on timepi hasn't selected the PPS for half an hour, so the receiver has no fix. timepi keeps serving, from PTB's stratum 1 servers over the internet: ~1 ms instead of ~1 µs, and PTP announces clockClass 52.
 
 This happens several times a day because of the antenna's sky view, and usually clears on its own. Follow [Handle a GPS without a fix](handle-a-gps-without-a-fix.md).
 
-## timepi — not synchronised
+## timepi — not synchronised {#timepi-not-synchronised}
 
 **Critical, after 5 min.** ntpsec reports stratum 16: it has no usable source at all, neither the PPS nor PTB nor the pool. Every client follows a free-running clock (PTP announces clockClass 248).
 
@@ -37,7 +37,7 @@ This happens several times a day because of the antenna's sky view, and usually 
 
 **Check it worked:** `ntpq -c rv` shows `stratum=1` (PPS) or `stratum=2` (PTB), and the alert resolves 5 min later. On a client, `sudo chronyc -n tracking` shows `Leap status : Normal`.
 
-## timepi — time metrics missing
+## timepi — time metrics missing {#timepi-time-metrics-missing}
 
 **Warning, after 15 min, also fires on no data.** Mimir has had no `ntpsec_stratum` from timepi for 15 min, so the two alerts above can't fire. Either timepi is down or the metrics path is broken.
 
@@ -53,7 +53,7 @@ This happens several times a day because of the antenna's sky view, and usually 
    You want `time_metrics_up{source="ntpsec"} 1` and a file younger than a minute. Buckle's `ptp-server: metrics` health check tests exactly that (max age 3 min).
 3. If the file is fresh but Grafana has nothing, Alloy isn't shipping it: that's the o11y pipeline, see the [Fleet docs](https://backstage.k8s.specht-labs.de/docs/default/system/fleet/).
 
-## Host clock off by more than 1 ms
+## Host clock off by more than 1 ms {#host-clock-off-by-more-than-1-ms}
 
 **Warning, after 15 min.** chrony on the named host estimates its clock more than 1 ms off its source. Normal is nanoseconds (PTP) to microseconds (NTP).
 
@@ -77,7 +77,7 @@ This happens several times a day because of the antenna's sky view, and usually 
 
 **Check it worked:** `System time` in `chronyc tracking` back under 1 ms (and, on PTP, under 1 µs).
 
-## Host clock unsynchronised
+## Host clock unsynchronised {#host-clock-unsynchronised}
 
 **Warning, after 10 min.** chrony on the named host has reported a leap status other than Normal for 10 min: it follows nothing.
 
@@ -98,9 +98,9 @@ This happens several times a day because of the antenna's sky view, and usually 
 
 **Check it worked:** `sudo chronyc -n tracking` says `Leap status : Normal`. Buckle's `time-sync: synchronized` health check, which gates rollouts, passes again.
 
-## PTP client lost the grandmaster
+## PTP client lost the grandmaster {#ptp-client-lost-the-grandmaster}
 
-**Warning, after 10 min.** ptp4l on the named host hasn't been SLAVE for 10 min. chrony meanwhile follows timepi over NTP, so the host is µs off instead of ns: not urgent.
+**Warning, after 10 min.** ptp4l on the named host hasn't been SLAVE for 10 min, or isn't running at all: `time-client-metrics` writes `ptp4l_port_slave 0` and `ptp4l_service_active 0` then. chrony meanwhile follows timepi over NTP, so the host is µs off instead of ns: not urgent.
 
 1. On the host (unit name from the `interface` in its fact: `eth0` on the Pis, `eno1` on isa):
 
@@ -112,13 +112,19 @@ This happens several times a day because of the antenna's sky view, and usually 
 
 2. On timepi, check the grandmaster: `sudo pmc -u -b 0 'GET PORT_DATA_SET'` must say `portState MASTER`, and `systemctl status ptp4l@eth0 phc2sys-eth0 --no-pager` both active. If every PTP client fired at once, it's timepi.
 3. Match what you see:
+    - ptp4l isn't running (`inactive` or `failed`; `ptp4l_service_active 0` on the dashboard's host): read the journal from step 1 for the reason, then start it. Its drop-in already restarts it 5 s after a failure, so one that stays down fails at start every time, and the journal says why:
+
+      ```sh
+      sudo systemctl restart ptp4l@eth0 && sudo systemctl restart chrony
+      ```
+
     - `pmc` prints nothing, but ptp4l runs (isa, or any host with AppArmor): ptp4l is still confined by linuxptp's AppArmor profile and can't answer. The metrics script then reports `ptp4l_port_slave 0`, which fires this alert even if ptp4l is locked. See [Known issues](../reference/known-issues.md#apparmor-blocks-pmc-on-ubuntu). Check:
 
       ```sh
       cat /proc/$(pgrep -x ptp4l)/attr/current
       ```
 
-      Output starting with `ptp4l ` means confined. Buckle's `ptp4l-unconfined` task fixes this on its next run; by hand, do what it does:
+      Output starting with `ptp4l ` means confined. The usual trigger is a linuxptp package upgrade, whose postinst loads the profile again. Buckle's `ptp4l-unconfined` task unloads it and restarts a confined ptp4l on its next run (within 15 min); by hand, do what it does:
 
       ```sh
       sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.ptp4l
@@ -136,15 +142,12 @@ This happens several times a day because of the antenna's sky view, and usually 
 
 **Check it worked:** `pmc` shows `SLAVE`, and within a minute `sudo chronyc -n sources` shows `#* PTP` again. If chrony stays on NTP while ptp4l is SLAVE, Buckle's `chrony-follow-ptp` task restarts chrony on its next run; `sudo systemctl restart chrony` does the same now.
 
-!!! note
-    If ptp4l isn't running at all, its metrics vanish instead of turning 0, and this rule (no data = OK) stays quiet. The host shows up only as an NTP client on the dashboard. `systemctl status ptp4l@<interface>` tells you.
-
-## SLO burn alerts
+## SLO burn alerts {#slo-burn-alerts}
 
 Grafana generates fast- and slow-burn alerts for the three time SLOs (labels `service=time-sync`); see [Alerts, SLOs and dashboards](../reference/alerts-slos-and-dashboards.md#slos).
 
 | SLO | Fast burn | What to do |
 |-----|-----------|------------|
-| Homelab — clock accuracy (PTP clients) | critical | PTP clients spend minutes more than 10 µs off. Run [Host clock off by more than 1 ms](#host-clock-off-by-more-than-1-ms) on the worst host (dashboard: **Fleet clients > RMS offset by host**). |
+| Homelab — clock accuracy (PTP clients) | critical | PTP clients spend minutes more than 10 µs off. Run [Host clock off by more than 1 ms](respond-to-a-time-sync-alert.md#host-clock-off-by-more-than-1-ms) on the worst host (dashboard: **Fleet clients > RMS offset by host**). |
 | Homelab — clock accuracy (NTP clients) | critical | Same, for hosts on NTP (threshold 100 µs). |
 | Homelab — timepi on GPS time (stratum 1) | warning, never pages | The GPS keeps losing its fix. [Handle a GPS without a fix](handle-a-gps-without-a-fix.md); the long-term fix is the antenna. |

@@ -6,7 +6,9 @@ nav:
   - Overview: index.md
   - How-to guides:
       - how-to/index.md
+      - Respond to a blade alert: how-to/respond-to-a-blade-alert.md
       - Set up bladectl on your Mac: how-to/set-up-bladectl-on-your-mac.md
+      - Fix the blade's mDNS name: how-to/fix-the-blades-mdns-name.md
       - Check fans, temperatures and events: how-to/check-fans-temperatures-and-events.md
       - Identify a blade: how-to/identify-a-blade.md
       - Fix a fan reading of 800k RPM: how-to/fix-a-fan-reading-of-800k-rpm.md
@@ -25,6 +27,8 @@ nav:
       - explanation/index.md
       - What the agent does: explanation/what-the-agent-does.md
       - The blades as Buckle's canary: explanation/the-blades-as-buckles-canary.md
+markdown_extensions:
+  - attr_list
 validation:
   omitted_files: warn
   absolute_links: warn

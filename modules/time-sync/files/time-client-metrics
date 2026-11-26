@@ -38,9 +38,18 @@ else
   up_chrony=0
 fi
 
+# On a PTP client the ptp4l series are always written, 0 while ptp4l isn't
+# running: a series that vanished instead would read as "no data", and the
+# "PTP client lost the grandmaster" alert treats no data as OK.
 up_ptp=""
-if [ -n "$ptp_if" ] && systemctl is-active -q "ptp4l@$ptp_if" 2>/dev/null; then
-  st=$(timeout 5 pmc -u -b 0 'GET TIME_STATUS_NP' 'GET CURRENT_DATA_SET' 'GET PORT_DATA_SET' 2>/dev/null)
+if [ -n "$ptp_if" ]; then
+  st=""
+  active=0
+  if systemctl is-active -q "ptp4l@$ptp_if" 2>/dev/null; then
+    active=1
+    st=$(timeout 5 pmc -u -b 0 'GET TIME_STATUS_NP' 'GET CURRENT_DATA_SET' 'GET PORT_DATA_SET' 2>/dev/null)
+  fi
+  printf '# HELP ptp4l_service_active 1 while ptp4l@%s is active (0: stopped or failed).\n# TYPE ptp4l_service_active gauge\nptp4l_service_active %d\n' "$ptp_if" "$active"
   echo "$st" | awk '
     /master_offset/ { o = $2 } /meanPathDelay/ { d = $2 } /portState/ { s = $2 } /gmPresent/ { gm = ($2 == "true") ? 1 : 0 }
     END {

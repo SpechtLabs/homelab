@@ -9,8 +9,8 @@ metadata:
   title: The NAS serves svc:nas, svc:stream, svc:node-exporter and svc:nfs
   description: >-
     Jellyfin (`tailscale serve --service=svc:stream --https=443
-    http://localhost:8096`), DSM, Drive and SMB (nas/README.md), the
-    node_exporter (tcp:9100) and NFS v4.1 (tcp:2049).
+    http://localhost:8096`), DSM (tcp:443, tcp:5001) and Drive (tcp:6690)
+    (nas/README.md), the node_exporter (tcp:9100) and NFS v4.1 (tcp:2049).
 spec:
   type: autoApprovers
   target: tailscale:sphinx-map
@@ -47,7 +47,7 @@ metadata:
   title: Home Assistant serves svc:hass
   description: >-
     The add-on's `services:`: web UI on tcp:443 (HTTPS) and tcp:8123 (plain
-    HTTP).
+    HTTP), served by hass-elbschloss.
 spec:
   type: autoApprovers
   target: tailscale:sphinx-map
@@ -55,7 +55,10 @@ spec:
   system: tailnet
   appliesTo: [component:home-assistant]
   services:
-    svc:hass: [tag:smarthome]
+    # tag:smarthome only until hass-elbschloss carries tag:hass-server (admin
+    # console and the add-on's advertise_tags); then drop it, so hass-schiltach
+    # can't serve svc:hass.
+    svc:hass: [tag:hass-server, tag:smarthome]
 ---
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale

@@ -45,6 +45,11 @@ and yarn). The tool reads your working copies, uncommitted edits included.
    comparison is by meaning (who reaches what), so reordering or new comments
    don't count. With no change it ends with
    `No differences: the rendered policy allows what policy-main.hujson allows.`
+   Without a backstage clone, the same command comes from npm:
+   `npx -p @spechtlabs/backstage-plugin-tailscale-backend backstage-tailscale-diff <policy.hujson> <catalog dirs>...`.
+   The tool reads untracked files in the clones too, so someone's
+   work in progress (an untracked `catalog-info.yaml`) shows up in the
+   render although Backstage doesn't see it yet.
 4. Read `/tmp/policy-rendered.hujson` if you want the file exactly as the
    pull request will carry it.
 

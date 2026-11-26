@@ -2,7 +2,7 @@
 
 Use this when an alert from the `ceph-health` group fires (Grafana: Infrastructure > Ceph). Each section below has the alert rule's exact title as its heading, so the rules' `runbook_url` can point straight at it.
 
-**Before you start:** open the *Ceph - Status* dashboard ([spechtlabs.grafana.net/d/ceph-status](https://spechtlabs.grafana.net/d/ceph-status), Infrastructure > Ceph). Its Hosts table tells you which host is affected, and the alert's title says it too. For the Ceph CLI, SSH to any storage Pi (each holds the admin keyring):
+**Before you start:** open the *Ceph - Status* dashboard ([spechtlabs.grafana.net/d/ceph-status](https://spechtlabs.grafana.net/d/ceph-status), Infrastructure > Ceph). Its Hosts table tells you which host is affected, and the alert's title says it too. The ceph-csi alerts link to *Ceph CSI (RBD)* ([spechtlabs.grafana.net/d/ceph-csi-rbd](https://spechtlabs.grafana.net/d/ceph-csi-rbd)) instead. For the Ceph CLI, SSH to any storage Pi (each holds the admin keyring):
 
 ```sh
 ssh pi@storagepi-ceph1

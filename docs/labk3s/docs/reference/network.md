@@ -48,6 +48,6 @@ The nodes are Ceph clients (`tag:ceph-client` to `tag:ceph`, tcp 3300, 6789, 680
 |---|---|
 | Pod CIDR | 10.42.0.0/16 (k3s default), a /24 per node: leader 10.42.0.0, worker1 10.42.6.0, worker2 10.42.3.0, worker3 10.42.4.0, worker4 10.42.1.0 |
 | Service CIDR | 10.43.0.0/16 (k3s default; `kubernetes` is 10.43.0.1) |
-| CoreDNS `ts.net` forward | to `10.43.37.229`, the ClusterIP of Service `tailscale/nameserver`, pinned in [`coredns-custom.cm.yaml`](https://github.com/SpechtLabs/k8s-deployment/blob/main/apps/coredns/cluster/labk3s/coredns-custom.cm.yaml) |
+| CoreDNS `ts.net` forward | to `10.43.37.229`, the ClusterIP of Service `tailscale/nameserver`: in [`coredns-custom.cm.yaml`](https://github.com/SpechtLabs/k8s-deployment/blob/main/apps/coredns/cluster/labk3s/coredns-custom.cm.yaml), and pinned on the Service by the DNSConfig's `nameserver.service.clusterIP` ([`dns-config.yaml`](https://github.com/SpechtLabs/k8s-deployment/blob/main/apps/tailscale/cluster/labk3s/dns-config.yaml)); change both together |
 
 In-cluster lookups of `*.ts.net` resolve to the operator's egress proxies, not to raw `100.x` addresses. Pods still reach `100.x` addresses directly through their node.
