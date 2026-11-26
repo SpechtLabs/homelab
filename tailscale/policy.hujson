@@ -321,7 +321,7 @@
 		{
 			"src": ["group:admins"],
 			"dst": ["svc:labk3s"],
-			"ip":  ["*"],
+			"ip":  ["tcp:6443"],
 		},
 		{
 			"src": ["tag:o11y-collector"],
@@ -358,11 +358,11 @@
 		// doesn't use the NAS (DSM's connection log and the backup folder, 2026-11-26).
 		// Home Assistant at home, https://hass.<tailnet> and http://hass.<tailnet>:8123,
 		// for group:hass-users; the collector probes it for the availability SLO.
-		// The Service has only the web UI's ports, so "*" is all it offers.
+		// The Service has only the web UI's ports.
 		{
 			"src": ["group:hass-users"],
 			"dst": ["svc:hass"],
-			"ip":  ["*"],
+			"ip":  ["tcp:443", "tcp:8123"],
 		},
 		{
 			"src": ["tag:o11y-collector"],
