@@ -54,8 +54,10 @@ device:
   themselves, `tag:ceph-client` (the labk3s nodes) to them, on the mon and OSD
   ports. The OSD range skips 7480, RGW's port.
 - labk3s: k3s runs over the tailnet (node-ip, the server's advertise-address
-  and flannel on `tailscale0`). Agents join through `svc:labk3s`, then use the
-  server's own tailnet address that Kubernetes advertises; flannel's VXLAN
+  and flannel on `tailscale0`). The API goes only through `svc:labk3s`: the
+  server advertises the Service's address (`advertise-address`), so the
+  `kubernetes` endpoint, the agents' load balancers and pods calling
+  `kubernetes.default` all use it, and no grant names the server; flannel's VXLAN
   (udp 8472), the kubelet API (10250) and ceph-csi's metrics (8681) run node
   to node among `tag:k3s-node`. A node half on the LAN and half on the
   tailnet can't exchange VXLAN with the others, so a change to how the nodes

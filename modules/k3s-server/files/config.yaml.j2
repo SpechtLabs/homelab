@@ -1,11 +1,13 @@
 # {{ buckle_managed }}
 token: "{{ secrets.K3S_TOKEN }}"
 data-dir: /var/lib/rancher/k3s
-# labk3s runs over the tailnet: the node's address, the API endpoint the
-# agents learn, and flannel's VXLAN all use the tailnet (tailscale/policy.hujson,
-# tag:k3s-node). ips[0] is the node's tailnet IPv4.
+# labk3s runs over the tailnet: the node's address and flannel's VXLAN use the
+# node's tailnet IPv4 (ips[0]; tailscale/policy.hujson, tag:k3s-node). The API
+# is advertised at svc:{{ vars.k3s_service }}'s address: it becomes the
+# `kubernetes` endpoint, so the agents' load balancers and pods calling
+# kubernetes.default reach the API through the Service, never the node.
 node-ip: {{ host.facts.tailscale.ips[0] }}
-advertise-address: {{ host.facts.tailscale.ips[0] }}
+advertise-address: {{ vars.k3s_service_ip }}
 flannel-iface: tailscale0
 tls-san:
   - {{ vars.k3s_service }}.{{ vars.tailnet }}

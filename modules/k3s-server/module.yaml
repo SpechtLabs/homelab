@@ -10,6 +10,9 @@ vars:
   # The Tailscale Service in front of the API: labk3s.<tailnet>:6443. Its
   # name goes into the serving certificate (tls-san).
   k3s_service: labk3s
+  # svc:labk3s's IPv4 (stable while the Service exists), the API's advertise-address.
+  # The svc-ip health check fails when the name points elsewhere.
+  k3s_service_ip: 100.67.145.122
   k3s_disable: [traefik]
   k3s_disable_network_policy: true
 tasks:
@@ -78,6 +81,13 @@ health:
     command:
       run: [/usr/local/bin/k3s, kubectl, '--server=https://{{ vars.k3s_service }}.{{ vars.tailnet }}:6443', get, --raw, /readyz]
       expect: { exit: 0, stdout_matches: '^ok' }
+    required: false
+  # The advertised address is the Service's: the Kubernetes endpoint and
+  # MagicDNS agree.
+  - name: svc-ip
+    command:
+      run: "getent ahostsv4 {{ vars.k3s_service }}.{{ vars.tailnet }} | grep -qx '{{ vars.k3s_service_ip }} *STREAM.*'"
+      expect: { exit: 0 }
     required: false
   - name: nodes-ready
     command:
