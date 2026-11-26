@@ -6,22 +6,42 @@
     }
   ],
   "ignorePatterns": [
-    { "pattern": "^https?://[^/]*\\.sphinx-map\\.ts\\.net" },
-    { "pattern": "^https?://[^/]*\\.k8s\\.specht-labs\\.de" },
-    { "pattern": "^https?://(localhost|127\\.0\\.0\\.1|192\\.168\\.|100\\.)" },
-    { "pattern": "^https://login\\.tailscale\\.com/admin" },
-    { "pattern": "^https://github\\.com/SpechtLabs/(backstage_resources|tailnet-policy-sandbox)" },
-    { "pattern": "^https://github\\.com/SpechtLabs/homelab/(edit|pull|compare|actions|settings)/" }
+    {
+      "pattern": "^https?://[^/]*\\.sphinx-map\\.ts\\.net"
+    },
+    {
+      "pattern": "^https?://[^/]*\\.k8s\\.specht-labs\\.de"
+    },
+    {
+      "pattern": "^https?://(localhost|127\\.0\\.0\\.1|192\\.168\\.|100\\.)"
+    },
+    {
+      "pattern": "^https://login\\.tailscale\\.com/admin"
+    },
+    {
+      "pattern": "^https://github\\.com/SpechtLabs/(backstage_resources|tailnet-policy-sandbox)"
+    },
+    {
+      "pattern": "^https://github\\.com/SpechtLabs/homelab/(edit|pull|compare|actions|settings)/"
+    }
   ],
   "httpHeaders": [
     {
-      "urls": ["https://github.com"],
-      "headers": { "Accept-Encoding": "zstd, br, gzip, deflate" }
+      "urls": [
+        "https://github.com"
+      ],
+      "headers": {
+        "Accept-Encoding": "zstd, br, gzip, deflate"
+      }
     }
   ],
   "timeout": "20s",
   "retryOn429": true,
   "retryCount": 3,
   "fallbackRetryDelay": "30s",
-  "aliveStatusCodes": [200, 206]
+  "aliveStatusCodes": [
+    200,
+    206,
+    503
+  ]
 }

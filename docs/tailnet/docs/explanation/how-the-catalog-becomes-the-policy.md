@@ -7,8 +7,8 @@ Component consumes which API, which host runs what, who's in which group.
 Writing the same facts again as grants meant two places to keep in step.
 
 What follows is what Backstage's tailnet plugin
-([`compile.ts`](https://github.com/SpechtLabs/backstage/blob/main/packages/backend/src/plugins/tailscale/compile.ts),
-[`graph.ts`](https://github.com/SpechtLabs/backstage/blob/main/packages/backend/src/plugins/tailscale/graph.ts))
+([`compile.ts`](https://github.com/SpechtLabs/backstage-plugin-tailscale/blob/main/plugins/tailscale-backend/src/compile.ts),
+[`graph.ts`](https://github.com/SpechtLabs/backstage-plugin-tailscale/blob/main/plugins/tailscale-backend/src/graph.ts))
 does with it.
 
 ## The inputs

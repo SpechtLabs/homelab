@@ -58,7 +58,7 @@ dir="$HOME/.config/bladectl"; mkdir -p "$dir"; chmod 700 "$dir"
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 # The agents announce themselves via mDNS (modules/compute-blade-agent), which
 # only works on the blades' LAN. Away from it, keep the blades already configured.
-blades=$(bladectl discover --wait 3s 2>/dev/null | awk -F'│' 'NF>6 && $2 !~ /BLADE/ {gsub(/ /,"",$2); print $2}')
+blades=$(bladectl discover --wait 6s 2>/dev/null | awk -F'│' 'NF>6 && $2 !~ /BLADE/ {gsub(/ /,"",$2); print $2}')
 if [ -z "$blades" ] && [ -f "$dir/config.yaml" ]; then
   echo "no blades announced here (not on their LAN?); refreshing the configured ones"
   blades=$(yq '.blades[].name' "$dir/config.yaml")
@@ -103,6 +103,9 @@ run = '''
 set -euo pipefail
 # Links to this repo's files on GitHub are checked against the working tree
 # (replacementPatterns), so a page may link a file the same change adds.
+# GitHub throttles a CI runner's unauthenticated requests with 503, so the
+# config counts 503 as alive (aliveStatusCodes); a missing file is a 404,
+# which still fails. 429 is retried.
 git ls-files -z --cached --others --exclude-standard -- 'docs/**/*.md' '*.md' '**/README.md' \
   | xargs -0 markdown-link-check --quiet --config .markdown-link-check.json
 '''
