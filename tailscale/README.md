@@ -60,6 +60,10 @@ device:
   to node among `tag:k3s-node`. A node half on the LAN and half on the
   tailnet can't exchange VXLAN with the others, so a change to how the nodes
   connect has to reach all of them within minutes, not one drain at a time.
+  After such a change, restart the hostNetwork pods that bind to `POD_IP`
+  (ceph-csi's node plugin, metrics on 8681): they keep listening on the old
+  address until their containers restart, and the scrape fails ("Ceph CSI —
+  node plugin missing").
 
 ## Adding a Service
 
