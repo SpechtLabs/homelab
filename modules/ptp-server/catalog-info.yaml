@@ -12,7 +12,7 @@ metadata:
     PHC and ptp4l serves PTP from it, announcing the clock's real quality.
     time-metrics exports ntpsec, gpsd, PPS and PTP state.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
 spec:
   type: service
   owner: group:spechtlabs

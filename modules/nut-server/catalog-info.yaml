@@ -10,7 +10,7 @@ metadata:
     upsd on isa: re-exports the UPS Tower's own NUT server (dummy-ups proxy)
     to the Pis, the NUC and Home Assistant, so they don't all poll the UPS.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
 spec:
   type: service
   owner: group:spechtlabs

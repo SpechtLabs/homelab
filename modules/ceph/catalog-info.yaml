@@ -12,11 +12,11 @@ metadata:
     storagepi-ceph2. Pools replicated three times. Buckle preps the hosts
     and applies the orchestrator specs, pools, keys and S3 users.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
     # The tag its hosts' traffic comes from on the tailnet.
     specht-labs.de/tailnet-src: tag:ceph
   links:
-    - url: https://github.com/cedi/homelab/blob/main/docs/ceph.md
+    - url: https://github.com/SpechtLabs/homelab/blob/main/docs/ceph.md
       title: Runbook (docs/ceph.md)
 spec:
   type: service

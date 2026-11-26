@@ -11,7 +11,7 @@ metadata:
     revision through the phases in buckle.yaml, and applies the labk3s
     workloads. Nightly database backup locally and on the NAS.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
     # The tag its traffic comes from on the tailnet (isa's, as the server).
     specht-labs.de/tailnet-src: tag:buckle-server
   links:

@@ -27,7 +27,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Location
 metadata:
   name: homelab
-  description: Every catalog-info.yaml in cedi/homelab.
+  description: Every catalog-info.yaml in SpechtLabs/homelab.
 spec:
   targets:
     - ./catalog/systems.yaml
@@ -47,7 +47,7 @@ metadata:
     on main becomes a revision that rolls out through the phases in
     buckle.yaml.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
 spec:
   type: gitops
   owner: group:spechtlabs

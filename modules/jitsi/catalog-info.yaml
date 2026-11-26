@@ -10,7 +10,7 @@ metadata:
     the videobridge, nginx and coturn, from the quick-install, versions
     pinned in vars/host-meet.yaml.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
   links:
     - url: https://meet.realschule-rottweil.de
       title: Jitsi Meet

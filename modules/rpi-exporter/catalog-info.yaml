@@ -9,7 +9,7 @@ metadata:
     cedi/rpi_exporter on every Pi, :9243: SoC temperature, clocks,
     throttling. Scraped by the host's Alloy.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
   links:
     - url: https://github.com/cedi/rpi_exporter
       title: Upstream

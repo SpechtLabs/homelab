@@ -12,7 +12,7 @@ metadata:
     and Funnel (tsidp) publish services on it. The policy is policy.hujson
     here, tested on PRs and applied on main.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
   links:
     - url: https://login.tailscale.com/admin/machines
       title: Tailscale admin console

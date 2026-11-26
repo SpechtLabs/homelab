@@ -14,7 +14,7 @@ metadata:
     node metrics, node_exporter textfiles and the host's own exporters
     (rpi_exporter, blade, Ceph, Jitsi) to Mimir.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
     # The tags its traffic comes from on the tailnet (the hosts').
     specht-labs.de/tailnet-src: tag:buckle-agent
   links:
@@ -43,7 +43,7 @@ metadata:
     in k8s-deployment (Buckle, tsidp, Home Assistant, the labk3s API, DSM,
     Jellyfin).
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
     # The tags its traffic comes from on the tailnet (isa's).
     specht-labs.de/tailnet-src: tag:o11y-collector
 spec:

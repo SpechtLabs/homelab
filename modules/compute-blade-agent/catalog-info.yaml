@@ -10,7 +10,7 @@ metadata:
     policy, button gestures (hold 5 s: shutdown, 5 presses: power off),
     metrics on :9666. Renews its own certificates.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
   links:
     - url: https://github.com/compute-blade-community/compute-blade-agent
       title: Upstream

@@ -9,7 +9,7 @@ metadata:
     tsidp, the tailnet's OIDC identity provider, on isa as its own tailnet
     node `idp`, public through Funnel.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
   links:
     - url: https://idp.sphinx-map.ts.net
       title: tsidp

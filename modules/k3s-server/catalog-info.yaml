@@ -12,7 +12,7 @@ metadata:
     datastore; traefik and the network policy controller off). Drained
     around disruptive runs.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
     # The tag its traffic comes from on the tailnet (clusterpi-leader's).
     specht-labs.de/tailnet-src: tag:k3s-node
   links:
@@ -73,7 +73,7 @@ metadata:
     (1-meta-labk3s); Argo CD deploys everything else from k8s-deployment.
     Volumes from Ceph (StorageClass ceph-rbd).
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
   tags: [kubernetes, k3s]
 spec:
   type: kubernetes-cluster

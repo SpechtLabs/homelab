@@ -10,15 +10,15 @@ metadata:
   name: homelab
   title: Homelab
   description: >-
-    Elbschloss, the house, and what runs there or is run from cedi/homelab:
+    Elbschloss, the house, and what runs there or is run from SpechtLabs/homelab:
     the home network, the tailnet, Buckle, the time server, Ceph, the labk3s
     cluster, the compute blades, Jitsi on its VPS, and Home Assistant in
     Schiltach.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
   links:
-    - url: https://github.com/cedi/homelab
-      title: cedi/homelab
+    - url: https://github.com/SpechtLabs/homelab
+      title: SpechtLabs/homelab
     - url: https://buckle.sphinx-map.ts.net
       title: Buckle
 spec:

@@ -11,7 +11,7 @@ metadata:
     Pi 5s, the CM4 blades and isa), the rest by NTP (~0.1-1 us); the public
     pool as fallback.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
 spec:
   type: service
   owner: group:spechtlabs

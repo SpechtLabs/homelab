@@ -25,7 +25,7 @@ metadata:
     DSM on the NAS: web UI and Drive (sign-in through tsidp), Container
     Manager for the projects here, and NFS exports.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
   links:
     - url: https://nas.sphinx-map.ts.net
       title: DSM
@@ -141,7 +141,7 @@ metadata:
     Jellyfin media server (compose project `media`), on the tailnet as
     https://stream.sphinx-map.ts.net (Tailscale Service svc:stream).
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
   links:
     - url: https://stream.sphinx-map.ts.net
       title: Jellyfin
@@ -187,7 +187,7 @@ metadata:
     Nginx Proxy Manager on the NAS (compose project `media`), on ports 80,
     81 (admin) and 443 of every interface.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
 spec:
   type: service
   owner: group:spechtlabs
@@ -207,7 +207,7 @@ metadata:
     and cAdvisor (:8123) on the NAS (compose project `o11y`); the o11y
     collector on isa scrapes them.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
 spec:
   type: service
   owner: group:spechtlabs

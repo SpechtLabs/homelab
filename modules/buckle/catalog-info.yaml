@@ -11,7 +11,7 @@ metadata:
     it is also labk3s's executor. Restarts into a new version 90 s after
     the run.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
     # The tags its traffic comes from on the tailnet (the hosts').
     specht-labs.de/tailnet-src: tag:buckle-agent
   links:

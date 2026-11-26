@@ -10,7 +10,7 @@ metadata:
     node addresses and flannel on the tailnet.
     Rolled one worker at a time after the server, each drained first.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
     # The tags its traffic comes from on the tailnet (the workers').
     specht-labs.de/tailnet-src: tag:k3s-node
 spec:

@@ -9,7 +9,7 @@ metadata:
     upsmon + upssched on every Pi and the NUC, watching isa's NUT proxy. Most
     shut down early on battery; jumphost and timepi (nut-late) last.
   annotations:
-    github.com/project-slug: cedi/homelab
+    github.com/project-slug: SpechtLabs/homelab
     # The tags its traffic comes from on the tailnet (the hosts').
     specht-labs.de/tailnet-src: tag:buckle-agent
 spec:
