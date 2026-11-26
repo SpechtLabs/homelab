@@ -1,149 +1,184 @@
-// This tailnet's policy is maintained in https://github.com/cedi/homelab/blob/main/tailscale/policy.hujson
-// and applied by .github/workflows/tailscale.yaml. Edits in the admin console get overwritten.
+// Homelab tailnet (sphinx-map.ts.net). Rendered by Backstage from 63 Tailscale
+// entities and the catalog's users and groups; change those, not this file.
+// https://backstage.k8s.specht-labs.de/catalog/default/tailscale/sphinx-map
 {
-	// Declare static groups of users beyond those in the identity service.
 	"groups": {
+		// Tailnet admins
 		"group:admins": [
 			"cedi@github",
 		],
+		// Home Assistant users
+		"group:hass-users": [
+			"x545vpxsbj@privaterelay.appleid.com",
+			"cedi@github",
+		],
+		// Tailnet SREs
 		"group:sre": [
 			"cedi@github",
 		],
-		// group:vpn is given access to (mullvad) exit nodes
-		"group:vpn": [
-			"cedi@github",
-			"x1bay@github",
-			"x545vpxsbj@privaterelay.appleid.com",
-		],
-		// group:hass-users is given access to Home Assistant at home (svc:hass)
-		"group:hass-users": [
-			"cedi@github",
-			"x545vpxsbj@privaterelay.appleid.com",
-		],
-		// group:synology-users is given access to the Synology NAS
+		// Synology users
 		"group:synology-users": [
+			"x545vpxsbj@privaterelay.appleid.com",
 			"cedi@github",
 			"x1bay@github",
+		],
+		// Tailnet VPN users
+		"group:vpn": [
 			"x545vpxsbj@privaterelay.appleid.com",
+			"cedi@github",
+			"x1bay@github",
 		],
 	},
 
-	// Declare convenient hostname aliases to use in place of IP addresses.
 	"hosts": {
-		"nas-elbschloss":      "100.71.201.45",
-		"clusterpi-leader":    "100.92.89.43",
-		"hass-elbschloss":     "100.75.135.70",
-		"nuc":                 "100.122.149.90",
-		"idp":                 "100.77.112.23",
-		"hass-schiltach":      "100.89.41.43",
+		"nas-elbschloss":   "100.71.201.45",
+		"clusterpi-leader": "100.92.89.43",
+		"hass-elbschloss":  "100.75.135.70",
+		"nuc":              "100.122.149.90",
+		"idp":              "100.77.112.23",
+		"hass-schiltach":   "100.89.41.43",
 	},
 
-	// Declare ACL-Tags and their owners
 	"tagOwners": {
-		"tag:tsidp":          ["group:admins"], // Devices tagged with tag:tsidp are allowed to run tsidp with Tailscale Funnel
-		"tag:smarthome":      ["group:admins"], // Devices tagged with tag:smarthome are smart-home devices with should be treated with tighter access controll restrictions
-		"tag:k8s-operator":   ["group:admins"], // tag:k8s-operator is the tailscale operator running on my k8s clusters
-		"tag:k3s-operator":   ["group:admins"], // tag:k8s-operator is the tailscale operator running on my k8s clusters
-		"tag:k8s":            ["tag:k8s-operator"], // Devices tagged with tag:k8s are services exposed by the k8s-operator
-		"tag:tka":            ["tag:k8s-operator", "group:admins"], // Devices tagged with tag:tka are tailscale-k8s-auth services exposed by tka
-		"tag:k3s":            ["tag:k3s-operator"], // Devices tagged with tag:k8s are services exposed by the k8s-operator
-		"tag:o11y-collector": ["group:admins"], // The o11y collector (isa): scrapes the NAS, probes the SLO targets, pushes to svc:lgtm
-		"tag:o11y-agent":     ["group:admins"], // Telemetry senders without a Buckle agent (meet, labk3s's lab-lgtm-egress): push to svc:lgtm
-		"tag:jumphost":       ["group:admins"], // Devices tagged with tag:jumphost are allowed to initiate SSH connections via tailscale-ssh
-		"tag:backstage":      ["group:admins", "tag:k8s-operator"], // Backstage's egress proxies on specht-labs (its view onto the labk3s ArgoCD)
-		"tag:opencode":       ["group:admins"], // Devices tagged with tag:opencode are running the OpenCode Web UI
-		"tag:buckle-server":  ["group:admins"], // Devices tagged with tag:buckle-server run the Buckle fleet server (github.com/cedi/homelab)
-		"tag:buckle-agent":   ["group:admins"], // Devices tagged with tag:buckle-agent run a Buckle agent: they dial the server, and admins SSH to them
-		"tag:ceph":           ["group:admins"], // Ceph cluster hosts (storagepi-ceph1..3): mons, OSDs, mgr, cephadm
-		"tag:ceph-client":    ["group:admins"], // Ceph clients: the labk3s nodes, where ceph-csi maps RBD volumes
-		"tag:compute-blade":  ["group:admins"], // The compute blades (blade-pi1..4)
-		"tag:k3s-node":       ["group:admins"], // labk3s nodes (clusterpi-leader, clusterpi-worker1..4): k3s runs over the tailnet
-		"tag:tsidp-client":   ["group:admins", "tag:k8s-operator", "tag:k3s-operator"],
-		// Host tag owned by the operator too (it mints the proxies' keys), unlike
-		// the admins-only host tags above.
-		"tag:labk3s-ingress": ["group:admins", "tag:k3s-operator"], // The tailnet-ingress ProxyGroup on labk3s (k8s-deployment): hosts svc:labk3s-argocd-api, svc:lab-argocd
-		"tag:specht-labs-ingress": ["group:admins", "tag:k8s-operator"], // The tailnet-ingress ProxyGroup on specht-labs (k8s-deployment): hosts svc:lgtm, svc:argocd, svc:backstage // Machines that are tsidp relying parties (token, JWKS, userinfo calls): the Buckle server, the labk3s egress to idp
-		// Service hosts: a tag that only the one host allowed to serve a Service
-		// carries, for its autoApprovers. Owned by admins only, so neither k8s
-		// operator can hand it to a proxy.
-		"tag:nas":            ["group:admins"], // The Synology: hosts svc:nas, svc:stream, svc:node-exporter and svc:nfs
-		"tag:nut-server":     ["group:admins"], // The NUT server (isa): hosts svc:nut
-		"tag:k3s-server":     ["group:admins"], // labk3s's k3s server (clusterpi-leader): hosts svc:labk3s
+		// Backstage's egress proxies
+		// Backstage on specht-labs, and its view onto the labk3s Argo CD.
+		"tag:backstage": ["group:admins", "tag:k8s-operator"],
+		// Buckle agents
+		// Every host Buckle manages: they dial the server, and admins SSH to them.
+		"tag:buckle-agent": ["group:admins"],
+		// Buckle fleet server
+		// Hosts svc:buckle.
+		"tag:buckle-server": ["group:admins"],
+		// Ceph cluster hosts
+		// storagepi-ceph1..3: mons, OSDs, mgr, cephadm.
+		"tag:ceph": ["group:admins"],
+		// Ceph clients
+		// The labk3s nodes, where ceph-csi maps RBD volumes.
+		"tag:ceph-client": ["group:admins"],
+		// Compute blades
+		// blade-pi1..4.
+		"tag:compute-blade": ["group:admins"],
+		// Jumphost
+		// Allowed to start Tailscale SSH sessions.
+		"tag:jumphost": ["group:admins"],
+		// Services the labk3s operator exposes
+		"tag:k3s": ["tag:k3s-operator"],
+		// labk3s nodes
+		// clusterpi-leader and clusterpi-worker1..4: k3s runs over the tailnet.
+		"tag:k3s-node": ["group:admins"],
+		// Tailscale operator on labk3s
+		"tag:k3s-operator": ["group:admins"],
+		// labk3s's k3s server
+		// clusterpi-leader: hosts svc:labk3s.
+		"tag:k3s-server": ["group:admins"],
+		// Services the specht-labs operator exposes
+		"tag:k8s": ["tag:k8s-operator"],
+		// Tailscale operator on specht-labs
+		"tag:k8s-operator": ["group:admins"],
+		// labk3s tailnet ingress
+		// The tailnet-ingress ProxyGroup on labk3s: hosts svc:labk3s-argocd-api and
+		// svc:lab-argocd. The operator owns it too: it mints the proxies' keys.
+		"tag:labk3s-ingress": ["group:admins", "tag:k3s-operator"],
+		// The Synology
+		// Hosts svc:nas and svc:stream. Admins only, so neither k8s operator can hand it
+		// to a proxy.
+		"tag:nas": ["group:admins"],
+		// The NUT server
+		// isa: hosts svc:nut.
+		"tag:nut-server": ["group:admins"],
+		// Telemetry senders without a Buckle agent
+		// meet and labk3s's lab-lgtm-egress: push to svc:lgtm.
+		"tag:o11y-agent": ["group:admins"],
+		// The o11y collector
+		// isa: scrapes exporters, probes the SLO targets, pushes to svc:lgtm.
+		"tag:o11y-collector": ["group:admins"],
+		// OpenCode web UI
+		"tag:opencode": ["group:admins"],
+		// Smart-home devices
+		// The Home Assistant boxes: tighter access than other hosts.
+		"tag:smarthome": ["group:admins"],
+		// specht-labs tailnet ingress
+		// The tailnet-ingress ProxyGroup on specht-labs: hosts svc:lgtm, svc:argocd and
+		// svc:backstage.
+		"tag:specht-labs-ingress": ["group:admins", "tag:k8s-operator"],
+		// tailscale-k8s-auth
+		// TKA's services: cluster sign-in through the tailnet.
+		"tag:tka": ["tag:k8s-operator", "group:admins"],
+		// tsidp, the tailnet's OIDC provider
+		// Allowed to run tsidp with Tailscale Funnel.
+		"tag:tsidp": ["group:admins"],
+		// tsidp relying parties
+		// Machines that call tsidp's token, JWKS and userinfo endpoints: the Buckle
+		// server, the labk3s egress to idp.
+		"tag:tsidp-client": ["group:admins", "tag:k8s-operator", "tag:k3s-operator"],
 	},
 
 	"nodeAttrs": [
-		// allow the k8s-operator to enable funnel
+		// The k8s operators may enable Funnel
 		{
 			"target": ["tag:k8s-operator", "tag:k3s-operator"],
 			"attr":   ["funnel"],
 		},
-
-		// allow tsidp to enable funnel
+		// tsidp may enable Funnel
 		{
 			"target": ["tag:tsidp"],
 			"attr":   ["funnel"],
 		},
-
-		// group:vpn has access to mullvad exit nodes
+		// VPN users get the Mullvad exit nodes
 		{
 			"target": ["group:vpn"],
 			"attr":   ["mullvad"],
 		},
 	],
-	// Tailscale Services (svc:<name>.<tailnet>) that tagged hosts may advertise
-	// without approval in the admin console.
+
 	"autoApprovers": {
 		"services": {
-			// Jellyfin on the NAS: `tailscale serve --service=svc:stream --https=443 http://localhost:8096`
-			"svc:stream": ["tag:nas"],
-			// Buckle: UI and API on tcp:443, agents' gRPC on tcp:7700 with a PROXY v2
-			// header (bootstrap/README.md).
+			// The Buckle server serves svc:buckle
+			// UI and API on tcp:443, the agents' gRPC on tcp:7700 with a PROXY v2 header
+			// (bootstrap/README.md).
 			"svc:buckle": ["tag:buckle-server"],
-			// Home Assistant's add-on (`services:` in its config): web UI on tcp:443
-			// (HTTPS) and tcp:8123 (plain HTTP, as before the move to a Service).
+			// Home Assistant serves svc:hass
+			// The add-on's `services:`: web UI on tcp:443 (HTTPS) and tcp:8123 (plain HTTP).
 			"svc:hass": ["tag:smarthome"],
-			// DSM, Drive and SMB on the NAS (nas/README.md).
-			"svc:nas": ["tag:nas"],
-			// The NAS's node_exporter (tcp:9100) and NFS v4.1 (tcp:2049), each
-			// `tailscale serve --service=svc:<name> --tcp=<port> tcp://localhost:<port>`.
-			"svc:node-exporter": ["tag:nas"],
-			"svc:nfs":           ["tag:nas"],
-			// upsd on isa (modules/nut-server), the UPS for every Pi and the NUC.
-			"svc:nut": ["tag:nut-server"],
+			// The k3s server serves svc:labk3s
 			// The labk3s API (modules/k3s-server), tcp:6443 passed through to k3s.
 			"svc:labk3s": ["tag:k3s-server"],
-			// The specht-labs tailnet Gateway (k8s-deployment
-			// apps/envoy-gateway/cluster/specht-labs/tailnet-services.yaml).
-			"svc:lgtm":      ["tag:specht-labs-ingress"],
-			"svc:argocd":    ["tag:specht-labs-ingress"],
-			"svc:backstage": ["tag:specht-labs-ingress"],
-			// The labk3s Argo CD API (k8s-deployment
-			// apps/argocd/cluster/labk3s/argocd-api-tailnet.yaml), tcp:443.
+			// The labk3s ingress serves the labk3s Argo CD
+			// The API (apps/argocd/cluster/labk3s/argocd-api-tailnet.yaml, tcp:443) and the
+			// UI (Ingress argocd-server, https://lab-argocd.<tailnet>).
 			"svc:labk3s-argocd-api": ["tag:labk3s-ingress"],
-			// The labk3s Argo CD UI (k8s-deployment apps/argocd/cluster/labk3s,
-			// Ingress argocd-server), https://lab-argocd.<tailnet>.
 			"svc:lab-argocd": ["tag:labk3s-ingress"],
+			// The NAS serves svc:nas, svc:stream, svc:node-exporter and svc:nfs
+			// Jellyfin (`tailscale serve --service=svc:stream --https=443
+			// http://localhost:8096`), DSM, Drive and SMB (nas/README.md), the node_exporter
+			// (tcp:9100) and NFS v4.1 (tcp:2049).
+			"svc:stream": ["tag:nas"],
+			"svc:nas": ["tag:nas"],
+			"svc:node-exporter": ["tag:nas"],
+			"svc:nfs": ["tag:nas"],
+			// isa serves svc:nut
+			// upsd (modules/nut-server), the UPS for every Pi and the NUC.
+			"svc:nut": ["tag:nut-server"],
+			// The specht-labs tailnet Gateway serves LGTM, Argo CD and Backstage
+			// k8s-deployment apps/envoy-gateway/cluster/specht-labs/tailnet-services.yaml.
+			"svc:lgtm": ["tag:specht-labs-ingress"],
+			"svc:argocd": ["tag:specht-labs-ingress"],
+			"svc:backstage": ["tag:specht-labs-ingress"],
 		},
 	},
 
 	"ssh": [
-		// Admins and the jumphost: everything Buckle manages, the Home Assistant
-		// boxes, the Ceph hosts, the labk3s nodes and the compute blades, as any
-		// user; root on the Pi clusters and the Home Assistant boxes directly...
-		{
-			"action": "accept",
-			"src":    ["group:admins", "tag:jumphost"],
-			"dst":    ["tag:ceph", "tag:k3s-node", "tag:compute-blade", "tag:smarthome"],
-			"users":  ["autogroup:nonroot", "root"],
-		},
+		// Admins SSH to every Buckle host
+		// Admins and the jumphost, as any user but root.
 		{
 			"action": "accept",
 			"src":    ["group:admins", "tag:jumphost"],
 			"dst":    ["tag:buckle-agent"],
 			"users":  ["autogroup:nonroot"],
 		},
-		// ...and root on the rest of the Buckle hosts (isa, nuc, timepi, the
-		// jumphost, meet) in check mode.
+		// Admins are root on the Buckle hosts in check mode
+		// isa, nuc, timepi, the jumphost, meet: root after a fresh sign-in, at most
+		// every 8 hours.
 		{
 			"action":      "check",
 			"checkPeriod": "8h",
@@ -151,14 +186,37 @@
 			"dst":         ["tag:buckle-agent"],
 			"users":       ["root"],
 		},
-		// SREs: the Ceph hosts, the compute blades and the labk3s nodes, as any
-		// user; root in check mode.
+		// Admins SSH to the Pi clusters and Home Assistant as anyone
+		// Admins and the jumphost: the Ceph hosts, the labk3s nodes, the compute blades
+		// and the Home Assistant boxes, as any user including root.
+		{
+			"action": "accept",
+			"src":    ["group:admins", "tag:jumphost"],
+			"dst":    ["tag:ceph", "tag:k3s-node", "tag:compute-blade", "tag:smarthome"],
+			"users":  ["autogroup:nonroot", "root"],
+		},
+		// Members SSH to their own devices
+		{
+			"action": "accept",
+			"src":    ["autogroup:member"],
+			"dst":    ["autogroup:self"],
+			"users":  ["autogroup:nonroot"],
+		},
+		// Members are root on their own devices in check mode
+		{
+			"action": "check",
+			"src":    ["autogroup:member"],
+			"dst":    ["autogroup:self"],
+			"users":  ["root"],
+		},
+		// SREs SSH to Ceph, the compute blades and labk3s
 		{
 			"action": "accept",
 			"src":    ["group:sre"],
 			"dst":    ["tag:ceph", "tag:compute-blade", "tag:k3s-node"],
 			"users":  ["autogroup:nonroot"],
 		},
+		// SREs are root on Ceph, the compute blades and labk3s in check mode
 		{
 			"action":      "check",
 			"checkPeriod": "8h",
@@ -166,286 +224,57 @@
 			"dst":         ["tag:ceph", "tag:compute-blade", "tag:k3s-node"],
 			"users":       ["root"],
 		},
-		// any user can use Tailscale SSH to connect to their own devices as non-root user
-		{
-			"action": "accept",
-			"src":    ["autogroup:member"],
-			"dst":    ["autogroup:self"],
-			"users":  ["autogroup:nonroot"],
-		},
-		// any user can use Tailscale SSH to connect to their own devices in check mode as root user
-		{
-			"action": "check",
-			"src":    ["autogroup:member"],
-			"dst":    ["autogroup:self"],
-			"users":  ["root"],
-		},
 	],
 
 	"grants": [
-		// Allow admin to access everything unrestricted
-		{
-			"src":    ["group:admins"],
-			"dst":    ["*"],
-			"ip":     ["*"],
-		},
-		// Ceph speaks only on the tailnet (public_network is 100.64.0.0/10,
-		// modules/ceph): the hosts among themselves (cephadm's sshd on 2222, mons
-		// on 3300/6789, OSDs and mgr on 6800-7568, ms_bind_port_max) and the
-		// labk3s nodes' ceph-csi as clients. Node-scoped: clients reach every OSD
-		// at its own address, so there's no Service in front. The OSD range skips
-		// 7480, RGW's port (no consumer).
-		{
-			"src": ["tag:ceph"],
-			"dst": ["tag:ceph"],
-			"ip":  ["tcp:2222", "tcp:3300", "tcp:6789", "tcp:6800-7479", "tcp:7481-7568"],
-		},
-		{
-			"src": ["tag:ceph-client"],
-			"dst": ["tag:ceph"],
-			"ip":  ["tcp:3300", "tcp:6789", "tcp:6800-7479", "tcp:7481-7568"],
-		},
-		// labk3s over the tailnet (node-ip and flannel on tailscale0). The API
-		// only through svc:labk3s: the server advertises the Service's address,
-		// so the agents' load balancers and pods calling kubernetes.default use
-		// it too. Flannel's VXLAN, the kubelet API (exec/logs, metrics-server,
-		// Alloy's scrapes) and ceph-csi's metrics run node to node: node-scoped
-		// like Ceph, every node is a peer.
-		{
-			"src": ["tag:k3s-node"],
-			"dst": ["svc:labk3s"],
-			"ip":  ["tcp:6443"],
-		},
-		{
-			"src": ["tag:k3s-node"],
-			"dst": ["tag:k3s-node"],
-			"ip":  ["udp:8472", "tcp:10250", "tcp:8681"],
-		},
-		// LGTM push and query through svc:lgtm, plain HTTP (it has only tcp:80):
-		// Alloy on the Buckle hosts, the collector, meet and labk3s's
-		// lab-lgtm-egress (tag:o11y-agent), Home Assistant.
-		{
-			"src": ["tag:buckle-agent", "tag:o11y-collector", "tag:o11y-agent", "tag:smarthome"],
-			"dst": ["svc:lgtm"],
-			"ip":  ["tcp:80"],
-		},
-		// Argo CD and Backstage on specht-labs (argocd.k8s.specht-labs.de,
-		// backstage.k8s.specht-labs.de); admins' "*" grant covers them too.
+		// Admins reach everything
 		{
 			"src": ["group:admins"],
-			"dst": ["svc:argocd", "svc:backstage"],
-			"ip":  ["tcp:443"],
-		},
-		// Allow vpn members to access exit nodes
-		{
-			"src": ["group:vpn"],
-			"dst": ["autogroup:internet"],
+			"dst": ["*"],
 			"ip":  ["*"],
 		},
-		// The NUT clients (modules/nut-client: the Pis and the NUC, all Buckle
-		// hosts) reach upsd through svc:nut. It has only tcp:3493.
-		{
-			"src": ["tag:buckle-agent"],
-			"dst": ["svc:nut"],
-			"ip":  ["tcp:3493"],
-		},
-		// Allow admins to access all tailscale web interfaces and edit everything
-		{
-			"src": ["group:admins"],
-			"dst": ["tag:smarthome"],
-			"ip":  ["5252"],
-			"app": {
-				"tailscale.com/cap/webui": [
-					{
-						"canEdit": ["*"], // can edit everything
-					},
-				],
-			},
-		},
-		// Allow users to access the tailscale web interface for their own devices
-		// and edit account, ssh and exitNode settings
-		// does not allow configuring and setting up subnetRouters
-		{
-			"src": ["autogroup:member"],
-			"dst": ["autogroup:self"],
-			"ip":  ["5252"],
-			"app": {
-				"tailscale.com/cap/webui": [
-					{
-						"canEdit": ["account", "ssh", "exitNodes"], // can edit everything
-					},
-				],
-			},
-		},
-		// Allow admins to use tka & connect via admin role
+		// Admins get cluster-admin through TKA
+		// group:admins sign in to both clusters through TKA as cluster-admin, for an
+		// hour at a time. Both instances (tka, lab-tka) listen on tcp:8123.
 		{
 			"src": ["group:admins"],
 			"dst": ["tag:tka"],
-			"ip":  ["*"],
+			"ip": ["tcp:8123"],
 			"app": {
 				"specht-labs.de/cap/tka": [
 					{
-						"role": "cluster-admin",
+						"role":   "cluster-admin",
 						"period": "1h",
 					},
 				],
 			},
 		},
-		// The labk3s Argo CD UI, https://lab-argocd.<tailnet> (svc:lab-argocd);
-		// sign-in through tsidp.
-		{
-			"src": ["group:admins", "group:sre"],
-			"dst": ["svc:lab-argocd"],
-			"ip":  ["tcp:443"],
-		},
-		// Backstage on specht-labs reads the labk3s Argo CD API (read-only
-		// account) through its egress proxy (catalog: api:argocd-labk3s-api).
-		{
-			"src": ["tag:backstage"],
-			"dst": ["svc:labk3s-argocd-api"],
-			"ip":  ["tcp:443"],
-		},
-		// The collector scrapes no device: every host's own Alloy reads its
-		// exporters and tailscaled (100.100.100.100), and the NAS's node_exporter
-		// is svc:node-exporter (below). It probes the services the homelab's
-		// availability SLOs measure
-		// (vars/group-o11y-collector.yaml, o11y_probes), on the paths users take:
-		// their Tailscale Services (svc:labk3s below, svc:hass, svc:nas).
-		{
-			"src": ["tag:o11y-collector"],
-			"dst": ["svc:stream"],
-			"ip":  ["tcp:443"],
-		},
-		// The labk3s API at https://labk3s.<tailnet>:6443: kubectl for admins, the
-		// collector's probe. The Service has only tcp:6443.
-		{
-			"src": ["group:admins"],
-			"dst": ["svc:labk3s"],
-			"ip":  ["tcp:6443"],
-		},
-		{
-			"src": ["tag:o11y-collector"],
-			"dst": ["svc:labk3s"],
-			"ip":  ["tcp:6443"],
-		},
-		// Synology users reach DSM and Drive through svc:nas (https://nas.<tailnet>).
-		// This is all they get on the NAS. Jellyfin is
-		// svc:stream. svc:nas also carries SMB (tcp:445) for Home Assistant's
-		// backups, so these grants list ports instead of "*".
-		{
-			"src": ["group:synology-users"],
-			"dst": ["svc:nas"],
-			"ip":  [
-				"tcp:443",  // DSM (https://nas.<tailnet>)
-				"tcp:5001", // DSM HTTPS, which the Synology mobile apps use
-				"tcp:6690", // Synology Drive sync
-			],
-		},
-		// The collector scrapes the NAS's node_exporter through svc:node-exporter.
-		{
-			"src": ["tag:o11y-collector"],
-			"dst": ["svc:node-exporter"],
-			"ip":  ["tcp:9100"],
-		},
-		// The collector probes DSM for its availability SLO.
-		{
-			"src": ["tag:o11y-collector"],
-			"dst": ["svc:nas"],
-			"ip":  ["tcp:443"],
-		},
-		// Home Assistant has nothing on the NAS over the tailnet: hass-elbschloss
-		// backs up through the Synology integration over the LAN, hass-schiltach
-		// doesn't use the NAS (DSM's connection log and the backup folder, 2026-11-26).
-		// Home Assistant at home, https://hass.<tailnet> and http://hass.<tailnet>:8123,
-		// for group:hass-users; the collector probes it for the availability SLO.
-		// The Service has only the web UI's ports.
-		{
-			"src": ["group:hass-users"],
-			"dst": ["svc:hass"],
-			"ip":  ["tcp:443", "tcp:8123"],
-		},
-		{
-			"src": ["tag:o11y-collector"],
-			"dst": ["svc:hass"],
-			"ip":  ["tcp:443", "tcp:8123"],
-		},
-		// Synology users can stream from Jellyfin at https://stream.<tailnet>
-		{
-			"src": ["group:synology-users"],
-			"dst": ["svc:stream"],
-			"ip":  ["tcp:443"],
-		},
-		// Every member signs in through tsidp (https://idp.<tailnet>), and machines
-		// that are relying parties (tag:tsidp-client) call it; that includes isa,
-		// so the collector's probe needs no grant of its own. tsidp stays a device,
-		// not a Service: it relies on Funnel and on capability grants matched on
-		// its own address. The grants below add capabilities per group, on the
-		// same port: they open nothing more.
-		{
-			"src": ["autogroup:member", "tag:tsidp-client"],
-			"dst": ["tag:tsidp"],
-			"ip":  ["tcp:443"],
-		},
-		// The Buckle server's nightly backup goes to the NAS over NFS v4.1, through
-		// svc:nfs (tcp:2049 only).
-		{
-			"src": ["tag:buckle-server"],
-			"dst": ["svc:nfs"],
-			"ip":  ["tcp:2049"],
-		},
-		// Admins can manage tsidp and register OIDC clients. Their tokens carry
-		// groups: ["buckle-admins"], which Buckle's admin_acl checks: who
-		// administers the fleet is decided here, by group:admins.
+		// Admins manage tsidp and administer Buckle
+		// group:admins use tsidp's admin UI and register OIDC clients. Their tokens
+		// carry groups ["buckle-admins"], which Buckle's admin_acl checks: who
+		// administers the fleet is decided here.
 		{
 			"src": ["group:admins"],
 			"dst": ["tag:tsidp"],
-			"ip":  ["tcp:443"],
+			"ip": ["tcp:443"],
 			"app": {
 				"tailscale.com/cap/tsidp": [
 					{
-						"allow_admin_ui":    true,
-						"allow_dcr":         true,
-						"extraClaims":       {"groups": ["buckle-admins"]},
+						"allow_admin_ui": true,
+						"allow_dcr": true,
+						"extraClaims": {
+							"groups": ["buckle-admins"],
+						},
 						"includeInUserInfo": true,
 					},
 				],
 			},
 		},
-		// Admins get groups: ["grafana-admins"] in their tsidp tokens; Grafana maps it
-		// to its Admin role. tsidp unions list claims across grants, so their tokens
-		// carry ["buckle-admins", "grafana-admins"].
-		{
-			"src": ["group:admins"],
-			"dst": ["tag:tsidp"],
-			"ip":  ["tcp:443"],
-			"app": {
-				"tailscale.com/cap/tsidp": [
-					{
-						"extraClaims":       {"groups": ["grafana-admins"]},
-						"includeInUserInfo": true,
-					},
-				],
-			},
-		},
-		// Synology users can authenticate to Synology through tsidp.
-		{
-			"src": ["group:synology-users"],
-			"dst": ["tag:tsidp"],
-			"ip":  ["tcp:443"],
-			"app": {
-				"tailscale.com/cap/tsidp": [
-					{
-						"users":     ["group:synology-users"],
-						"resources": ["synology"],
-					},
-				],
-			},
-		},
-		// SRE users can authenticate to ArgoCD through tsidp.
+		// SREs sign in to Argo CD through tsidp
 		{
 			"src": ["group:sre"],
 			"dst": ["tag:tsidp"],
-			"ip":  ["tcp:443"],
+			"ip": ["tcp:443"],
 			"app": {
 				"tailscale.com/cap/tsidp": [
 					{
@@ -455,28 +284,215 @@
 				],
 			},
 		},
-		// Admins and SREs reach Buckle's UI and API at https://buckle.<tailnet>.
-		// Signing in still needs the buckle-admins claim (server.yaml's user_acl).
+		// Admins are Grafana admins
+		// group:admins get groups ["grafana-admins"] in their tsidp tokens; Grafana maps
+		// it to its Admin role. tsidp unions list claims across grants, so their tokens
+		// carry ["buckle-admins", "grafana-admins"].
+		{
+			"src": ["group:admins"],
+			"dst": ["tag:tsidp"],
+			"ip": ["tcp:443"],
+			"app": {
+				"tailscale.com/cap/tsidp": [
+					{
+						"extraClaims": {
+							"groups": ["grafana-admins"],
+						},
+						"includeInUserInfo": true,
+					},
+				],
+			},
+		},
+		// Synology users sign in to the NAS through tsidp
+		{
+			"src": ["group:synology-users"],
+			"dst": ["tag:tsidp"],
+			"ip": ["tcp:443"],
+			"app": {
+				"tailscale.com/cap/tsidp": [
+					{
+						"users":     ["group:synology-users"],
+						"resources": ["synology"],
+					},
+				],
+			},
+		},
+		// VPN users use the exit nodes
+		{
+			"src": ["group:vpn"],
+			"dst": ["autogroup:internet"],
+			"ip":  ["*"],
+		},
+		// Admins edit everything in the smart-home devices' web UI
+		{
+			"src": ["group:admins"],
+			"dst": ["tag:smarthome"],
+			"ip": ["5252"],
+			"app": {
+				"tailscale.com/cap/webui": [
+					{
+						"canEdit": ["*"],
+					},
+				],
+			},
+		},
+		// Members manage their own devices in the web UI
+		// Account, SSH and exit node settings; not subnet routers.
+		{
+			"src": ["autogroup:member"],
+			"dst": ["autogroup:self"],
+			"ip": ["5252"],
+			"app": {
+				"tailscale.com/cap/webui": [
+					{
+						"canEdit": ["account", "ssh", "exitNodes"],
+					},
+				],
+			},
+		},
+		// From the catalog: argocd-api
+		// Used by group:admins (tailnet-allow).
+		{
+			"src": ["group:admins"],
+			"dst": ["svc:argocd"],
+			"ip":  ["tcp:443"],
+		},
+		// From the catalog: backstage-web
+		// Used by group:admins (tailnet-allow).
+		{
+			"src": ["group:admins"],
+			"dst": ["svc:backstage"],
+			"ip":  ["tcp:443"],
+		},
+		// From the catalog: buckle-api
+		// Used by group:admins, group:sre (tailnet-allow).
 		{
 			"src": ["group:admins", "group:sre"],
 			"dst": ["svc:buckle"],
 			"ip":  ["tcp:443"],
 		},
-		// Buckle agents dial the server's gRPC port through svc:buckle, which
-		// forwards tcp:7700 to whichever host runs the server with a PROXY v2
-		// header (the server trusts it and whois-es the agent's own address), so
-		// the server can move without touching agents.
+		// From the catalog: buckle-agent-api
+		// Consumed by buckle-agent.
 		{
 			"src": ["tag:buckle-agent"],
 			"dst": ["svc:buckle"],
 			"ip":  ["tcp:7700"],
 		},
+		// From the catalog: home-assistant-api
+		// Consumed by o11y-collector. Used by group:hass-users (tailnet-allow).
+		{
+			"src": ["group:hass-users", "tag:o11y-collector"],
+			"dst": ["svc:hass"],
+			"ip":  ["tcp:443", "tcp:8123"],
+		},
+		// From the catalog: argocd-labk3s-web
+		// Used by group:admins, group:sre (tailnet-allow).
+		{
+			"src": ["group:admins", "group:sre"],
+			"dst": ["svc:lab-argocd"],
+			"ip":  ["tcp:443"],
+		},
+		// From the catalog: labk3s-kubernetes-api
+		// Consumed by k3s-agent, k3s-server, o11y-collector. Used by group:admins
+		// (tailnet-allow).
+		{
+			"src": ["group:admins", "tag:k3s-node", "tag:o11y-collector"],
+			"dst": ["svc:labk3s"],
+			"ip":  ["tcp:6443"],
+		},
+		// From the catalog: argocd-labk3s-api
+		// Consumed by backstage.
+		{
+			"src": ["tag:backstage"],
+			"dst": ["svc:labk3s-argocd-api"],
+			"ip":  ["tcp:443"],
+		},
+		// From the catalog: loki-push, mimir-remote-write, tempo-otlp
+		// Consumed by alloy, grafana-k8s-monitoring-labk3s, home-assistant,
+		// home-assistant-schiltach, o11y-collector.
+		{
+			"src": ["tag:buckle-agent", "tag:o11y-agent", "tag:o11y-collector", "tag:smarthome"],
+			"dst": ["svc:lgtm"],
+			"ip":  ["tcp:80"],
+		},
+		// From the catalog: synology-drive, synology-dsm-https
+		// Used by group:synology-users (tailnet-allow).
+		{
+			"src": ["group:synology-users"],
+			"dst": ["svc:nas"],
+			"ip":  ["tcp:5001", "tcp:6690"],
+		},
+		// From the catalog: synology-dsm-web
+		// Consumed by o11y-collector. Used by group:synology-users (tailnet-allow).
+		{
+			"src": ["group:synology-users", "tag:o11y-collector"],
+			"dst": ["svc:nas"],
+			"ip":  ["tcp:443"],
+		},
+		// From the catalog: nas-nfs
+		// Consumed by buckle-server.
+		{
+			"src": ["tag:buckle-server"],
+			"dst": ["svc:nfs"],
+			"ip":  ["tcp:2049"],
+		},
+		// From the catalog: nas-node-exporter
+		// Consumed by o11y-collector.
+		{
+			"src": ["tag:o11y-collector"],
+			"dst": ["svc:node-exporter"],
+			"ip":  ["tcp:9100"],
+		},
+		// From the catalog: nut
+		// Consumed by nut-client.
+		{
+			"src": ["tag:buckle-agent"],
+			"dst": ["svc:nut"],
+			"ip":  ["tcp:3493"],
+		},
+		// From the catalog: jellyfin-web
+		// Consumed by o11y-collector. Used by group:synology-users (tailnet-allow).
+		{
+			"src": ["group:synology-users", "tag:o11y-collector"],
+			"dst": ["svc:stream"],
+			"ip":  ["tcp:443"],
+		},
+		// From the catalog: ceph-cluster
+		// Consumed by ceph.
+		{
+			"src": ["tag:ceph"],
+			"dst": ["tag:ceph"],
+			"ip":  ["tcp:2222", "tcp:3300", "tcp:6789", "tcp:6800-7479", "tcp:7481-7568"],
+		},
+		// From the catalog: ceph-rbd
+		// Consumed by ceph-csi-rbd.
+		{
+			"src": ["tag:ceph-client"],
+			"dst": ["tag:ceph"],
+			"ip":  ["tcp:3300", "tcp:6789", "tcp:6800-7479", "tcp:7481-7568"],
+		},
+		// From the catalog: labk3s-node-mesh
+		// Consumed by k3s-agent, k3s-server.
+		{
+			"src": ["tag:k3s-node"],
+			"dst": ["tag:k3s-node"],
+			"ip":  ["tcp:8681", "tcp:10250", "udp:8472"],
+		},
+		// From the catalog: tsidp-oidc
+		// Consumed by argocd, argocd-labk3s, backstage, buckle-server, synology-dsm.
+		// Used by autogroup:member (tailnet-allow).
+		{
+			"src": ["autogroup:member", "tag:tsidp-client"],
+			"dst": ["tag:tsidp"],
+			"ip":  ["tcp:443"],
+		},
 	],
 
 	"tests": [
+		// Admins reach the devices
 		{
-			"src":   "cedi@github",
-			"proto": "tcp",
+			"src":    "cedi@github",
+			"proto":  "tcp",
 			"accept": [
 				"nas-elbschloss:5000",
 				"clusterpi-leader:443",
@@ -487,69 +503,42 @@
 				"hass-schiltach:8123",
 			],
 		},
+		// Backstage reaches the labk3s Argo CD API and nothing else there
 		{
-			"src":    "x1bay@github",
-			"proto":  "tcp",
-			// DSM and Drive only through svc:nas, Home Assistant not at all: nothing
-			// on the devices themselves.
-			"deny":   ["hass-schiltach:8123", "nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:6690", "nas-elbschloss:8096", "nas-elbschloss:5000", "nas-elbschloss:22", "nas-elbschloss:445", "hass-elbschloss:8123", "hass-elbschloss:22"],
-		},
-		// Buckle hosts and Home Assistant get only their own ports on the NAS.
-		{
-			"src":    "tag:buckle-agent",
-			"proto":  "tcp",
-			"deny":   ["nas-elbschloss:443", "nas-elbschloss:445", "nas-elbschloss:5001", "nas-elbschloss:22", "nas-elbschloss:3493"],
-		},
-		{
-			"src":    "tag:smarthome",
-			"proto":  "tcp",
-			"deny":   ["nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:22"],
-		},
-		// Backstage's egress reaches the labk3s ArgoCD API and nothing else there.
-		{
-			"src":    "tag:backstage",
-			"proto":  "tcp",
-			"deny":   ["tag:k3s-node:443", "tag:k3s-server:6443", "nas-elbschloss:443"],
-		},
-		{
-			"src":    "group:synology-users",
-			"proto":  "tcp",
-			"deny":   ["nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:6690"],
-		},
-		{
-			"src":    "tag:smarthome",
-			"proto":  "tcp",
-			"deny":   ["nas-elbschloss:445", "nas-elbschloss:2049", "nas-elbschloss:6690"],
-		},
-		{
-			"src":   "group:vpn",
+			"src":   "tag:backstage",
 			"proto": "tcp",
-			"deny":  ["tag:buckle-agent:443", "tag:buckle-agent:80"],
+			"deny":  ["tag:k3s-node:443", "tag:k3s-server:6443", "nas-elbschloss:443"],
+		},
+		// Buckle agents reach the server only through svc:buckle
+		{
+			"src":   "tag:buckle-agent",
+			"proto": "tcp",
+			"deny":  ["tag:buckle-server:22", "tag:buckle-server:12345"],
 		},
 		{
-			"src":    "tag:buckle-agent",
-			"proto":  "tcp",
-			"deny":   ["tag:buckle-server:22", "tag:buckle-server:12345"],
+			"src":   "tag:buckle-agent",
+			"proto": "tcp",
+			"deny":  ["tag:buckle-server:7700"],
 		},
-		// The labk3s nodes reach the API only through svc:labk3s, not the server.
+		// The Buckle server reaches the NAS's NFS only through svc:nfs
 		{
-			"src":    "tag:k3s-node",
-			"proto":  "tcp",
-			"accept": ["tag:k3s-node:10250", "tag:k3s-node:8681"],
-			"deny":   ["tag:k3s-server:6443"],
+			"src":   "tag:buckle-server",
+			"proto": "tcp",
+			"deny":  ["nas-elbschloss:2049", "nas-elbschloss:111", "nas-elbschloss:892"],
 		},
-		// The compute blades are neither Ceph clients nor labk3s nodes.
-		{
-			"src":    "tag:compute-blade",
-			"proto":  "tcp",
-			"deny":   ["tag:ceph:6789", "tag:k3s-node:10250", "tag:k3s-server:6443"],
-		},
-		// Ceph: the hosts reach each other including cephadm's sshd; clients
-		// get the mons and OSDs, not cephadm, the dashboard or RGW.
+		// Ceph's hosts and clients
+		// The hosts reach each other including cephadm's sshd; clients get the mons and
+		// OSDs, not cephadm, the dashboard or RGW.
 		{
 			"src":    "tag:ceph",
 			"proto":  "tcp",
-			"accept": ["tag:ceph:2222", "tag:ceph:3300", "tag:ceph:6789", "tag:ceph:6800", "tag:ceph:7568"],
+			"accept": [
+				"tag:ceph:2222",
+				"tag:ceph:3300",
+				"tag:ceph:6789",
+				"tag:ceph:6800",
+				"tag:ceph:7568",
+			],
 		},
 		{
 			"src":    "tag:ceph-client",
@@ -557,45 +546,107 @@
 			"accept": ["tag:ceph:3300", "tag:ceph:6789", "tag:ceph:6800", "tag:ceph:7568"],
 			"deny":   ["tag:ceph:2222", "tag:ceph:8443", "tag:ceph:7480", "tag:ceph:9283"],
 		},
+		// The compute blades are neither Ceph clients nor labk3s nodes
+		{
+			"src":   "tag:compute-blade",
+			"proto": "tcp",
+			"deny":  ["tag:ceph:6789", "tag:k3s-node:10250", "tag:k3s-server:6443"],
+		},
+		// The labk3s nodes reach the API only through svc:labk3s
+		{
+			"src":    "tag:k3s-node",
+			"proto":  "tcp",
+			"accept": ["tag:k3s-node:10250", "tag:k3s-node:8681"],
+			"deny":   ["tag:k3s-server:6443"],
+		},
+		// The NAS only through its Services
+		// Synology users get DSM and Drive only through svc:nas and Home Assistant not
+		// at all: nothing on the devices themselves. Buckle hosts and Home Assistant get
+		// only their own ports on the NAS.
+		{
+			"src":   "x1bay@github",
+			"proto": "tcp",
+			"deny": [
+				"hass-schiltach:8123",
+				"nas-elbschloss:443",
+				"nas-elbschloss:5001",
+				"nas-elbschloss:6690",
+				"nas-elbschloss:8096",
+				"nas-elbschloss:5000",
+				"nas-elbschloss:22",
+				"nas-elbschloss:445",
+				"hass-elbschloss:8123",
+				"hass-elbschloss:22",
+			],
+		},
+		{
+			"src":   "group:synology-users",
+			"proto": "tcp",
+			"deny":  ["nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:6690"],
+		},
+		{
+			"src":   "tag:buckle-agent",
+			"proto": "tcp",
+			"deny": [
+				"nas-elbschloss:443",
+				"nas-elbschloss:445",
+				"nas-elbschloss:5001",
+				"nas-elbschloss:22",
+				"nas-elbschloss:3493",
+			],
+		},
+		{
+			"src":   "tag:smarthome",
+			"proto": "tcp",
+			"deny":  ["nas-elbschloss:443", "nas-elbschloss:5001", "nas-elbschloss:22"],
+		},
+		{
+			"src":   "tag:smarthome",
+			"proto": "tcp",
+			"deny":  ["nas-elbschloss:445", "nas-elbschloss:2049", "nas-elbschloss:6690"],
+		},
+		// NUT goes through svc:nut
+		// The server's own address is closed to the clients.
+		{
+			"src":   "clusterpi-leader",
+			"proto": "tcp",
+			"deny":  ["tag:nut-server:3493"],
+		},
+		// The collector scrapes no device, and reaches the NAS and labk3s only through
+		// their Services
+		{
+			"src":   "tag:o11y-collector",
+			"proto": "tcp",
+			"deny": [
+				"tag:buckle-agent:9100",
+				"tag:buckle-agent:5252",
+				"tag:k3s-node:5252",
+				"nas-elbschloss:9100",
+				"nas-elbschloss:443",
+				"tag:k3s-server:6443",
+			],
+		},
+		// VPN users get the internet, not the homelab
 		{
 			"src":    "group:vpn",
 			"proto":  "tcp",
 			"accept": ["1.1.1.1:443"],
 		},
-		// The collector scrapes no device directly, and reaches the NAS and
-		// labk3s only through their Services.
 		{
-			"src":   "tag:o11y-collector",
+			"src":   "group:vpn",
 			"proto": "tcp",
-			"deny":  ["tag:buckle-agent:9100", "tag:buckle-agent:5252", "tag:k3s-node:5252", "nas-elbschloss:9100", "nas-elbschloss:443", "tag:k3s-server:6443"],
-		},
-		// The Buckle server reaches the NAS's NFS only through svc:nfs.
-		{
-			"src":   "tag:buckle-server",
-			"proto": "tcp",
-			"deny":  ["nas-elbschloss:2049", "nas-elbschloss:111", "nas-elbschloss:892"],
+			"deny":  ["tag:buckle-agent:443", "tag:buckle-agent:80"],
 		},
 		{
 			"src":   "group:vpn",
 			"proto": "tcp",
 			"deny":  ["tag:smarthome:8123"],
 		},
-
-		// NUT goes through svc:nut; the server's own address is closed to the clients.
-		{
-			"src":    "clusterpi-leader",
-			"proto":  "tcp",
-			"deny":   ["tag:nut-server:3493"],
-		},
-		// Buckle agents reach the server through svc:buckle only, not on its own address.
-		{
-			"src":    "tag:buckle-agent",
-			"proto":  "tcp",
-			"deny":   ["tag:buckle-server:7700"],
-		},
 	],
 
 	"sshTests": [
+		// cedi gets a shell on the nuc
+		// As cedi directly, as root in check mode.
 		{
 			"src":    "cedi@github",
 			"dst":    ["nuc"],
