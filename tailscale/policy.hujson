@@ -60,6 +60,7 @@
 		"tag:buckle-agent":   ["group:admins"], // Devices tagged with tag:buckle-agent run a Buckle agent: they dial the server, and admins SSH to them
 		"tag:ceph":           ["group:admins"], // Ceph cluster hosts (storagepi-ceph1..3): mons, OSDs, mgr, cephadm
 		"tag:ceph-client":    ["group:admins"], // Ceph clients: the labk3s nodes, where ceph-csi maps RBD volumes
+		"tag:compute-blade":  ["group:admins"], // The compute blades (blade-pi1..4)
 		"tag:k3s-node":       ["group:admins"], // labk3s nodes (clusterpi-leader, clusterpi-worker1..4): k3s runs over the tailnet
 		"tag:tsidp-client":   ["group:admins", "tag:k8s-operator", "tag:k3s-operator"],
 		// Host tag owned by the operator too (it mints the proxies' keys), unlike
@@ -119,26 +120,43 @@
 	},
 
 	"ssh": [
-		// admins can access the homelab unrestricted
+		// Admins and the jumphost: everything Buckle manages, the Home Assistant
+		// boxes, the Ceph hosts, the labk3s nodes and the compute blades, as any
+		// user; root on the Pi clusters and the Home Assistant boxes directly...
 		{
 			"action": "accept",
 			"src":    ["group:admins", "tag:jumphost"],
-			"dst":    ["tag:homelab", "tag:smarthome"],
+			"dst":    ["tag:ceph", "tag:k3s-node", "tag:compute-blade", "tag:smarthome", "tag:homelab"],
 			"users":  ["autogroup:nonroot", "root"],
 		},
-		// admins and jumphost can access the Buckle-managed hosts as nonroot
 		{
 			"action": "accept",
 			"src":    ["group:admins", "tag:jumphost"],
 			"dst":    ["tag:buckle-agent"],
 			"users":  ["autogroup:nonroot"],
 		},
-		// admins can access the Buckle-managed hosts as root in check mode
+		// ...and root on the rest of the Buckle hosts (isa, nuc, timepi, the
+		// jumphost, meet) in check mode.
 		{
 			"action":      "check",
 			"checkPeriod": "8h",
 			"src":         ["group:admins"],
 			"dst":         ["tag:buckle-agent"],
+			"users":       ["root"],
+		},
+		// SREs: the Ceph hosts, the compute blades and the labk3s nodes, as any
+		// user; root in check mode.
+		{
+			"action": "accept",
+			"src":    ["group:sre"],
+			"dst":    ["tag:ceph", "tag:compute-blade", "tag:k3s-node"],
+			"users":  ["autogroup:nonroot"],
+		},
+		{
+			"action":      "check",
+			"checkPeriod": "8h",
+			"src":         ["group:sre"],
+			"dst":         ["tag:ceph", "tag:compute-blade", "tag:k3s-node"],
 			"users":       ["root"],
 		},
 		// any user can use Tailscale SSH to connect to their own devices as non-root user
