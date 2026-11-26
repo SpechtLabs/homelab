@@ -42,8 +42,8 @@ and renders nothing. Otherwise the flow's source is the API's
 consumer without either is listed as "missing source" and gets no grant.
 
 `tailnet-client-tag` exists because `tailnet-src` belongs to a Component, not
-to one of the APIs it consumes. isa is `tag:buckle-server` when the Buckle
-server backs up to `svc:nfs`, but `tag:tsidp-client` when it signs people in
+to one of the APIs it consumes. isa is `tag:buckle-server` when it backs
+up to `svc:nfs` (the `nas-backup` Component), but `tag:tsidp-client` when it signs people in
 through tsidp. Using tsidp makes a device a relying party, so the tag goes
 on the API.
 

@@ -207,17 +207,24 @@ apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
 metadata:
   name: test-buckle-nfs
-  title: The Buckle server reaches the NAS's NFS only through svc:nfs
+  title: The backup hosts reach the NAS's NFS only through svc:nfs
+  description: >-
+    isa (tag:buckle-server) and clusterpi-leader (tag:k3s-server) back up
+    through svc:nfs (modules/nas-backup); the NAS's own NFS, portmapper and
+    mountd stay closed to them.
 spec:
   type: test
   target: tailscale:sphinx-map
   owner: group:spechtlabs
   system: tailnet
-  appliesTo: [component:buckle-server]
+  appliesTo: [component:buckle-server, component:nas-backup]
   tests:
-    src: tag:buckle-server
-    proto: tcp
-    deny: ['nas-elbschloss:2049', 'nas-elbschloss:111', 'nas-elbschloss:892']
+    - src: tag:buckle-server
+      proto: tcp
+      deny: ['nas-elbschloss:2049', 'nas-elbschloss:111', 'nas-elbschloss:892']
+    - src: tag:k3s-server
+      proto: tcp
+      deny: ['nas-elbschloss:2049', 'nas-elbschloss:111', 'nas-elbschloss:892']
 ---
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale

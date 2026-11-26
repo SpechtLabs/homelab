@@ -54,7 +54,7 @@ groups and selected modules. The last lines should read:
 
 ```text
 ok: no problems found
-24 modules in .: 0 errors, 0 warnings
+25 modules in .: 0 errors, 0 warnings
 ```
 
 It can't show you the rendered Alloy config: a full plan needs apt and systemd, which macOS
@@ -109,7 +109,7 @@ revision:
 
 ```text
     {"__path__" = "/var/log/apt/history.log"},
-agent     jumphost · 2.22.0 · connected to http://buckle.sphinx-map.ts.net:7700 (active)
+agent     jumphost · 2.22.2 · connected to http://buckle.sphinx-map.ts.net:7700 (active)
 revision  applied <your commit> · stable <your commit>
 ```
 

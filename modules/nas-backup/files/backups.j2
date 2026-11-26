@@ -1,0 +1,6 @@
+# {{ buckle_managed }}
+# The backups this host runs (vars/backups.yaml, those whose group it is in):
+# name kind source folder keep_local keep_nas
+{%- for b in vars.nas_backups if b.group in host.groups %}
+{{ b.name }} {{ b.kind }} {{ b.source }} {{ b.folder }} {{ b.keep_local }} {{ b.keep_nas }}
+{%- endfor %}

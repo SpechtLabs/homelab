@@ -6,12 +6,14 @@ against `fixtures/facts/<host id>.json`; a stale file means a green PR that fail
 
 **Before you start:** the API signed in ([Call the Buckle API](call-the-buckle-api.md)) and the
 repo checked out. The repo is public: keep only what selectors and templates read, never raw facts
-(they carry MAC addresses, public IPv6, local users and every systemd unit).
+(they carry MAC addresses, public IPv6, local users and every systemd unit). Tailscale's own
+addresses stay in (`tailscale.ips`): the k3s modules template `node-ip` from them, and they're
+tailnet-internal.
 
 1. Pull the host's current facts from the server and trim them:
 
     ```sh
-    trim='{os, hardware: (.hardware | del(.disks, .disk)), net: {hostname: .net.hostname, fqdn: .net.fqdn}, tailscale: (.tailscale | if . then {hostname, tags, online, backend_state, tailnet} else null end), script, cloud}'
+    trim='{os, hardware: (.hardware | del(.disks, .disk)), net: {hostname: .net.hostname, fqdn: .net.fqdn}, tailscale: (.tailscale | if . then {hostname, tags, ips, online, backend_state, tailnet} else null end), script, cloud}'
     h=timepi
     curl -s -b "$J" "$B/api/v1/hosts/$h/facts" | jq "$trim" > "fixtures/facts/$h.json"
     ```

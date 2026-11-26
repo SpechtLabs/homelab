@@ -48,6 +48,7 @@ this page keeps what still explains today's setup.
 | 2026-11-23 | Server moved from the NUC to isa in about two minutes, hosts unaffected |
 | 2026-11-24 | Buckle 2.22.0: node maintenance (cedi's buckle#907); phases rebuilt as `canary`/`core`/`fleet` with module limits, no bakes |
 | 2026-11-26 | Repo moved from cedi/homelab to SpechtLabs/homelab |
+| 2026-11-27 | One `nas-backup` module for every NAS backup (Buckle database and secrets, tsidp, the k3s datastore); fleet on Buckle 2.22.2 |
 
 ## The phase plan that didn't survive
 

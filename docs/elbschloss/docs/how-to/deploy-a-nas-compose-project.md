@@ -1,16 +1,18 @@
 # Deploy a NAS compose project
 
-Use this to change or update `media` or `o11y` on the NAS, or to add a project. Buckle can't do
-this: DSM has no apt and Buckle doesn't run containers.
+Use this to change or update `media`, `o11y`, `obsidian` or `backup` on the NAS, or to add a
+project. Buckle can't do this: DSM has no apt and Buckle doesn't run containers.
 
 **Before you start:** `ssh -J cedi@nyx king@nas.local`, and DSM's web UI
 (`https://nas.sphinx-map.ts.net`) for Container Manager. The projects are listed in
 [Synology NAS](../reference/nas.md#compose-projects).
 
-!!! warning "`media` has drifted"
-    The NAS's `media` project runs only Jellyfin; the repo's still defines Nginx Proxy Manager
-    on ports 80, 81 and 443. Deploying the repo's file as it is would bring that container back.
-    Decide first whether it should exist, and fix the repo or the NAS to match.
+!!! warning "Secrets stay on the NAS"
+    `obsidian/.env` and `backup/github-backup/config.yaml` exist only on the NAS and are
+    gitignored; the repo has `*.example` files instead
+    ([Synology NAS](../reference/nas.md#secrets-that-stay-on-the-nas)). Never copy with
+    `--delete`, which would remove them. A project whose secret file is missing on the NAS
+    fails to start (`obsidian` names its `.env` in `env_file`).
 
 1. See how the NAS's copy differs from the repo's, from the repo root:
 
@@ -22,18 +24,16 @@ this: DSM has no apt and Buckle doesn't run containers.
 
 2. Commit the change to `nas/<project>/` first, so the repo stays the record.
 
-3. Copy the directory to the NAS. The repo's README says:
+3. Copy the directory to the NAS:
 
     ```sh
-    rsync -a nas/o11y/ nas:/volume1/docker/o11y/
+    rsync -a -e "ssh -J cedi@nyx" nas/o11y/ king@nas.local:/volume1/docker/o11y/
     ```
 
     !!! warning "Unverified"
-        `nas` is an SSH alias the repo doesn't define; spelled out it's
-        `rsync -a -e "ssh -J cedi@nyx" nas/o11y/ king@nas.local:/volume1/docker/o11y/`. A dry run
-        of that (`-n`) on 2026-11-26 was refused with `Permission denied`, which is what DSM
-        answers when its rsync service (Control Panel > File Services > rsync) is off. Turn it
-        on, or copy the files another way, and check with step 1 afterwards.
+        A dry run of that (`-n`) on 2026-11-26 was refused with `Permission denied`, which is
+        what DSM answers when its rsync service (Control Panel > File Services > rsync) is off.
+        Turn it on, or copy the files another way, and check with step 1 afterwards.
 
 4. In DSM, open Container Manager > Project, select the project and rebuild it. For a new
     project, create it there with the directory `/volume1/docker/<project>` and its

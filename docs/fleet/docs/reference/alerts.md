@@ -9,12 +9,16 @@ Group `homelab-platform`, folder Infrastructure,
 [`apps/grafana-operator/cluster/specht-labs/grafanaalertrules-homelab.yaml`](https://github.com/SpechtLabs/k8s-deployment/blob/main/apps/grafana-operator/cluster/specht-labs/grafanaalertrules-homelab.yaml).
 Both evaluate every 5 min.
 
+One pair of rules covers every backup in `vars/backups.yaml`; each fires once per `backup` and
+`instance` ([Backups](backups.md)).
+
 | Title | uid | Fires when | For | Severity | Runbook |
 |---|---|---|---|---|---|
-| Buckle — database backup on the NAS is stale | `buckle-backup-stale` | `time() - max(buckle_backup_last_success_timestamp_seconds{target="nas"}) > 93600` (26 h) | 10m | warning | [Respond to a backup alert](../how-to/respond-to-a-backup-alert.md) |
-| Buckle — no database backup on the NAS recorded | `buckle-backup-missing` | `absent(buckle_backup_last_success_timestamp_seconds{target="nas"})` | 26h | warning | same |
+| NAS backup is stale | `nas-backup-stale` | `time() - max by (backup, instance) (nas_backup_last_success_timestamp_seconds{target="nas"}) > 93600` (26 h) | 10m | warning | [stale](../how-to/respond-to-a-backup-alert.md#nas-backup-stale) |
+| NAS backup never recorded | `nas-backup-missing` | `nas_backup_configured` without any `target="nas"` timestamp for the same `backup` and `instance` | 26h | warning | [missing](../how-to/respond-to-a-backup-alert.md#nas-backup-missing) |
 
-Labels: `service: buckle`, `category: backup`.
+Labels: `service: nas-backup`, `category: backup`. They replaced the Buckle-only
+`buckle-backup-stale` and `buckle-backup-missing` (2026-11-27).
 
 ## SLO
 

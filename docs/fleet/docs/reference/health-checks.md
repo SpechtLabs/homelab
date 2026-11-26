@@ -34,10 +34,10 @@ Run them on a host: `sudo buckle health`. Names in the UI and API are `<module>/
 | `ptp-server/gps-pps-selected`, `metrics` | no | ntpsec on GPS/PPS, time metrics written |
 | `tsidp/unit` | yes | `tsidp` active, up 30 s |
 | `tsidp/discovery` | yes | `https://idp.sphinx-map.ts.net/.well-known/openid-configuration` has an issuer |
-| `buckle-server/backup-recent` | no | The backup's metric file has a NAS stamp younger than 26 h |
+| `nas-backup/recent` | no | `nas-backup check`: every backup the host runs has a NAS copy younger than 26 h |
 | `jitsi/prosody`, `jicofo`, `videobridge`, `bridge-available`, `coturn`, `site`, `internal-certificate`, `certificate` | yes | Jitsi's services; `bridge-available` fails if jicofo can't see the videobridge |
 
-Modules without checks: `base`, `buckle`, `ceph-disk`, `dotfiles`, `headless`, `pi-facts`,
+Modules without checks: `base`, `buckle`, `buckle-server`, `ceph-disk`, `dotfiles`, `headless`, `pi-facts`,
 `pi-tools`, `ptp-facts`.
 
 What each check runs exactly is in its `module.yaml`; check names change with the modules, so the

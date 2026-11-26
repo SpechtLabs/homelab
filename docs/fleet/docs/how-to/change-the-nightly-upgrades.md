@@ -30,7 +30,7 @@ Ceph host and one k3s node at a time, nodes drained around their reboot) with `a
 
 1. Edit the file, e.g. `cron: "0 3 * * *"` in `schedules/nightly-upgrades.yaml`. Keep
    `nightly-kernel-reboots` after the upgrades are done (they take up to the 2 h `window`), and
-   both after the database backup at 01:30 UTC on isa.
+   both after the NAS backups at 02:00 Berlin (`nas-backup.timer`).
 2. `mise run validate` checks the cron expression, the time zone and that `base` declares the
    action. PR, merge.
 3. The server runs the **stable** revision's schedules, so the change takes effect once its commit

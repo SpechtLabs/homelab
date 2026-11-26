@@ -16,7 +16,7 @@ UI and API: <https://buckle.sphinx-map.ts.net> (sign-in through tsidp, `group:ad
 | Buckle agents | all 17 hosts, `buckle-agent.service` | Report facts, apply their host's plan, run actions, correct drift every 15 min |
 | The repo | `buckle.yaml`, `modules/`, `vars/`, `schedules/`, `workloads/` | The fleet's desired state; every commit on `main` is a deploy |
 | `svc:buckle` | Tailscale Service served by isa | `tcp:443` for the UI/API, `tcp:7700` for agents (PROXY v2) |
-| Nightly backup | isa, `buckle-backup.timer` | `sqlite3 .backup` of the database, kept on isa and on the NAS |
+| Nightly backups | isa and clusterpi-leader, `nas-backup.timer` | Buckle's database and secrets, tsidp's state, the k3s datastore: kept locally and on the NAS |
 
 ## Where to start
 

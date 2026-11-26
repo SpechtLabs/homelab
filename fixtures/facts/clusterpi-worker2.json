@@ -3,7 +3,7 @@
     "codename": "bookworm",
     "family": "debian",
     "id": "debian",
-    "kernel": "6.12.34+rpt-rpi-v8",
+    "kernel": "6.12.115+rpt-rpi-v8",
     "pretty_name": "Debian GNU/Linux 12 (bookworm)",
     "version": "12"
   },
@@ -32,24 +32,30 @@
   "tailscale": {
     "hostname": "clusterpi-worker2.sphinx-map.ts.net",
     "tags": [
-      "tag:homelab"
+      "tag:buckle-agent",
+      "tag:ceph-client",
+      "tag:k3s-node"
+    ],
+    "ips": [
+      "100.123.236.103",
+      "fd7a:115c:a1e0::ae01:ec67"
     ],
     "online": true,
     "backend_state": "Running",
     "tailnet": "cedi.github"
   },
   "script": {
-    "rpi": {
-      "hat_product": "",
-      "hat_vendor": "",
-      "nvme": false,
-      "pps_gpio": false
-    },
     "ptp": {
       "hardware": false,
       "interface": "eth0",
       "lan": true,
       "phc": null
+    },
+    "rpi": {
+      "hat_product": "",
+      "hat_vendor": "",
+      "nvme": false,
+      "pps_gpio": false
     }
   },
   "cloud": null

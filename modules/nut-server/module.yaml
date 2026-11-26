@@ -1,18 +1,40 @@
 name: nut-server
-description: upsd on isa, re-exporting the UPS Tower's NUT server (dummy-ups proxy) to the Pis.
+description: upsd on isa, re-exporting the UPS Tower's NUT server (dummy-ups proxy) to the Pis, with isa's upsmon as the primary that orders the shutdown; UPS metrics for Grafana.
 when: 'host.groups contains "nut-server"'
+needs: [alloy]               # the textfile directory ups-metrics writes to
 tags: [power]
 vars:
   # The Ubiquiti UPS Tower (UPSTower.local) serves NUT itself, UPS name `ups`.
-  # Keep its DHCP lease fixed. It accepts any login, so monuser and the
-  # stored NUT_UPSTREAM_PASSWORD (DSM's old fixed account) still work.
+  # Keep its DHCP lease fixed. The proxy only reads it, which needs no login.
   # (Not the Synology on .64: it has no NUT server enabled.)
   nut_upstream_host: 192.168.0.156
-  nut_upstream_user: monuser
+  # upsd.users: `admin` is the primary's login (isa's own upsmon, the only one
+  # allowed to set FSD), `monuser` the secondaries'.
   nut_admin_user: admin
   nut_monitor_user: monuser
   nut_listen: 0.0.0.0
-  nut_finaldelay: 180
+  # How long the primary waits, after setting FSD, for the secondaries to log
+  # out (their upssched powers them off at once on FSD), then FINALDELAY before
+  # its own shutdown. Short on purpose: this all happens on low battery, and
+  # isa going last is what HOSTSYNC buys, not a long FINALDELAY.
+  nut_hostsync: 30
+  nut_finaldelay: 5
+  #
+  # No FSD on a timer, only on the UPS's low battery: without kill-power (see
+  # below) an early FSD would leave the powered-off hosts on a live UPS, and
+  # mains coming back within the remaining runtime would leave them off until
+  # someone cycles their power. Waiting for LB keeps jumphost, timepi and isa
+  # up through outages of ~20 minutes and lets the battery run nearly flat, so
+  # the outlets drop and come back with the mains. The battery-runtime alert
+  # (k8s-deployment grafanaalertrules-ups.yaml) pages before LB; `sudo upsmon
+  # -c fsd` on isa takes the fleet down early by hand.
+  #
+  # No kill-power. The proxy can't pass one on: `upsdrvctl shutdown` would run
+  # dummy-ups at the end of isa's shutdown, when its route to the UPS Tower may
+  # already be gone, and the UPS Tower offers no delayed shutdown (instant
+  # commands load.off, load.on, shutdown.reboot, test.battery.start; no
+  # ups.delay.shutdown), so cutting the load would cut the NAS mid-shutdown.
+  # So upsmon.conf.j2 sets no POWERDOWNFLAG.
 tasks:
   - apt.package: { name: nut }
 
@@ -42,9 +64,28 @@ tasks:
     id: svc-nut
     removal: leave
 
+  # ── Metrics ──
+  # upsc into a node_exporter textfile every 30 s: status flags, battery,
+  # load, mains, clients. The UPS alerts in k8s-deployment
+  # (grafanaalertrules-ups.yaml) read these.
+  - file.copy: { src: ups-metrics.py, dest: /usr/local/sbin/ups-metrics, mode: "0755" }
+    when: 'vars.o11y_textfile_dir != ""'
+  - file.template:
+      src: ups-metrics.service.j2
+      dest: /etc/systemd/system/ups-metrics.service
+      mode: "0644"
+    when: 'vars.o11y_textfile_dir != ""'
+    notify: [daemon-reload]
+  - file.copy: { src: ups-metrics.timer, dest: /etc/systemd/system/ups-metrics.timer, mode: "0644" }
+    when: 'vars.o11y_textfile_dir != ""'
+    notify: [daemon-reload]
+  - systemd.unit: { name: ups-metrics.timer, enabled: true, active: true, daemon_reload: true }
+    when: 'vars.o11y_textfile_dir != ""'
+
 handlers:
   restart-server:  { systemd.restart: { name: nut-server } }
   restart-monitor: { systemd.restart: { name: nut-monitor } }
+  daemon-reload:   { systemd.daemon_reload: {} }
 
 health:
   - name: upsd
@@ -55,6 +96,18 @@ health:
     command:
       run: ['upsc', '{{ vars.nut_ups_name }}@localhost', 'ups.status']
       expect: { exit: 0 }
+  # isa's upsmon is logged in to its own upsd as the primary. Without it
+  # nobody sets FSD: the secondaries still go on low battery after HOSTSYNC,
+  # but isa itself doesn't. upsd logs every login and logout; this boot's last
+  # one for the primary's user has to be a login.
+  - name: primary
+    command:
+      run: >-
+        systemctl is-active --quiet nut-monitor &&
+        journalctl -b -u nut-server -o cat --no-pager -q
+        | grep -E 'User {{ vars.nut_admin_user }}@[^ ]+ logged (into|out from) UPS \[{{ vars.nut_ups_name }}\]'
+        | tail -n 1 | grep -q 'logged into'
+      expect: { exit: 0 }
   # ...and the same through svc:nut, the way the clients reach it. Not
   # required: right after a push the rollout can beat the policy apply that
   # approves this host. The clients' ups-reachable check is the one that holds.
@@ -62,4 +115,12 @@ health:
     command:
       run: ['upsc', '{{ vars.nut_ups_name }}@nut.{{ vars.tailnet }}', 'ups.status']
       expect: { exit: 0 }
+    required: false
+  # Informational: missing metrics mustn't hold a rollout; Grafana alerts on
+  # them (ups-metrics-stale).
+  - name: metrics
+    file:
+      path: '{{ vars.o11y_textfile_dir }}/ups.prom'
+      max_age: 3m
+      contains: 'ups_metrics_up{ups="{{ vars.nut_ups_name }}"} 1'
     required: false

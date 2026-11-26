@@ -1,17 +1,10 @@
 version: "3.9"
 
+# Jellyfin only. Nginx Proxy Manager (80/81/443) used to be here too; it was
+# gone from the NAS by 2026-11 and Home Assistant is reached through svc:hass,
+# so it left the repo as well. Its old data is still in
+# /volume1/docker/media/nginx-proxy on the NAS.
 services:
-  nginx-proxy-manager:
-    image: "jc21/nginx-proxy-manager:latest"
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "81:81"
-      - "443:443"
-    volumes:
-      - /volume1/docker/media/nginx-proxy/data:/data
-      - /volume1/docker/media/nginx-proxy/letsencrypt:/etc/letsencrypt
-
   jellyfin:
     image: jellyfin/jellyfin:latest
     container_name: jellyfin

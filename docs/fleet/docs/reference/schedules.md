@@ -22,7 +22,8 @@ Behaviour that matters here:
 - Their rollouts appear on **Rollouts** with an alarm clock, `triggered_by: schedule:<name>` in
   the API.
 
-Related timer outside Buckle's schedules: `buckle-backup.timer` on isa, 01:30 in isa's time zone
-(UTC), up to 5 min random delay ([Server and agents](server-and-agents.md#backup)).
+Related timer outside Buckle's schedules: `nas-backup.timer` on isa and clusterpi-leader, 02:00
+Europe/Berlin, up to 5 min random delay, so the backups are done before the upgrades start
+([Backups](backups.md)).
 
 API: `GET /api/v1/schedules`, `GET /api/v1/schedules/<name>`.

@@ -5,7 +5,10 @@ tags: [power]
 vars:
   nut_monitor_user: monuser
   # early: cluster and storage Pis power off after 60s on battery.
-  # late:  the jumphost and time server hold on until the UPS calls FSD.
+  # late:  the jumphost and time server hold on until FSD, which isa's upsmon
+  #        (the primary, modules/nut-server) sets on low battery. Both power
+  #        off at once on FSD: the primary waits for them to log out before it
+  #        shuts isa down.
   nut_shutdown_affinity: early
   nut_onbatt_grace: 60
 tasks:

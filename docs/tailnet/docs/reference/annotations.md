@@ -59,7 +59,8 @@ The annotations Backstage's tailnet plugin reads
 
 Components with `tailnet-src`: in homelab `alloy`, `buckle-agent` and
 `nut-client` (`tag:buckle-agent`), `o11y-collector` (`tag:o11y-collector`),
-`buckle-server` (`tag:buckle-server`), `ceph` (`tag:ceph`), `k3s-server`
+`buckle-server` (`tag:buckle-server`), `nas-backup` (`tag:buckle-server`,
+`tag:k3s-server`), `ceph` (`tag:ceph`), `k3s-server`
 and `k3s-agent` (`tag:k3s-node`), `home-assistant` and
 `home-assistant-schiltach` (`tag:smarthome`); in
 k8s-deployment `backstage` (`tag:backstage`), `ceph-csi-rbd`

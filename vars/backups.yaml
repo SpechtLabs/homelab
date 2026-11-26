@@ -1,0 +1,53 @@
+# Nightly backups to the NAS (modules/nas-backup). Each host runs the entries
+# whose group it is in; adding a group here means adding it to the module's
+# `when` too.
+#
+#   name:   the backup: /var/backups/<name>, the files' prefix, the metric's
+#           `backup` label
+#   kind:   sqlite (a consistent copy of a live database) or dir (a tarball)
+#   folder: its folder in the NAS share /volume1/homelab, created by hand in
+#           DSM; one per backup, so a restore never has to pick files apart
+#   keep_local, keep_nas: days
+#
+# All of them are root-only, here and on the NAS: the Buckle database holds
+# per-host tokens, buckle-secrets every secret Buckle hands out, tsidp its
+# OIDC signing key, k3s the cluster's CA (encrypted with K3S_TOKEN, which is
+# in buckle-secrets).
+nas_backups:
+  # Fleet state, hosts' tokens, runs, audit log. Not the config (git).
+  - name: buckle
+    group: buckle-server
+    kind: sqlite
+    source: /var/lib/buckle-server/buckle.db
+    folder: buckle
+    keep_local: 3
+    keep_nas: 14
+  # /etc/buckle/secrets: the values buckle.yaml only references. The
+  # password manager has them too; this copy restores a server in one step.
+  - name: buckle-secrets
+    group: buckle-server
+    kind: dir
+    source: /etc/buckle/secrets
+    folder: buckle-secrets
+    keep_local: 3
+    keep_nas: 14
+  # tsidp's state (modules/tsidp, tsidp_state_dir): the OIDC signing key
+  # (oidc-key.json), the registered clients (oidc-funnel-clients.json), the
+  # idp node's tailscaled state and its certificates. Losing the key logs out
+  # every relying party; losing the clients means registering each again.
+  - name: tsidp
+    group: tsidp
+    kind: dir
+    source: /data
+    folder: tsidp
+    keep_local: 3
+    keep_nas: 14
+  # labk3s's datastore (single server, SQLite through kine): every object, and
+  # the bootstrap data (CA and service-account keys) encrypted with the token.
+  - name: k3s
+    group: k3s-server
+    kind: sqlite
+    source: /var/lib/rancher/k3s/server/db/state.db
+    folder: k3s
+    keep_local: 3
+    keep_nas: 14

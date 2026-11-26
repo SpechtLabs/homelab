@@ -1,0 +1,26 @@
+# The shape of /volume1/docker/backup/github-backup/config.yaml on the NAS,
+# which has the real entries and stays out of git: every entry carries a GitHub
+# username and token. Copy, fill in and put it there; see
+# https://github.com/SierraSoftworks/github-backup for the options.
+schedule: "0 * * * *"
+
+backups:
+  # The user's own repositories. This is the live filter; with || it keeps
+  # every repository that isn't a fork, empty and a template all at once.
+  - kind: github/repo
+    from: users/<github-user>
+    to: /backups/
+    filter: '!repo.fork || !repo.empty || !repo.template'
+    credentials: !UsernamePassword { username: <github-user>, password: <token> }
+
+  - kind: github/star
+    from: users/<github-user>
+    to: /backups/stars
+    credentials: !UsernamePassword { username: <github-user>, password: <token> }
+
+  # One entry per organisation (orgs/<name>) or single repository
+  # (repos/<owner>/<name>).
+  - kind: github/repo
+    from: orgs/<org>
+    to: /backups/
+    credentials: !UsernamePassword { username: <github-user>, password: <token> }

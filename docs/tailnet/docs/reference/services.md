@@ -12,7 +12,7 @@ exists, whichever host serves it.
 | `svc:nas` | 100.87.152.84 | nas-elbschloss | tcp:443 (DSM), tcp:5001 (DSM HTTPS, mobile apps), tcp:6690 (Drive) | `group:synology-users` (all three); `tag:o11y-collector` (443) |
 | `svc:stream` | 100.115.192.64 | nas-elbschloss | tcp:443 (Jellyfin) | `group:synology-users`, `tag:o11y-collector` |
 | `svc:node-exporter` | 100.118.146.244 | nas-elbschloss | tcp:9100 | `tag:o11y-collector` |
-| `svc:nfs` | 100.123.239.59 | nas-elbschloss | tcp:2049 (NFS v4.1) | `tag:buckle-server` (nightly backup) |
+| `svc:nfs` | 100.123.239.59 | nas-elbschloss | tcp:2049 (NFS v4.1) | `tag:buckle-server`, `tag:k3s-server` (nightly backups, [`modules/nas-backup`](https://github.com/SpechtLabs/homelab/blob/main/modules/nas-backup/module.yaml)) |
 | `svc:hass` | 100.81.129.181 | hass-elbschloss (Home Assistant add-on's `services:`) | tcp:443 (HTTPS), tcp:8123 (plain HTTP) | `group:hass-users`, `tag:o11y-collector` |
 | `svc:labk3s` | 100.67.145.122 | clusterpi-leader | tcp:6443 (k3s API, passed through) | `tag:k3s-node`, `tag:o11y-collector` |
 | `svc:lgtm` | 100.102.186.94 | specht-labs `tailnet-ingress` (specht-labs-ingress-0/1) | tcp:80 | `tag:buckle-agent`, `tag:o11y-agent`, `tag:o11y-collector`, `tag:smarthome` |

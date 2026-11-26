@@ -23,7 +23,7 @@ agents:
   registration: auto
   # svc:buckle forwards tcp:7700 here with a PROXY v2 header from the serving host's
   # own address; the server whois-es the agent address the header carries.
-  trusted_proxies: ["100.122.149.90", "100.70.89.41"]   # nuc, isa
+  trusted_proxies: ["100.70.89.41"]   # isa (the NUC served it until 2026-11-23)
   tailscale:
     # Agents need one of these tags; a device without one is refused, even when
     # it is already registered (to retag hosts, widen this first).

@@ -5,13 +5,17 @@
 DSM has no apt, and Buckle only pulls container images; it doesn't run them. So the Synology is
 configured in DSM by hand, and what can be versioned is: the compose projects in
 [nas/](https://github.com/SpechtLabs/homelab/tree/main/nas), deployed through Container Manager.
-That leaves drift possible, and it happened: the NAS's `media` project no longer has the Nginx
-Proxy Manager the repo still lists ([Synology NAS](../reference/nas.md#compose-projects)).
+Nothing stops the NAS and the repo from drifting apart, and they did: by 2026-11 the NAS ran
+two projects the repo didn't have (`obsidian`, `backup`) and lacked Nginx Proxy Manager, which
+the repo still listed. Both are in step again; a diff before each deploy keeps them there. The
+projects' secrets can't be versioned, so they stay on the NAS next to their compose files.
 
 ## Only Services, no device
 
 Clients reach the NAS only through the Tailscale Services it hosts: `svc:nas` (DSM, Drive),
-`svc:stream` (Jellyfin), `svc:node-exporter` and `svc:nfs`. No grant names the device. A
+`svc:stream` (Jellyfin), `svc:node-exporter` and `svc:nfs`. No grant names the device. The
+exception is CouchDB for Obsidian on 5984, which has no Service: LAN clients use it, and admins
+reach it on the device address through their `*` grant. A
 Service name can't be taken while a device holds the same MagicDNS name, which is why the
 device was renamed from `nas` to `nas-elbschloss` and `nas.sphinx-map.ts.net` now means the
 Service. The policy's tests check that the device's own ports stay closed.

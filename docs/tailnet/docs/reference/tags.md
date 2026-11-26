@@ -34,7 +34,7 @@ the exception, because their operator mints the proxies' keys.
 | `tag:buckle-server` | admins | isa | `svc:buckle` (also a source: `svc:nfs`) |
 | `tag:nut-server` | admins | isa | `svc:nut` |
 | `tag:nas` | admins | nas-elbschloss | `svc:nas`, `svc:stream`, `svc:node-exporter`, `svc:nfs` |
-| `tag:k3s-server` | admins | clusterpi-leader | `svc:labk3s` |
+| `tag:k3s-server` | admins | clusterpi-leader | `svc:labk3s` (also a source: `svc:nfs`) |
 | `tag:hass-server` | admins | hass-elbschloss (advertised by the Home Assistant Tailscale add-on's `advertise_tags`) | `svc:hass` |
 | `tag:specht-labs-ingress` | admins, `tag:k8s-operator` | specht-labs-ingress-0, -1 | `svc:lgtm`, `svc:argocd`, `svc:backstage` |
 | `tag:labk3s-ingress` | admins, `tag:k3s-operator` | labk3s-ingress-0, -1 | `svc:labk3s-argocd-api`, `svc:lab-argocd` |

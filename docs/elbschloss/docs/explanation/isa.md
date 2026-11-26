@@ -2,7 +2,7 @@
 
 isa is an HP EliteDesk 800 G6 Mini (i5-10500) on Ubuntu 26.04, the only always-on x86 box at
 home besides the NUC. Since 2026-11-23 it runs four things the rest of the homelab depends on:
-the Buckle server, tsidp, the NUT proxy and the o11y collector.
+the Buckle server, tsidp, the NUT proxy (and NUT primary) and the o11y collector.
 
 ## How it got there
 
@@ -23,7 +23,7 @@ carries a lot.
 |---|---|---|
 | Buckle server (`svc:buckle`) | every agent, you in the UI | No rollouts, no actions, no UI. Hosts keep running what they last applied. |
 | tsidp (the `idp` node) | Buckle's sign-in, DSM's SSO, Grafana, Argo CD and Backstage on specht-labs (over Funnel), labk3s's Argo CD | Nobody signs in to anything that uses tsidp. Dex on both clusters gives up if idp is unreachable at its start, until kubelet restarts it. |
-| NUT proxy (`svc:nut`) | upsmon on 14 Pis and the NUC, Home Assistant | Clients lose the UPS. On line power that's a warning after 300 s (`NOCOMMWARNTIME`). During a power cut nothing tells the early hosts to go, though a client whose UPS vanishes while it's on battery counts it as critical after `DEADTIME` and shuts down anyway. |
+| NUT proxy (`svc:nut`) and primary | upsmon on 14 Pis and the NUC, Home Assistant; the UPS metrics and alerts | Clients lose the UPS, and nobody sets FSD. On line power that's a warning after 300 s (`NOCOMMWARNTIME`) and `UPS — metrics stale` in Grafana. During a power cut nothing tells the early hosts to go, though a client whose UPS vanishes while it's on battery counts it as critical after `DEADTIME` and shuts down anyway. |
 | o11y collector | the labk3s cluster's OTLP, the NAS's metrics, all six availability probes | The NAS goes dark in Grafana, and the Buckle, tsidp, labk3s API, NAS, Jellyfin and Home Assistant SLOs lose their data at once. |
 
 The Buckle groups `buckle-server`, `tsidp`, `nut-server` and `o11y-collector` all select
@@ -43,16 +43,13 @@ alerts when the NAS copy is older than 26 h. A break-glass server
 (`buckle-server-breakglass`) gets you into Buckle without tsidp
 ([bootstrap/README.md](https://github.com/SpechtLabs/homelab/blob/main/bootstrap/README.md)).
 
-## What doesn't
+## What isn't in git
 
-Two pieces exist only on isa as far as the repo says:
-
-- the Buckle server's secrets in `/etc/buckle/secrets/` (K3S token, NUT passwords, the Argo CD
-  age key, Jitsi secrets). The bootstrap README says everything else can be rebuilt "from git
-  and the secrets", but not where a second copy of the secrets lives.
-- tsidp's `/data`. Nothing in the repo backs it up; the NUC still has an old
-  `/var/backups/tsidp` from the move.
-
-Losing the disk without those means re-registering every OIDC client and re-creating the
-secrets by hand, which is the real cost of having one isa. The modules, the units and the
-server config come back from git.
+Two pieces can't come back from git: the Buckle server's secrets in `/etc/buckle/secrets/`
+(K3S token, NUT passwords, the Argo CD age key, Jitsi secrets) and tsidp's `/data` (node key,
+signing key, registered clients). Both go to the NAS every night with the database, through
+`modules/nas-backup` (`vars/backups.yaml`: `buckle-secrets`, `tsidp`, `buckle`), into
+`/volume1/homelab/<name>/` for 14 days. Losing isa's disk then costs at most a day of changes;
+without those copies it would mean re-registering every OIDC client and re-creating the secrets
+by hand. The backups are the [Fleet](https://backstage.k8s.specht-labs.de/docs/default/system/fleet/)
+System's.

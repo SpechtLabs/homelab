@@ -7,8 +7,8 @@ Buckle loads every module in the repo and each decides by its `when` which hosts
 **Before you start:** the repo, `mise`, and one host to plan against. Read one existing module
 that does something similar: [`modules/rpi-exporter`](https://github.com/SpechtLabs/homelab/tree/main/modules/rpi-exporter)
 (binary from a GitHub release, a unit, a health check) and
-[`modules/buckle-server`](https://github.com/SpechtLabs/homelab/tree/main/modules/buckle-server)
-(templates, a timer, an informational check) are short and cover the usual shapes. Buckle's own
+[`modules/nas-backup`](https://github.com/SpechtLabs/homelab/tree/main/modules/nas-backup)
+(templates rendered from a vars list, a timer, a textfile metric, an informational check) are short and cover the usual shapes. Buckle's own
 module reference: <https://buckle.sierrasoftworks.com>.
 
 1. Decide who gets it. Select on a group in `buckle.yaml`, and derive that group from a fact
@@ -89,4 +89,4 @@ module reference: <https://buckle.sierrasoftworks.com>.
   newline without `(?m)`.
 - **`when: 'x in map'` doesn't test map keys**; it's always false.
 - Health checks are required by default and gate the rollout; mark one `required: false` when a
-  failure shouldn't hold a rollout (as `buckle-server/backup-recent`).
+  failure shouldn't hold a rollout (as `nas-backup/recent`).

@@ -26,7 +26,11 @@ Changing the config
 
 The server
 
-- [Respond to a backup alert](respond-to-a-backup-alert.md): the nightly database backup to the NAS.
-- [Restore the server database](restore-the-server-database.md): put a backup back.
+- [Respond to a backup alert](respond-to-a-backup-alert.md): a NAS backup stale or never recorded.
+- [Add a backup](add-a-backup.md): one entry in `vars/backups.yaml`.
+- [Restore the server database](restore-the-server-database.md): put a Buckle database backup back.
+- [Restore the Buckle secrets](restore-the-buckle-secrets.md): `/etc/buckle/secrets` from its tarball.
+- [Restore tsidp](restore-tsidp.md): the signing key, the clients, the node state.
+- [Restore the k3s datastore](restore-the-k3s-datastore.md): labk3s's SQLite datastore.
 - [Sign in when tsidp is down](sign-in-when-tsidp-is-down.md): the break-glass server on localhost.
 - [Move the server to another host](move-the-server-to-another-host.md): the 2026-11-23 NUC to isa recipe.

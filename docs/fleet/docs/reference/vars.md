@@ -12,17 +12,18 @@ repeats `hw-pi.yaml`'s `rpi_exporter` scrape. Module defaults
 |---|---|---|
 | 1 | always | [`vars/defaults.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/defaults.yaml) |
 | 2 | always | [`vars/versions.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/versions.yaml) |
-| 3 | a Raspberry Pi | [`vars/hw-pi.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/hw-pi.yaml) |
-| 4 | group `blades` | [`vars/group-blades.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/group-blades.yaml) |
-| 5 | group `nut-late` | inline: `nut_shutdown_affinity: late` |
-| 6 | group `spechtlabs` | [`vars/group-spechtlabs.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/group-spechtlabs.yaml) |
-| 7 | group `o11y-collector` | [`vars/group-o11y-collector.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/group-o11y-collector.yaml) |
-| 8 | group `ceph` | [`vars/group-ceph.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/group-ceph.yaml) |
-| 9 | nuc | [`vars/host-nuc.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/host-nuc.yaml) |
-| 10 | isa | [`vars/host-isa.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/host-isa.yaml) |
-| 11 | meet | [`vars/host-meet.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/host-meet.yaml) |
-| 12 | timepi | [`vars/host-timepi.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/host-timepi.yaml) |
-| 13 | jumphost | inline: `dotfiles_preset: core` |
+| 3 | always | [`vars/backups.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/backups.yaml) (`nas_backups`, [Backups](backups.md)) |
+| 4 | a Raspberry Pi | [`vars/hw-pi.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/hw-pi.yaml) |
+| 5 | group `blades` | [`vars/group-blades.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/group-blades.yaml) |
+| 6 | group `nut-late` | inline: `nut_shutdown_affinity: late` |
+| 7 | group `spechtlabs` | [`vars/group-spechtlabs.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/group-spechtlabs.yaml) |
+| 8 | group `o11y-collector` | [`vars/group-o11y-collector.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/group-o11y-collector.yaml) |
+| 9 | group `ceph` | [`vars/group-ceph.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/group-ceph.yaml) |
+| 10 | nuc | [`vars/host-nuc.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/host-nuc.yaml) |
+| 11 | isa | [`vars/host-isa.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/host-isa.yaml) |
+| 12 | meet | [`vars/host-meet.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/host-meet.yaml) |
+| 13 | timepi | [`vars/host-timepi.yaml`](https://github.com/SpechtLabs/homelab/blob/main/vars/host-timepi.yaml) |
+| 14 | jumphost | inline: `dotfiles_preset: core` |
 
 ## Shared vars (`vars/defaults.yaml`)
 
@@ -59,7 +60,7 @@ Values change; read the file for the current ones.
 |---|---|---|
 | `buckle_server_url` | `buckle` | `http://buckle.{{ vars.tailnet }}:7700` |
 | `buckle_restart_delay` | `buckle` | `90` (seconds) |
-| `buckle_backup_nfs_export` | `buckle-server` | `nfs.{{ vars.tailnet }}:/volume1/homelab/buckle` |
+| `nas_backup_nfs_root` | `nas-backup` | `nfs.{{ vars.tailnet }}:/volume1/homelab` (each backup's `folder` below it) |
 | `tailscale_ssh`, `tailscale_exit_node` | `tailscale` | `true`, `false` |
 | `dotfiles_preset` | `dotfiles` | `server` (`core` on jumphost) |
 | `locale` | `base` | `en_US.UTF-8` |

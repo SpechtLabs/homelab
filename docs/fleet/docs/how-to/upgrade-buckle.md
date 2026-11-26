@@ -18,8 +18,10 @@ with).
    each host (one GitHub API call per host) and restarts the agent 90 s after the run, from a
    transient `buckle-upgrade-<version>` unit, so the run reports first. Order: the four blades,
    then `core` two at a time (isa restarts `buckle-server` and its agent together), then `fleet`.
-3. If only `mise.toml` moved (Renovate has split the two before:
-   [Known issues](../explanation/known-issues.md)), bump `buckle_version` by hand in a PR of its own.
+3. Both pins arrive in one PR. Renovate's own mise manager reports the `mise.toml` pin as
+   `github:SierraSoftworks/buckle`, so `renovate.json` names it in the `buckle` group and the
+   three-day wait; before that, 2.22.2 reached `mise.toml` alone on 2026-11-26 while the fleet
+   stayed on 2.22.0. If they ever differ again, bump the one behind by hand.
 
 ### Check it worked
 

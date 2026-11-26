@@ -42,32 +42,6 @@
       "matchStrings": [
         "# renovate: datasource=(?<datasource>git-refs) depName=(?<depName>\\S+) branch=(?<currentValue>\\S+)\\n\\w+: (?<currentDigest>[0-9a-f]{40})"
       ]
-    },
-    {
-      "customType": "regex",
-      "description": "The buckle CLI pinned for local use and CI",
-      "managerFilePatterns": [
-        "/^mise\\.toml$/"
-      ],
-      "matchStrings": [
-        "\"github:SierraSoftworks/buckle\" = \"(?<currentValue>[^\"]+)\""
-      ],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "SierraSoftworks/buckle",
-      "extractVersionTemplate": "^v(?<version>.*)$"
-    },
-    {
-      "customType": "regex",
-      "description": "bladectl (compute-blade-agent's CLI) pinned for local use",
-      "managerFilePatterns": [
-        "/^mise\\.toml$/"
-      ],
-      "matchStrings": [
-        "\"github:compute-blade-community/compute-blade-agent\" = \"(?<currentValue>[^\"]+)\""
-      ],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "compute-blade-community/compute-blade-agent",
-      "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ],
   "packageRules": [
@@ -85,9 +59,10 @@
       "platformAutomerge": false
     },
     {
-      "description": "Third-party software the fleet runs only once its release is three days old, so a broken release is usually yanked or fixed before it reaches a host. Not for the user's own projects below.",
+      "description": "Third-party software the fleet runs only once its release is three days old, so a broken release is usually yanked or fixed before it reaches a host: the pins in vars/ (custom regex) and the CLIs in mise.toml (Renovate's mise manager), so a CLI never runs ahead of the fleet's pin. Not for the user's own projects below.",
       "matchManagers": [
-        "custom.regex"
+        "custom.regex",
+        "mise"
       ],
       "matchDatasources": [
         "github-releases"
@@ -98,6 +73,7 @@
       "description": "Own projects (released on purpose, wanted right away): no waiting.",
       "matchDepNames": [
         "compute-blade-community/compute-blade-agent",
+        "github:compute-blade-community/compute-blade-agent",
         "cedi/rpi_exporter"
       ],
       "minimumReleaseAge": null
@@ -125,7 +101,7 @@
       "dependencyDashboardApproval": false
     },
     {
-      "description": "k3s: one minor at a time (Kubernetes can't skip minors), and a minor is a cluster upgrade that can drop APIs the Argo CD apps use, so approve those on the Dependency Dashboard. Patches (and +k3sN rebuilds) automerge.",
+      "description": "k3s: minors apart from patches (and +k3sN rebuilds), one minor per PR, because Kubernetes can't skip a minor. Patches automerge like everything else; minors follow the next rule.",
       "matchDepNames": [
         "k3s-io/k3s"
       ],
@@ -149,9 +125,10 @@
       "platformAutomerge": false
     },
     {
-      "description": "Buckle: CLI and fleet in one PR, so CI validates with the new binary; validate.yml runs it on an x86-64-v2 CPU like the NUC's, which catches a release the server can't run (2.14.0 crashed it with SIGILL). Majors stay off: the canary blades' agents would upgrade before the server, and a protocol break there takes the control plane down.",
+      "description": "Buckle: the fleet's pin (vars/versions.yaml) and the CLI (mise.toml, which Renovate's mise manager names github:SierraSoftworks/buckle) in one PR, so CI validates with the binary the fleet gets; validate.yml runs it on an x86-64-v2 CPU like the NUC's, which catches a release the NUC can't run (2.14.0 crashed it with SIGILL). Without the second name, 2.22.2 reached mise.toml alone and left the fleet on 2.22.0 (2026-11-26). Majors stay off: the canary blades' agents would upgrade before the server, and a protocol break there takes the control plane down.",
       "matchDepNames": [
-        "SierraSoftworks/buckle"
+        "SierraSoftworks/buckle",
+        "github:SierraSoftworks/buckle"
       ],
       "groupName": "buckle",
       "major": {
@@ -159,9 +136,10 @@
       }
     },
     {
-      "description": "compute-blade-agent: agent on the blades and bladectl here in one PR",
+      "description": "compute-blade-agent: agent on the blades (vars/versions.yaml) and bladectl here (mise.toml, through the mise manager) in one PR",
       "matchDepNames": [
-        "compute-blade-community/compute-blade-agent"
+        "compute-blade-community/compute-blade-agent",
+        "github:compute-blade-community/compute-blade-agent"
       ],
       "groupName": "compute-blade-agent"
     }

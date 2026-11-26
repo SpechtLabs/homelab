@@ -40,8 +40,8 @@ curl -s -o /dev/null -w "%{http_code}\n" https://hass.sphinx-map.ts.net/
 
 ## If it didn't
 
-- `hass.elbschloss.xyz` doesn't answer: its Nginx Proxy Manager on the NAS isn't deployed. Use
-  the tailnet or LAN address.
+- `hass.elbschloss.xyz` doesn't answer, and won't: the Nginx Proxy Manager behind it is gone.
+  Use the tailnet or LAN address.
 - `400 Bad Request` over `svc:hass`: Home Assistant rejects the proxy; its `trusted_proxies`
   setting has to allow the add-on (seen on 2026-11-25).
 - Timeouts: `tailscale status | grep hass-elbschloss`. Offline means the box or its add-on is

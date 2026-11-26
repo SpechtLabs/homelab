@@ -1,50 +1,11 @@
 name: buckle-server
-description: The Buckle server's host. Nightly database backup, kept locally and on the NAS over NFS.
+description: The Buckle server's host. Keeps the secrets directory root-only; the server's config is installed by hand (bootstrap/), its backups are modules/nas-backup's.
 when: 'host.groups contains "buckle-server"'
-needs: [alloy]               # the textfile directory the backup's metric goes to
 tags: [buckle]
-vars:
-  # The NAS's NFS export for these backups (its own folder: they go into its
-  # root), NFS v4.1 through the Tailscale Service svc:nfs (tcp:2049 only).
-  # The NAS's tailscaled forwards it from localhost, so DSM's rule (Shared
-  # Folder → NFS Permissions) is for 127.0.0.1: read/write, no squash,
-  # non-privileged ports allowed. The policy grants svc:nfs to
-  # tag:buckle-server alone.
-  buckle_backup_nfs_export: 'nfs.{{ vars.tailnet }}:/volume1/homelab/buckle'
 tasks:
-  # sqlite3 for a consistent copy of a live database (.backup), nfs-common to
-  # mount the NAS.
-  - apt.package: { names: [sqlite3, nfs-common] }
-
-  - file.copy: { src: buckle-backup.sh, dest: /usr/local/sbin/buckle-backup, mode: "0755" }
-  - file.template:
-      src: mnt-nas-backups.mount.j2
-      dest: /etc/systemd/system/mnt-nas-backups.mount
-      mode: "0644"
-    notify: [remount]
-  - file.template:
-      src: buckle-backup.service.j2
-      dest: /etc/systemd/system/buckle-backup.service
-      mode: "0644"
-    notify: [daemon-reload]
-  - file.copy: { src: buckle-backup.timer, dest: /etc/systemd/system/buckle-backup.timer, mode: "0644" }
-    notify: [daemon-reload]
-  - systemd.unit: { name: buckle-backup.timer, enabled: true, active: true, daemon_reload: true }
-
-handlers:
-  daemon-reload: { systemd.daemon_reload: {} }
-  # The share stays mounted between backups: a changed unit only takes effect
-  # once it is mounted again.
-  remount:
-    command.run:
-      run: "systemctl daemon-reload && if findmnt -n /mnt/nas/backups >/dev/null; then systemctl restart mnt-nas-backups.mount; fi"
-
-health:
-  # Informational: a missed night mustn't hold a rollout. Grafana alerts when
-  # the NAS copy is older than 26 h (k8s-deployment, grafanaalertrules-homelab.yaml).
-  - name: backup-recent
-    file:
-      path: '{{ vars.o11y_textfile_dir }}/buckle_backup.prom'
-      max_age: 26h
-      contains: 'target="nas"'
-    required: false
+  # Only the directory: what's in it is installed by hand (bootstrap/README.md)
+  # so that no revision can break the server's own config. The secrets it
+  # holds go to the NAS nightly (vars/backups.yaml, buckle-secrets).
+  - file.directory: { path: /etc/buckle/secrets, mode: "0700", owner: root, group: root }
+    id: buckle-secrets-dir
+    removal: leave

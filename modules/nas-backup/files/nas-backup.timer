@@ -1,0 +1,12 @@
+[Unit]
+Description=Nightly backups to the NAS
+
+[Timer]
+# Berlin time whatever the host's zone (isa runs on UTC): done before the
+# 03:00 nightly upgrades (schedules/nightly-upgrades.yaml) start rebooting.
+OnCalendar=*-*-* 02:00:00 Europe/Berlin
+RandomizedDelaySec=5m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

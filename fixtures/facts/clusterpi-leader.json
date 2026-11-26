@@ -32,24 +32,31 @@
   "tailscale": {
     "hostname": "clusterpi-leader.sphinx-map.ts.net",
     "tags": [
-      "tag:homelab"
+      "tag:buckle-agent",
+      "tag:ceph-client",
+      "tag:k3s-node",
+      "tag:k3s-server"
+    ],
+    "ips": [
+      "100.92.89.43",
+      "fd7a:115c:a1e0::9e01:592b"
     ],
     "online": true,
     "backend_state": "Running",
     "tailnet": "cedi.github"
   },
   "script": {
-    "rpi": {
-      "hat_product": "",
-      "hat_vendor": "",
-      "nvme": true,
-      "pps_gpio": false
-    },
     "ptp": {
       "hardware": true,
       "interface": "eth0",
       "lan": true,
       "phc": 0
+    },
+    "rpi": {
+      "hat_product": "",
+      "hat_vendor": "",
+      "nvme": true,
+      "pps_gpio": false
     }
   },
   "cloud": null

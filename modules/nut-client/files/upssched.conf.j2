@@ -8,5 +8,7 @@ AT ONBATT * START-TIMER onbatt_shutdown {{ vars.nut_onbatt_grace }}
 AT ONLINE * CANCEL-TIMER onbatt_shutdown
 AT FSD * EXECUTE immediate_shutdown
 {% else -%}
+# delayed_shutdown isn't delayed: on FSD the primary (isa) is waiting
+# for this host to log out, so it powers off right away like the early ones.
 AT FSD * EXECUTE delayed_shutdown
 {% endif -%}

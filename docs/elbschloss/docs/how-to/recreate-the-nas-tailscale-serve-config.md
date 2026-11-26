@@ -60,8 +60,9 @@ curl -s https://stream.sphinx-map.ts.net/health
 ssh cedi@isa "bash -c 'curl -s http://node-exporter.sphinx-map.ts.net:9100/metrics | grep -c ^node_'"
 ```
 
-A count in the hundreds (470 on 2026-11-26). NFS gets used by isa's nightly backup at 01:30
-UTC; the `buckle-backup-stale` alert fires if it fails for 26 h.
+A count in the hundreds (470 on 2026-11-26). NFS gets used by the nightly NAS backups (02:00
+Europe/Berlin, from isa and clusterpi-leader); the `NAS backup is stale` alert fires if one
+hasn't reached the NAS for 26 h.
 
 ## If it didn't
 

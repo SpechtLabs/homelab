@@ -25,7 +25,11 @@ nav:
       - Add a module: how-to/add-a-module.md
       - Change the nightly upgrades: how-to/change-the-nightly-upgrades.md
       - Respond to a backup alert: how-to/respond-to-a-backup-alert.md
+      - Add a backup: how-to/add-a-backup.md
       - Restore the server database: how-to/restore-the-server-database.md
+      - Restore the Buckle secrets: how-to/restore-the-buckle-secrets.md
+      - Restore tsidp: how-to/restore-tsidp.md
+      - Restore the k3s datastore: how-to/restore-the-k3s-datastore.md
       - Sign in when tsidp is down: how-to/sign-in-when-tsidp-is-down.md
       - Move the server to another host: how-to/move-the-server-to-another-host.md
   - Reference:
@@ -38,6 +42,7 @@ nav:
       - Vars: reference/vars.md
       - Health checks: reference/health-checks.md
       - Schedules: reference/schedules.md
+      - Backups: reference/backups.md
       - Server and agents: reference/server-and-agents.md
       - Buckle API: reference/api.md
       - CI and Renovate: reference/ci-and-renovate.md
@@ -49,6 +54,8 @@ nav:
       - Facts over hostnames: explanation/facts-over-hostnames.md
       - From Ansible to Buckle: explanation/from-ansible-to-buckle.md
       - Known issues: explanation/known-issues.md
+markdown_extensions:
+  - attr_list
 validation:
   omitted_files: warn
   absolute_links: warn

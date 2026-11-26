@@ -32,24 +32,29 @@
   "tailscale": {
     "hostname": "blade-pi4.sphinx-map.ts.net",
     "tags": [
-      "tag:homelab"
+      "tag:buckle-agent",
+      "tag:compute-blade"
+    ],
+    "ips": [
+      "100.97.100.127",
+      "fd7a:115c:a1e0::b201:6480"
     ],
     "online": true,
     "backend_state": "Running",
     "tailnet": "cedi.github"
   },
   "script": {
-    "rpi": {
-      "hat_product": "",
-      "hat_vendor": "",
-      "nvme": true,
-      "pps_gpio": false
-    },
     "ptp": {
       "hardware": true,
       "interface": "eth0",
       "lan": true,
       "phc": 0
+    },
+    "rpi": {
+      "hat_product": "",
+      "hat_vendor": "",
+      "nvme": true,
+      "pps_gpio": false
     }
   },
   "cloud": null

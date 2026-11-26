@@ -1,0 +1,22 @@
+# {{ buckle_managed }}
+[Unit]
+Description=UPS metrics (upsc against the local upsd) for node_exporter's textfile collector
+After=nut-server.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ups-metrics --dir {{ vars.o11y_textfile_dir }} --ups {{ vars.nut_ups_name }}
+TimeoutStartSec=30s
+# Root only to write the textfile directory; upsc itself needs no login.
+ReadWritePaths={{ vars.o11y_textfile_dir }}
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryMax=64M
+Nice=10

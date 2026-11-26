@@ -1,14 +1,19 @@
 # {{ buckle_managed }}
-MONITOR {{ vars.nut_ups_name }}@{{ vars.nut_upstream_host }} 1 {{ vars.nut_upstream_user }} {{ secrets.NUT_UPSTREAM_PASSWORD }} secondary
+# isa is the primary of the UPS on its own upsd: the dummy-ups repeater of the
+# UPS Tower, which every secondary (the Pis and the NUC through svc:nut) reads.
+# On OB+LB this upsmon sets FSD there, so the secondaries power off, waits up
+# to HOSTSYNC for them to log out, and shuts isa down last.
+MONITOR {{ vars.nut_ups_name }}@localhost 1 {{ vars.nut_admin_user }} {{ secrets.NUT_ADMIN_PASSWORD }} primary
 MINSUPPLIES 1
 SHUTDOWNCMD "/sbin/shutdown -h +0"
 POLLFREQ 5
 POLLFREQALERT 5
-HOSTSYNC 15
+HOSTSYNC {{ vars.nut_hostsync }}
 DEADTIME 15
-POWERDOWNFLAG /etc/killpower
-OFFDURATION 30
+# No POWERDOWNFLAG, on purpose: as primary, upsmon would write it, and
+# nutshutdown (/usr/lib/systemd/system-shutdown) would then run `upsdrvctl
+# shutdown` against the dummy-ups proxy at the very end of isa's shutdown.
+# Why kill-power stays off: modules/nut-server/module.yaml.
 RBWARNTIME 43200
 NOCOMMWARNTIME 300
 FINALDELAY {{ vars.nut_finaldelay }}
-NOTIFYFLAG FSD SYSLOG+EXEC

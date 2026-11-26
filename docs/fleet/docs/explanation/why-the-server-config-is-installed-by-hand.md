@@ -21,7 +21,8 @@ What Buckle does manage on isa:
 
 - the binary, through the `buckle` module like on every host, so the server upgrades in `core`
   right after the canary;
-- the nightly database backup (`buckle-server` module);
+- the nightly backups of its database and its secrets (`nas-backup`), and the secrets
+  directory's mode (`buckle-server`);
 - the agent's `server:` line in `agent.yaml`, so agents follow `svc:buckle` wherever it's served.
 
 ## The cost: drift nobody sees

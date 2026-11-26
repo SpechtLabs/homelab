@@ -1,7 +1,8 @@
 # Check the UPS and the NUT chain
 
-Use this when you want the UPS's state, when a Buckle host shows `nut-client: ups-reachable`
-or `nut-server: proxied-ups` failing, or before you trust the chain for a power cut.
+Use this when you want the UPS's state, when a Buckle host shows `nut-client: ups-reachable`,
+`nut-server: proxied-ups` or `nut-server: primary` failing, when `UPS — metrics stale` fires,
+or before you trust the chain for a power cut.
 
 **Before you start:** SSH to isa (`ssh cedi@isa`) and to any Pi (`ssh pi@<host>`). Every
 command here only reads.
@@ -32,9 +33,21 @@ command here only reads.
     ```
 
     All three should be `active`. The log shows `Connected to UPS [ups]: dummy-ups-ups` after
-    each start of upsd, and `User monuser@127.0.0.1 logged into UPS [ups]` as clients connect.
+    each start of upsd, `User admin@127.0.0.1 logged into UPS [ups]` when isa's own upsmon
+    logs in as the primary, and `User monuser@127.0.0.1 logged into UPS [ups]` as the
+    secondaries connect.
 
-4. Check `svc:nut` the way the clients use it, from any Pi:
+4. Check that isa is the primary, as Buckle's `primary` check does:
+
+    ```sh
+    ssh cedi@isa "bash -c 'sudo grep ^MONITOR /etc/nut/upsmon.conf | cut -d" " -f1-4,6; journalctl -b -u nut-server -o cat --no-pager -q | grep -E "User admin@" | tail -n 1'"
+    ```
+
+    `MONITOR ups@localhost 1 admin primary` and, last, `User admin@127.0.0.1 logged into UPS
+    [ups]`. A `logged out from` line last means isa's upsmon isn't the primary any more:
+    `sudo systemctl status nut-monitor`.
+
+5. Check `svc:nut` the way the clients use it, from any Pi:
 
     ```sh
     ssh pi@jumphost "bash -c 'upsc ups@nut.sphinx-map.ts.net ups.status'"
@@ -50,16 +63,16 @@ command here only reads.
     It should contain `"tcp:3493": "tcp://localhost:3493"` under `svc:nut`. The `nut-server`
     module adds it on its next run; the host needs `tag:nut-server` for the Service to approve it.
 
-5. See which clients are logged in:
+6. See which clients are logged in:
 
     ```sh
     ssh cedi@isa "bash -c 'upsc -c ups@localhost'"
     ```
 
-    One `127.0.0.1` line per client that came through `svc:nut`: 15 with every Pi and the NUC
-    up.
+    One `127.0.0.1` line per logged-in upsmon: 16 with every Pi, the NUC and isa's primary up.
+    The same number is `ups_clients` in Grafana.
 
-6. On a client, check upsmon itself:
+7. On a client, check upsmon itself:
 
     ```sh
     ssh pi@clusterpi-worker1 "bash -c 'systemctl is-active nut-monitor; sudo cat /etc/nut/upssched.conf'"
@@ -70,7 +83,8 @@ command here only reads.
 
 ## Check it worked
 
-Buckle's host pages show `ups-reachable` passing on every client and `proxied-ups` on isa.
+Buckle's host pages show `ups-reachable` passing on every client, and `proxied-ups` and
+`primary` on isa.
 
 ## If it didn't
 

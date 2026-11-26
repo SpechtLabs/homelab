@@ -42,8 +42,9 @@ fleet:
     tsidp:           'host.id == "isa"'
     buckle-server:   'host.id == "isa"'   # by host, like o11y-collector
 
-    # Power: isa proxies the Synology's UPS; the Pis and the NUC shut down
-    # early unless they are the ones that should outlive the cluster.
+    # Power: isa proxies the Ubiquiti UPS Tower's NUT server and is the
+    # primary; the Pis and the NUC shut down early unless they are the ones
+    # that should outlive the cluster.
     nut-server: 'host.id == "isa"'
     nut-client: 'host.facts.hardware.raspberry_pi.version != null || host.id == "nuc"'
     nut-late:   'host.id in ["jumphost", "timepi"]'
@@ -69,6 +70,7 @@ fleet:
 vars:
   - file: vars/defaults.yaml
   - file: vars/versions.yaml
+  - file: vars/backups.yaml
 
   # hardware
   - when: 'host.facts.hardware.raspberry_pi.version != null'
@@ -102,7 +104,6 @@ vars:
 # secrets.providers.file.root (/etc/buckle/secrets).
 secrets:
   K3S_TOKEN:              { file: /etc/buckle/secrets/K3S_TOKEN }
-  NUT_UPSTREAM_PASSWORD:  { file: /etc/buckle/secrets/NUT_UPSTREAM_PASSWORD }
   NUT_ADMIN_PASSWORD:     { file: /etc/buckle/secrets/NUT_ADMIN_PASSWORD }
   NUT_MONITOR_PASSWORD:   { file: /etc/buckle/secrets/NUT_MONITOR_PASSWORD }
   # age private key for k8s-deployment's SOPS secrets: the one thing a fresh

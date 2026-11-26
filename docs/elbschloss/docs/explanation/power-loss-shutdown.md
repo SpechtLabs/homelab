@@ -2,25 +2,33 @@
 
 Everything at home hangs off one Ubiquiti UPS Tower with roughly 19 minutes of battery at
 today's load. The NUT setup spends that battery on the few hosts that matter during and right
-after an outage, and turns the rest off early. Exact values are in
-[UPS and NUT](../reference/ups-and-nut.md).
+after an outage, turns the rest off early, and lets isa, as the NUT primary, call the end.
+Exact values are in [UPS and NUT](../reference/ups-and-nut.md).
 
 ## The sequence
 
-```text
-t = 0      mains gone; UPS Tower reports OB
-t ~ 2-7 s  isa's dummy-ups copies the status (2 s poll); clients see OB (5 s poll)
-           -> ONBATT on every client; early hosts start a 60 s upssched timer
-t ~ 65 s   early hosts power off: labk3s, Ceph, the blades, the NUC
-           (power back before then: ONLINE cancels the timer, nothing happens)
-...        isa, jumphost, timepi and the NAS stay up on battery
-LB         the UPS reports battery low (OB LB)
-LB + 15 s  no primary has set FSD (HOSTSYNC), so each secondary upsmon declares
-           the UPS critical itself
-LB + 195 s isa, jumphost and timepi run SHUTDOWNCMD after FINALDELAY 180 s
+```mermaid
+sequenceDiagram
+  participant U as UPS Tower
+  participant I as isa (primary)
+  participant E as early hosts
+  participant L as jumphost, timepi
+  U->>I: OB (proxy polls every 2 s)
+  I->>E: ONBATT (clients poll every 5 s)
+  I->>L: ONBATT
+  Note over E: upssched timer, 60 s
+  E->>E: power off (ONLINE in time cancels it)
+  Note over I,L: stay up on battery
+  U->>I: OB LB
+  I->>I: set FSD on its own upsd
+  I->>L: FSD
+  L->>L: power off at once
+  Note over I: wait up to HOSTSYNC 30 s for logouts, FINALDELAY 5 s
+  I->>I: shutdown -h
 ```
 
-The NAS follows its own DSM settings; it talks to the UPS Tower directly.
+The NAS isn't in this: DSM is a network UPS client of the UPS Tower itself and follows its own
+settings. Home Assistant only reads the status.
 
 ## Why early and late
 
@@ -30,13 +38,57 @@ nothing, so they go after a minute. A minute rides out a flicker without taking 
 down. How Ceph and labk3s come back afterwards is in their own docs.
 
 The late hosts are the ones you want last: the jumphost is the way in, timepi is the LAN's
-time source, and isa is the NUT proxy everyone else reads the UPS through plus the Buckle
-server. isa has to stay up at least as long as its clients. If it went first, the clients would lose the UPS, and
-upsmon treats a UPS that disappears while on battery as critical after `DEADTIME` (30 s), so
-the failure is at least safe: the clients go down rather than run blind.
+time source. isa outlasts them because it's the primary: it sets FSD, and upsmon on a primary
+waits for its secondaries to log out before it shuts its own host down.
 
-isa reads the UPS Tower directly, not its own proxy, so its shutdown doesn't depend on its own
-upsd. The NAS does the same through DSM. Home Assistant only reads the status.
+## Why isa is the primary
+
+Until November 2026 nobody was. isa's upsmon was a secondary of the UPS Tower, and every client
+a secondary of isa's proxy, so on low battery each host waited `HOSTSYNC` for an FSD that never
+came and then shut down on its own clock, isa included. That works, but nothing ordered it,
+and isa could go before the hosts reading the UPS through it.
+
+As the primary of the proxied UPS on its own upsd (`ups@localhost`, user `admin`), isa sets the
+FSD flag there. upsd adds that flag to `ups.status` itself, so it works on a dummy-ups repeater
+even though the UPS Tower never hears about it. Every secondary sees FSD on its next poll.
+
+If the primary fails anyway (isa down, or its upsmon not logged in), the old behaviour is the
+fallback: secondaries see `OB LB`, wait 15 s, and shut down themselves. A client whose UPS
+disappears while on battery also counts it as critical after `DEADTIME` (30 s). The Buckle
+check `nut-server: primary` and the alert `UPS — metrics stale` are there so that state doesn't
+last unnoticed.
+
+## Why FSD waits for low battery
+
+isa could force FSD after a fixed time on battery and have everything down long before the
+battery is critical. It doesn't, because of kill-power (next section): nothing can tell this
+UPS to cut its outlets after the hosts are down. With an early FSD, the halted hosts would sit
+on a live UPS for many minutes, and if the mains came back in that time, they'd stay off until
+someone cycled their power. Waiting for LB keeps jumphost, timepi and isa up through outages of
+around 20 minutes, and drains the battery close to empty, so the outlets drop soon after the
+hosts are down and come back with the mains.
+
+The price is that the UPS's own LB threshold decides, and it isn't visible: the UPS exposes no
+`battery.charge.low` or `battery.runtime.low`. That's why `UPS — less than 10 minutes of
+battery left` pages first, and why `sudo upsmon -c fsd` on isa is the documented way to go
+early by hand.
+
+## Why there's no kill-power
+
+NUT's kill-power has the primary write a flag file, and the system's last shutdown step
+(`nutshutdown`) runs the driver once more to switch the UPS off after a delay. Through isa's
+proxy that can't be trusted:
+
+- the driver is dummy-ups, run at the very end of isa's shutdown, when its network route to the
+  UPS Tower may already be gone;
+- the UPS Tower has no delayed shutdown. Its instant commands are `load.off`, `load.on`,
+  `shutdown.reboot` and `test.battery.start`, with no `ups.delay.shutdown`, so the only way to
+  cut the load is at once, which would also cut the NAS in the middle of its own shutdown.
+
+So isa's upsmon has no `POWERDOWNFLAG` and `nutshutdown` does nothing. The consequence is the
+classic power race: if the mains return after the hosts have shut down but before the battery
+is empty, the outlets never lose power and the hosts that powered off stay off. Waiting for LB
+makes that window short. If it happens, cycle their power by hand.
 
 ## Why a proxy at all
 
@@ -44,23 +96,9 @@ The catalog's reason is that the fifteen clients shouldn't all poll the UPS. The
 gives them one name, `svc:nut`, that can move to another host without touching a client.
 Home Assistant stays on the LAN because `tag:smarthome` has no grant to `svc:nut`.
 
-## Gaps
+## Still unverified
 
-!!! warning "Unverified: no full power cut has happened under this config"
-    The NUT journals on isa (10 days) and a Pi (30 days) show no power event. The
-    sequence above is what the config and NUT's documented upsmon behaviour say, not something
-    anyone has watched.
-
-- **Nobody is primary.** isa's upsd has an `admin` user with `upsmon primary`, but no upsmon
-  logs in with it, and isa is a secondary of the UPS Tower. So nothing sets `FSD` for the fleet
-  and nothing tells the UPS to cut its output once the hosts are down
-  (`driver.flag.allow_killpower: 0` on the proxy). If mains returns while the battery still
-  holds, hosts that already powered off may stay off until their power is cycled. That's the
-  usual NUT power race; it hasn't been tested here.
-- **`FSD` on a late host doesn't wait.** The late hosts' upssched runs `delayed_shutdown` on
-  `FSD`, and that script powers off at once. The 180 s only applies when upsmon itself decides
-  the UPS is critical.
-- **No alerting.** Grafana has no rule on the UPS or NUT. Buckle's `ups-reachable` and
-  `proxied-ups` checks fail when the chain breaks, but only show on Buckle's host pages and
-  during rollouts.
-- The low-battery threshold is the UPS Tower's own setting; the repo doesn't record it.
+!!! warning "No full power cut has happened under this config"
+    The NUT journals on isa (10 days) and a Pi (30 days, as of 2026-11-26) show no power
+    event. The sequence above is what the config and NUT's documented upsmon behaviour say,
+    not something anyone has watched end to end.

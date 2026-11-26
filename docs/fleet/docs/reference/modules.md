@@ -1,6 +1,6 @@
 # Modules
 
-The 24 modules in [`modules/`](https://github.com/SpechtLabs/homelab/tree/main/modules), checked
+The 25 modules in [`modules/`](https://github.com/SpechtLabs/homelab/tree/main/modules), checked
 against each `module.yaml` on 2026-11-26. "Selected by" is the module's `when` (groups are in
 [Groups](groups.md)); hosts are what that selects today. Health checks per module are in
 [Health checks](health-checks.md).
@@ -23,7 +23,8 @@ against each `module.yaml` on 2026-11-26. "Selected by" is the module's `when` (
 | `time-sync` | `ntp-client` | home LAN hosts but timepi | chrony from timepi; PTP with hardware timestamps where `ptp-client`, NTP elsewhere; public pool as fallback |
 | `ptp-server` | `ptp-grandmaster` | timepi | gpsd + PPS discipline ntpsec; ptp4l/phc2sys serve PTP; time metrics as textfiles |
 | `tsidp` | `tsidp` | isa | The tailnet's OIDC provider (`idp.sphinx-map.ts.net`) |
-| `buckle-server` | `buckle-server` | isa | Nightly database backup, local and on the NAS (NFS v4.1 via `svc:nfs`) |
+| `buckle-server` | `buckle-server` | isa | Keeps `/etc/buckle/secrets` root-only (0700); the rest of the server's config is installed by hand |
+| `nas-backup` | `buckle-server`, `tsidp` or `k3s-server` | isa, clusterpi-leader | Nightly backups from `vars/backups.yaml` to the NAS (NFS v4.1 via `svc:nfs`), kept locally too, with a metric per backup |
 | `k3s-server` | `k3s-server` | clusterpi-leader | k3s control plane (single server, SQLite/kine) |
 | `k3s-agent` | `k3s-agent` | clusterpi-worker1..4 | k3s workers, joined through `svc:labk3s` |
 | `argocd-seed` | `k3s-server` | clusterpi-leader | Installs Argo CD from k8s-deployment, only on a cluster that has none |
@@ -44,7 +45,7 @@ everything else from SpechtLabs/k8s-deployment.
 | `k3s-agent` | `parallel: 1` | At most one k3s worker changing at a time, same counting |
 | `k3s-agent` | `needs: [base, 'group:k3s-server']` | Workers apply after the k3s server, also within the `fleet` phase |
 | `k3s-server`, `k3s-agent` | `disrupts: node` | A change to them drains the node first (`labk3s` `maintenance`) |
-| `buckle-server`, `time-sync`, `ptp-server` | `needs: [alloy]` (and others) | The textfile directory their metrics go to exists first |
+| `nas-backup`, `time-sync`, `ptp-server` | `needs: [alloy]` (and others) | The textfile directory their metrics go to exists first |
 | `pi-firmware` | `needs: [pi-facts]` | The PoE HAT task reads `host.facts.script.rpi` |
 
 ## Actions

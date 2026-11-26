@@ -5,6 +5,7 @@ Task recipes. Each one says what you need first, the commands, and how to tell i
 **When something's wrong**
 
 - [Respond to an availability alert](respond-to-an-availability-alert.md): the NAS, Jellyfin or Home Assistant SLO is burning.
+- [Respond to a UPS alert](respond-to-a-ups-alert.md): on battery, runtime or battery low, FSD, stale metrics, replace battery.
 - [Respond to a power cut](respond-to-a-power-cut.md): what to watch while it's out, what to check once it's back.
 - [Fix DSM sign-in](fix-dsm-sign-in.md): SSO through tsidp fails.
 - [Re-create the NAS's Tailscale serve config](recreate-the-nas-tailscale-serve-config.md): after a package reinstall, or when a NAS Service is gone.

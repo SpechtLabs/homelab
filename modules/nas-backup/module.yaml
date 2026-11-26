@@ -1,0 +1,69 @@
+name: nas-backup
+description: Nightly backups to the NAS (NFS v4.1 through svc:nfs), each kept locally and in its own NAS folder, with a metric per backup and target. Which backups a host runs is vars/backups.yaml.
+# The groups that own an entry in vars/backups.yaml. A new backup for another
+# group adds that group here too: Buckle has no loops, so the list of backups
+# is data (templated into /etc/nas-backup/backups) and only the selection is
+# spelled out.
+when: 'host.groups contains "buckle-server" || host.groups contains "tsidp" || host.groups contains "k3s-server"'
+needs: [alloy]               # the textfile directory the metrics go to
+tags: [backup]
+vars:
+  # The NAS share the backup folders live in, through the Tailscale Service
+  # svc:nfs (tcp:2049 only). The NAS's tailscaled forwards it from localhost,
+  # so DSM's rule (Shared Folder -> NFS Permissions) is for 127.0.0.1:
+  # read/write, no squash, non-privileged ports allowed. The tailnet policy
+  # grants svc:nfs to each backup's host (tag:buckle-server, tag:k3s-server).
+  nas_backup_nfs_root: 'nfs.{{ vars.tailnet }}:/volume1/homelab'
+tasks:
+  # sqlite3 for consistent copies of live databases, nfs-common to mount the
+  # NAS. The same task as modules/buckle-server's, so the packages it
+  # installed on isa move here instead of being removed.
+  - apt.package: { names: [sqlite3, nfs-common] }
+
+  - file.copy: { src: nas-backup.sh, dest: /usr/local/sbin/nas-backup, mode: "0755" }
+  - file.directory: { path: /etc/nas-backup, mode: "0700" }
+  - file.template: { src: backups.j2, dest: /etc/nas-backup/backups, mode: "0600" }
+  - file.template:
+      src: nfs-root.j2
+      dest: /etc/nas-backup/nfs-root
+      mode: "0600"
+  # What this host is meant to back up, as a metric, written by Buckle rather
+  # than by the backup: a backup that never ran still shows up as missing.
+  - file.template:
+      src: nas_backup_configured.prom.j2
+      dest: '{{ vars.o11y_textfile_dir }}/nas_backup_configured.prom'
+      mode: "0644"
+  - file.template:
+      src: nas-backup.service.j2
+      dest: /etc/systemd/system/nas-backup.service
+      mode: "0644"
+    notify: [daemon-reload]
+  - file.copy: { src: nas-backup.timer, dest: /etc/systemd/system/nas-backup.timer, mode: "0644" }
+    notify: [daemon-reload]
+  - systemd.unit: { name: nas-backup.timer, enabled: true, active: true, daemon_reload: true }
+
+  # modules/buckle-server's backup (2026-11-17 to 2026-11-27) kept the NAS
+  # mounted at /mnt/nas/backups between runs. Its removal runs a remount
+  # handler that restarts the mount unit it just deleted; unmounted first,
+  # the handler has nothing to do. Its metric file was the script's, not
+  # Buckle's, so nothing else would delete it and the old series would stay.
+  - command.run:
+      run: [umount, /mnt/nas/backups]
+      only_if: findmnt -n /mnt/nas/backups
+    id: retire-buckle-backup-mount
+    removal: leave
+  - file.absent: { path: '{{ vars.o11y_textfile_dir }}/buckle_backup.prom' }
+    removal: leave
+
+handlers:
+  daemon-reload: { systemd.daemon_reload: {} }
+
+health:
+  # Informational: a missed night mustn't hold a rollout. Grafana alerts per
+  # backup when its NAS copy is older than 26 h or missing (k8s-deployment,
+  # grafanaalertrules-homelab.yaml).
+  - name: recent
+    command:
+      run: ['/usr/local/sbin/nas-backup', check, '{{ vars.o11y_textfile_dir }}']
+      expect: { exit: 0 }
+    required: false

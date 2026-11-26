@@ -17,8 +17,8 @@ unaffected. Starting it stops `buckle-server` (`Conflicts=`); stopping it, or 4 
     isa's copy of `server-breakglass.yaml` still had the NUC-era values: `source.git.url`
     `cedi/homelab`, the retired `allowed_tags` (`tag:homelab`, `tag:core-infra`,
     `tag:core-services`) and `join.server_url` on the NUC. Under it, every agent (they carry
-    only `tag:buckle-agent` of those) would be refused. Run step 1 before every use until it's
-    been fixed.
+    only `tag:buckle-agent` of those) would be refused. Run step 1 before every use until the
+    repo copy has been installed on isa.
 
 1. Check that isa's break-glass config matches the repo. It's installed by hand and can drift:
 

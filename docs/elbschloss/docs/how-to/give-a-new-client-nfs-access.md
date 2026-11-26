@@ -15,7 +15,7 @@ Use this when another host or workload needs a folder on the NAS over NFS.
 
 1. Grant the client `svc:nfs`. On the client's Backstage Component, add the NFS API and the tag
     its traffic comes from, like
-    [modules/buckle-server/catalog-info.yaml](https://github.com/SpechtLabs/homelab/blob/main/modules/buckle-server/catalog-info.yaml)
+    [modules/nas-backup/catalog-info.yaml](https://github.com/SpechtLabs/homelab/blob/main/modules/nas-backup/catalog-info.yaml)
     does:
 
     ```yaml
@@ -47,9 +47,10 @@ Use this when another host or workload needs a folder on the NAS over NFS.
     sudo mount -t nfs -o nfsvers=4.1 nfs.sphinx-map.ts.net:/volume1/<folder>/<path> /mnt/<where>
     ```
 
-    On a Buckle host, put it in a module instead, as a mount unit like
-    [mnt-nas-backups.mount.j2](https://github.com/SpechtLabs/homelab/blob/main/modules/buckle-server/files/mnt-nas-backups.mount.j2)
-    (`nfsvers=4.1,soft,timeo=150,retrans=3,_netdev`, `After=tailscaled.service`).
+    On a Buckle host, put it in a module instead. For a nightly backup there's one already:
+    add an entry to [vars/backups.yaml](https://github.com/SpechtLabs/homelab/blob/main/vars/backups.yaml),
+    and `modules/nas-backup` mounts `/volume1/homelab/<folder>` for the run with
+    `nfsvers=4.1,soft,timeo=150,retrans=3`.
 
 ## Check it worked
 

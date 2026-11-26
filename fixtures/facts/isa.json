@@ -33,6 +33,10 @@
       "tag:o11y-collector",
       "tag:tsidp-client"
     ],
+    "ips": [
+      "100.70.89.41",
+      "fd7a:115c:a1e0::b839:592a"
+    ],
     "online": true,
     "backend_state": "Running",
     "tailnet": "cedi.github"

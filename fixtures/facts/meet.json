@@ -3,8 +3,8 @@
     "codename": "noble",
     "family": "debian",
     "id": "ubuntu",
-    "kernel": "6.8.0-51-generic",
-    "pretty_name": "Ubuntu 24.04.2 LTS",
+    "kernel": "6.8.0-151-generic",
+    "pretty_name": "Ubuntu 24.04.5 LTS",
     "version": "24.04"
   },
   "hardware": {
@@ -27,8 +27,12 @@
   "tailscale": {
     "hostname": "meet.sphinx-map.ts.net",
     "tags": [
-      "tag:core-services",
+      "tag:buckle-agent",
       "tag:o11y-agent"
+    ],
+    "ips": [
+      "100.85.86.18",
+      "fd7a:115c:a1e0::1f01:5612"
     ],
     "online": true,
     "backend_state": "Running",

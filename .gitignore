@@ -1,3 +1,6 @@
 .DS_Store
 bootstrap/server.env
 *.secret
+# NAS compose secrets: they stay on the NAS (nas/README.md)
+nas/**/.env
+nas/backup/github-backup/config.yaml

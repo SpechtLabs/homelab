@@ -1,6 +1,10 @@
 # Synology NAS
 
-Compose projects for the Synology, deployed through DSM's Container Manager (not Buckle).
+Compose projects for the Synology, deployed through DSM's Container Manager (not Buckle):
+`media` (Jellyfin), `o11y` (exporters), `obsidian` (CouchDB for Obsidian LiveSync) and
+`backup` (github-backup). Their secrets stay on the NAS and out of git (`.gitignore`):
+`obsidian/.env` and `backup/github-backup/config.yaml`; the `*.example` files next to them
+show the shape.
 How to run and change the NAS is in the elbschloss docs ([Backstage](https://backstage.k8s.specht-labs.de/docs/default/system/elbschloss/),
 [source](../docs/elbschloss/docs/index.md)):
 

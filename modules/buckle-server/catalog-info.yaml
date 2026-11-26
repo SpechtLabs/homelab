@@ -1,6 +1,6 @@
-# Backstage catalog entry for the Buckle server (config in bootstrap/, backup
-# here) and its two APIs. Not read by Buckle: Backstage reads it through the
-# Location in the repo-root catalog-info.yaml.
+# Backstage catalog entry for the Buckle server (config in bootstrap/, its
+# backups in modules/nas-backup) and its two APIs. Not read by Buckle:
+# Backstage reads it through the Location in the repo-root catalog-info.yaml.
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
@@ -9,7 +9,7 @@ metadata:
   description: >-
     The Buckle server on isa: watches this repo, plans and rolls out every
     revision through the phases in buckle.yaml, and applies the labk3s
-    workloads. Nightly database backup locally and on the NAS.
+    workloads. Its database and secrets go to the NAS nightly (nas-backup).
   annotations:
     github.com/project-slug: SpechtLabs/homelab
     # The tag its traffic comes from on the tailnet (isa's, as the server).
@@ -29,7 +29,6 @@ spec:
     - api:buckle-api
   consumesApis:
     - api:tsidp-oidc
-    - api:nas-nfs
   dependsOn:
     - resource:isa
     - resource:tailnet

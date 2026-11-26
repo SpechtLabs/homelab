@@ -7,6 +7,7 @@ nav:
   - How-to guides:
       - how-to/index.md
       - Respond to an availability alert: how-to/respond-to-an-availability-alert.md
+      - Respond to a UPS alert: how-to/respond-to-a-ups-alert.md
       - Respond to a power cut: how-to/respond-to-a-power-cut.md
       - Check the UPS and the NUT chain: how-to/check-the-ups-and-the-nut-chain.md
       - Test the power-loss shutdown: how-to/test-the-power-loss-shutdown.md
@@ -33,6 +34,8 @@ nav:
       - The NAS and Tailscale: explanation/nas-and-tailscale.md
 plugins:
   - techdocs-core
+markdown_extensions:
+  - attr_list
 validation:
   omitted_files: warn
   absolute_links: warn

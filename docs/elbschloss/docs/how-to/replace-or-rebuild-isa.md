@@ -30,8 +30,8 @@ while they move, is in [isa, and why so much runs on it](../explanation/isa.md).
    [bootstrap/README.md](https://github.com/SpechtLabs/homelab/blob/main/bootstrap/README.md)
    and the [Fleet docs](https://backstage.k8s.specht-labs.de/docs/default/system/fleet/). It
    moves `/etc/buckle` with the secrets in `/etc/buckle/secrets/`, which the NUT passwords are
-   part of, and the database. If the old disk is gone, the newest database is on the NAS in
-   `/volume1/homelab/buckle/`.
+   part of, and the database. If the old disk is gone, last night's copies are on the NAS:
+   the database in `/volume1/homelab/buckle/`, the secrets in `/volume1/homelab/buckle-secrets/`.
 
 4. **tsidp.** Stop `tsidp` on the old host and copy its state directory `/data` (mode 0700,
    root) to the new host before Buckle starts tsidp there. It holds the `idp` node's key, the
@@ -40,18 +40,25 @@ while they move, is in [isa, and why so much runs on it](../explanation/isa.md).
    client, Grafana, Argo CD, Backstage) has to be registered again. Keep the node name `idp`:
    the issuer and the email claims come from it.
 
+    If the old disk is gone, last night's tarball of `/data` is on the NAS in
+    `/volume1/homelab/tsidp/` (`tsidp-nightly-<date>.tar.gz`, `modules/nas-backup`).
+
     !!! warning "Unverified"
-        Nothing backs up `/data`, and moving it hasn't been written down before. This step
-        follows from what the directory holds
+        Moving or restoring `/data` hasn't been done yet. This step follows from what the
+        directory holds
         ([modules/tsidp/module.yaml](https://github.com/SpechtLabs/homelab/blob/main/modules/tsidp/module.yaml):
         `tsidp_state_dir: /data`, never removed by Buckle).
 
-5. **NUT.** Nothing to copy. Once the host is in `nut-server`, the module installs `nut`,
-   writes the config and serves `svc:nut` (tcp:3493). On Ubuntu 26.04 the first apply can fail
-   because the package's postinst starts upsd with an empty config; retry the host. On the old
-   host, take it out of the Service so clients don't land on a dead upsd:
+5. **NUT.** Nothing to copy but the secrets (`NUT_ADMIN_PASSWORD` for the primary,
+   `NUT_MONITOR_PASSWORD` for the secondaries), which move with `/etc/buckle/secrets/` in
+   step 3. Once the host is in `nut-server`, the module installs `nut`, writes the config, makes
+   the host's upsmon the primary, installs `ups-metrics` and serves `svc:nut` (tcp:3493). On
+   Ubuntu 26.04 the first apply can fail because the package's postinst starts upsd with an
+   empty config; retry the host. Only one host may be the primary: on the old host, stop
+   `nut-monitor` and take it out of the Service so clients don't land on a dead upsd:
 
     ```sh
+    sudo systemctl disable --now nut-monitor
     sudo tailscale serve drain svc:nut
     ```
 
@@ -71,16 +78,17 @@ On the new host:
 
 ```sh
 upsc ups@localhost ups.status        # OL
-upsc -c ups@localhost                # one 127.0.0.1 line per client, 15 in total
+upsc -c ups@localhost                # one 127.0.0.1 line per upsmon, 16 in total
 sudo tailscale serve get-config --all   # svc:buckle and svc:nut
-systemctl is-active tsidp alloy buckle-server nut-server nut-monitor
+systemctl is-active tsidp alloy buckle-server nut-server nut-monitor ups-metrics.timer
 ```
 
 From a Pi: `upsc ups@nut.sphinx-map.ts.net ups.status` prints `OL`. From your machine:
 `curl -s https://idp.sphinx-map.ts.net/.well-known/openid-configuration` returns the issuer,
 and `https://buckle.sphinx-map.ts.net` lets you sign in. The six availability probes report
 again in Grafana ([Monitoring](../reference/monitoring.md)). The next night,
-`/volume1/homelab/buckle/` on the NAS gets a new `buckle-nightly-<date>.db`.
+`/volume1/homelab/buckle/` on the NAS gets a new `buckle-nightly-<date>.db`, and
+`buckle-secrets/` and `tsidp/` a new tarball each.
 
 ## If it didn't
 

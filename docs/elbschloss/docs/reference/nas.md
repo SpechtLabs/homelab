@@ -61,7 +61,8 @@ The Service definitions in the admin console: `svc:nas` tcp:443, tcp:5001, tcp:6
 | Path | Holds | Written by |
 |---|---|---|
 | `/volume1/homelab` | NFS-exported folder | |
-| `/volume1/homelab/buckle` | `buckle-nightly-YYYY-MM-DD.db`, 14 days | isa's `buckle-backup` (01:30 UTC), through `svc:nfs` |
+| `/volume1/homelab/<name>` | the nightly NAS backups, 14 days each: `buckle` (`buckle-nightly-<date>.db`), `buckle-secrets` and `tsidp` (`.tar.gz`) from isa, `k3s` from clusterpi-leader | `modules/nas-backup` at 02:00 Europe/Berlin, through `svc:nfs` ([vars/backups.yaml](https://github.com/SpechtLabs/homelab/blob/main/vars/backups.yaml)) |
+| `/volume1/backup/github-backup` | GitHub repositories and stars | `github-backup`, hourly |
 | `/volume1/backup/hass` | Home Assistant's `Automatic_backup_<HA version>_<date>_01.00_<n>.tar` and `_meta.json` | Home Assistant at 01:00, DSM user `hass`, over the LAN |
 | `/volume1/docker/<project>` | compose projects | you, by hand |
 | `/volume1/Media` | Jellyfin's library (`/data/media` in the container) | |
@@ -88,7 +89,7 @@ Clients:
 
 | Client | Mount | Options |
 |---|---|---|
-| isa (`buckle-server` module) | `nfs.sphinx-map.ts.net:/volume1/homelab/buckle` on `/mnt/nas/backups` (unit `mnt-nas-backups.mount`, mounted only while the backup runs) | `nfsvers=4.1,soft,timeo=150,retrans=3,_netdev` |
+| isa and clusterpi-leader (`nas-backup` module) | `nfs.sphinx-map.ts.net:/volume1/homelab/<folder>`, mounted only while the backup runs | `nfsvers=4.1,soft,timeo=150,retrans=3` |
 
 ## Compose projects
 
@@ -99,15 +100,23 @@ Deployed through DSM's Container Manager, one Project per directory. Containers 
 |---|---|---|---|---|
 | `media` | [nas/media](https://github.com/SpechtLabs/homelab/tree/main/nas/media) | `/volume1/docker/media` | `jellyfin` (`jellyfin/jellyfin:latest`, host network) | 8096; 1900, 7359 discovery |
 | `o11y` | [nas/o11y](https://github.com/SpechtLabs/homelab/tree/main/nas/o11y) | `/volume1/docker/o11y` | `NodeExporter` (`prom/node-exporter:latest`), `SNMPExporter` (`prom/snmp-exporter:latest`), `cAdvisor` (`gcr.io/cadvisor/cadvisor:latest`), all host network | 9100, 9116, 8123 |
-| `obsidian` | not in the repo | `/volume1/docker/obsidian` | `obsidian-livesync` (`couchdb:3.3.3`) | |
-| `backup` | not in the repo | `/volume1/docker/backup` | `github-backup` (`ghcr.io/sierrasoftworks/github-backup:v3.3.5`) | |
+| `obsidian` | [nas/obsidian](https://github.com/SpechtLabs/homelab/tree/main/nas/obsidian) | `/volume1/docker/obsidian` | `obsidian-livesync` (`couchdb:3.3.3`, host network) | 5984 |
+| `backup` | [nas/backup](https://github.com/SpechtLabs/homelab/tree/main/nas/backup) | `/volume1/docker/backup` | `github-backup` (`ghcr.io/sierrasoftworks/github-backup:v3.3.5`, host network), hourly into `/volume1/backup/github-backup` | |
 
-!!! warning "The NAS's `media` project differs from the repo"
-    The repo's `nas/media/docker-compose.yaml` also defines `nginx-proxy-manager` (ports 80, 81,
-    443). The copy on the NAS doesn't, and no such container exists. Its data is still in
-    `/volume1/docker/media/nginx-proxy/`, with proxy hosts for `hass.elbschloss.xyz` (to
-    192.168.0.62:8123) and `manager.elbschloss.xyz`. The `o11y` copy matches the repo apart
-    from a commented-out `alloy` service that only the repo has.
+Nginx Proxy Manager (80, 81, 443) used to be part of `media`. It's gone from the NAS and, since
+2026-11, from the repo; its old data is still in `/volume1/docker/media/nginx-proxy/`. The repo's
+`o11y` has a commented-out `alloy` service that the NAS's copy doesn't; it does nothing.
+
+### Secrets that stay on the NAS
+
+Not in git (`.gitignore`), only next to the compose file on the NAS. The `*.example` files in the
+repo show their shape.
+
+| File on the NAS | Holds | Example in the repo |
+|---|---|---|
+| `/volume1/docker/obsidian/.env` | `COUCHDB_PASSWORD`, the `obsidian_admin` password CouchDB creates on first start | [nas/obsidian/.env.example](https://github.com/SpechtLabs/homelab/blob/main/nas/obsidian/.env.example) |
+| `/volume1/docker/obsidian/data/etc/local.d/docker.ini` | CouchDB's accounts (`obsidian_admin`, `obsidian_user`) and cookie secret, written by CouchDB | none: CouchDB's data |
+| `/volume1/docker/backup/github-backup/config.yaml` | github-backup's entries, each with a GitHub username and token (`!UsernamePassword`) | [nas/backup/github-backup/config.example.yaml](https://github.com/SpechtLabs/homelab/blob/main/nas/backup/github-backup/config.example.yaml) |
 
 node-exporter runs with `--collector.disable-defaults` plus `stat`, `time`, `cpu`, `loadavg`,
 `hwmon`, `meminfo` and `diskstats`. snmp-exporter reads
@@ -129,5 +138,5 @@ an ACL for a NUT server, which the NAS doesn't run any more.
 
 `resource:nas`, `component:synology-dsm` (APIs `nas-nfs`, `synology-dsm-web`,
 `synology-dsm-https`, `synology-drive`), `component:jellyfin` (`jellyfin-web`),
-`component:nginx-proxy-manager`, and in the observability System `component:nas-exporters`
+`component:obsidian-livesync`, `component:github-backup`, and in the observability System `component:nas-exporters`
 (`nas-node-exporter`). All in [nas/catalog-info.yaml](https://github.com/SpechtLabs/homelab/blob/main/nas/catalog-info.yaml).

@@ -85,8 +85,9 @@ healthy. The drain holds the host's slot, so the next worker waits. The feature 
 SierraSoftworks/buckle#907, released in 2.22.0.
 
 It applies to rollouts only: commit rollouts, action rollouts and schedules. An action run from a
-host's page goes straight to the host without a drain. And in 2.22, the Kubernetes drain evicts
-once without waiting for the pods to leave; SierraSoftworks/buckle#908 adds the wait.
+host's page goes straight to the host without a drain. Since 2.22.1 (cedi's
+SierraSoftworks/buckle#908) the drain keeps evicting until the node is empty, and `deadline: 10m`
+bounds the wait; 2.22.0 evicted once and carried on.
 
 ## When something fails
 

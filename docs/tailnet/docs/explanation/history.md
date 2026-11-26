@@ -50,7 +50,8 @@ hass-elbschloss, so hass-schiltach (also `tag:smarthome`) can't serve it.
 hass-elbschloss drops `tag:o11y-agent`, which only duplicated what
 `tag:smarthome` already gets, and the unused `tag:opencode` (carried over
 from the admin console's policy on 2026-11-17, never on a device or in a
-rule) leaves the policy.
+rule) leaves the policy. clusterpi-leader (`tag:k3s-server`) joins isa as a
+source for `svc:nfs`: both back up to the NAS through `modules/nas-backup`.
 
 ## Retired tags
 

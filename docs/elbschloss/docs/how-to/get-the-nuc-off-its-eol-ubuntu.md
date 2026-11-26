@@ -64,10 +64,10 @@ ssh cedi@nuc "bash -c 'lsb_release -ds; grep -h URIs /etc/apt/sources.list.d/ubu
 ```
 
 `Ubuntu 26.04... LTS` and `archive.ubuntu.com` (not `old-releases`). In Buckle the host is
-healthy, and on isa `upsc -c ups@localhost` lists 15 clients again.
+healthy, and on isa `upsc -c ups@localhost` lists 16 again (15 secondaries and isa's primary).
 
 Option B: `buckle validate` passes (`mise run validate`), and `upsc -c ups@localhost` on isa
-lists 14 clients.
+lists 15 (14 secondaries and isa's primary).
 
 ## If it didn't
 

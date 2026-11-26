@@ -1,0 +1,34 @@
+# Backstage catalog entry for the nightly NAS backups (modules/nas-backup).
+# Not read by Buckle: Backstage reads it through the Location in the
+# repo-root catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: nas-backup
+  title: NAS backups
+  description: >-
+    Nightly backups to the NAS over NFS v4.1 (svc:nfs), one folder each under
+    /volume1/homelab: on isa the Buckle database (buckle), its secrets
+    (buckle-secrets) and tsidp's state (tsidp); on clusterpi-leader labk3s's
+    datastore (k3s). Kept locally too; a metric per backup and target, alerts
+    in k8s-deployment. The list is vars/backups.yaml.
+  annotations:
+    github.com/project-slug: SpechtLabs/homelab
+    # The tags its traffic comes from on the tailnet: the hosts it runs on.
+    # Backstage renders the svc:nfs grant from these (tailscale/policy/). The
+    # k3s server's own tag, not tag:k3s-node: the workers have no backup.
+    specht-labs.de/tailnet-src: tag:buckle-server, tag:k3s-server
+  links:
+    - url: https://backstage.k8s.specht-labs.de/docs/default/system/fleet/how-to/respond-to-a-backup-alert/
+      title: Runbook
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: fleet
+  lifecycle: production
+  consumesApis:
+    - api:nas-nfs
+  dependsOn:
+    - resource:isa
+    - resource:clusterpi-leader
+    - resource:tailnet

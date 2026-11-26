@@ -1,6 +1,7 @@
 # Respond to a power cut
 
-Use this when the house loses mains power, or when it's just come back.
+Use this when the house loses mains power (alert `UPS — on battery`), or when it's just come
+back.
 
 **Before you start:** if the internet went with the power, the tailnet won't reach home
 either; these steps assume you can get to isa, over the tailnet or on the LAN
@@ -22,10 +23,14 @@ either; these steps assume you can get to isa, over the tailnet or on the LAN
     `UPS on battery for 60s - shutting down system` first. Don't fight it: there's nothing
     to save by keeping them up.
 
-3. isa, jumphost, timepi and the NAS keep running until the UPS reports battery low; then
-    isa, jumphost and timepi shut down about 3 minutes later. If you'd rather have them down
-    sooner (a long outage, a known repair), shut them down by hand: `sudo poweroff` on each,
-    isa last.
+3. isa, jumphost, timepi and the NAS keep running until the UPS reports battery low. Then isa,
+    the NUT primary, sets FSD: jumphost and timepi power off at once, isa within about 35 s
+    after them. The NAS follows DSM's own UPS settings. If you'd rather have the fleet down
+    sooner (a long outage, a known repair), set FSD by hand:
+
+    ```sh
+    ssh cedi@isa "sudo upsmon -c fsd"
+    ```
 
 ## Once power is back
 
@@ -40,10 +45,10 @@ either; these steps assume you can get to isa, over the tailnet or on the LAN
 2. Find hosts that didn't come back. Buckle's host list shows each host's agent as connected
     or not; from your machine, `tailscale status` shows the same per device.
 
-    !!! warning "Unverified: hosts may stay off"
-        Nothing tells the UPS to cut its output after the hosts are down, so if mains came
-        back before the battery ran flat, hosts that powered off may stay off. If one does,
-        cycle its power by hand (pull and re-plug its supply, or its PoE port for a blade).
+    Hosts that powered off stay off if the mains came back before the battery ran flat:
+    nothing tells this UPS to cut its outlets after a shutdown (no kill-power, see
+    [the explanation](../explanation/power-loss-shutdown.md#why-theres-no-kill-power)). Cycle
+    their power by hand: pull and re-plug the supply, or the PoE port for a blade.
 
 3. Check the NAS: `https://nas.sphinx-map.ts.net` loads DSM, and
 
@@ -55,7 +60,7 @@ either; these steps assume you can get to isa, over the tailnet or on the LAN
 
 4. Check the NUT chain end to end:
     [Check the UPS and the NUT chain](check-the-ups-and-the-nut-chain.md), steps 1 and 5. The
-    client count from `upsc -c ups@localhost` tells you how many of the 15 clients are back.
+    client count from `upsc -c ups@localhost` tells you how many are back: 16 with all 15 secondaries and isa's own primary.
 
 5. Let the other Systems recover and check them in their own docs:
     [Ceph](https://backstage.k8s.specht-labs.de/docs/default/system/ceph/),

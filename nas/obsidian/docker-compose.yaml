@@ -1,0 +1,26 @@
+version: "3.9"
+
+# CouchDB for the Obsidian Self-hosted LiveSync plugin. COUCHDB_PASSWORD (the
+# obsidian_admin account's) is in .env next to this file on the NAS, never in
+# git; .env.example shows the shape. The image only uses it to create the admin
+# on first start: after that the accounts live in data/etc/local.d/docker.ini
+# (with the cookie secret), which also stays on the NAS.
+services:
+  couchdb-obsidian-livesync:
+    container_name: obsidian-livesync
+    image: couchdb:3.3.3
+    restart: unless-stopped
+    network_mode: host
+    env_file: [.env]
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      - COUCHDB_USER=obsidian_admin
+    volumes:
+      # "coubdb" is the directory's real name on the NAS; don't fix the typo
+      # without moving the data.
+      - /volume1/docker/obsidian/data/coubdb:/opt/couchdb/data
+      - /volume1/docker/obsidian/data/etc/local.d:/opt/couchdb/etc/local.d
+    ports:
+      - "5984:5984" # Obsidian Sync Port

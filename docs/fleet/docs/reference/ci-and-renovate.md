@@ -26,12 +26,12 @@ Rules from [`renovate.json`](https://github.com/SpechtLabs/homelab/blob/main/ren
 
 | What | Rule |
 |---|---|
-| Watched pins | Lines in `vars/*.yaml` under a `# renovate: datasource=... depName=...` comment; `dotfiles_ref` by git commit on `main`; the buckle and bladectl pins in `mise.toml`; GitHub Actions digests |
+| Watched pins | Lines in `vars/*.yaml` under a `# renovate: datasource=... depName=...` comment; `dotfiles_ref` by git commit on `main`; the buckle and bladectl pins in `mise.toml` (Renovate's own mise manager, which names them `github:<owner>/<repo>`); GitHub Actions digests |
 | Automerge | digest, pin, patch and minor; Renovate merges after checks pass (`platformAutomerge: false`) |
-| Release age | third-party GitHub releases wait 3 days; `cedi/rpi_exporter` and compute-blade-agent don't wait |
+| Release age | third-party GitHub releases wait 3 days, the `mise.toml` CLIs too; `cedi/rpi_exporter` and compute-blade-agent don't wait |
 | Majors | automerge once 7 days old, except Buckle majors (disabled) |
 | k3s | minors separate from patches, one minor per PR, merged only before 06:00 on Mondays; patches automerge |
-| Groups | `buckle` (fleet pin + CLI), `compute-blade-agent` (agent + bladectl), GitHub Actions |
+| Groups | `buckle` (`buckle_version` + the CLI, matched by both names), `compute-blade-agent` (agent + bladectl, same), GitHub Actions |
 | Limits | 2 PRs an hour, 8 open; Europe/Berlin |
 
 Not watched: `ceph_version` and its sha256, Jitsi's packages in `vars/host-meet.yaml`.

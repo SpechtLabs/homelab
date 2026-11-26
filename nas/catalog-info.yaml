@@ -68,8 +68,10 @@ spec:
     Folder > NFS Permissions) for 127.0.0.1 with non-privileged ports
     allowed, and the tailnet policy decides who reaches svc:nfs.
 
-    /volume1/homelab/buckle   read/write, no squash
-                              (buckle-server's nightly database backup)
+    /volume1/homelab          read/write, no squash; one folder per
+                              nightly backup (modules/nas-backup,
+                              vars/backups.yaml): buckle, buckle-secrets,
+                              tsidp, k3s
 ---
 apiVersion: backstage.io/v1alpha1
 kind: API
@@ -180,13 +182,38 @@ spec:
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: nginx-proxy-manager
-  title: Nginx Proxy Manager
+  name: obsidian-livesync
+  title: Obsidian LiveSync (CouchDB)
   description: >-
-    Nginx Proxy Manager on the NAS (compose project `media`), on ports 80,
-    81 (admin) and 443 of every interface.
+    CouchDB for the Obsidian Self-hosted LiveSync plugin (compose project
+    `obsidian`), on port 5984 of every interface of the NAS. No Tailscale
+    Service: clients reach it on the LAN, admins also on the device address.
   annotations:
     github.com/project-slug: SpechtLabs/homelab
+  tags: [couchdb]
+spec:
+  type: service
+  owner: group:spechtlabs
+  system: elbschloss
+  lifecycle: production
+  dependsOn:
+    - resource:nas
+    - component:synology-dsm
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: github-backup
+  title: GitHub backup
+  description: >-
+    SierraSoftworks/github-backup on the NAS (compose project `backup`):
+    every hour, clones cedi's repositories and stars and those of the
+    organisations in its config into /volume1/backup/github-backup.
+  annotations:
+    github.com/project-slug: SpechtLabs/homelab
+  links:
+    - url: https://github.com/SierraSoftworks/github-backup
+      title: github-backup
 spec:
   type: service
   owner: group:spechtlabs

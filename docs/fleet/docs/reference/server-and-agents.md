@@ -37,7 +37,7 @@ installed by hand ([why](../explanation/why-the-server-config-is-installed-by-ha
 | `source.git` | `https://github.com/SpechtLabs/homelab.git`, branch `main`, `poll: 30s`, no credentials (public repo) |
 | `agents.auth` | `[tailscale]`: identity by Tailscale whois of the agent's address |
 | `agents.registration` | `auto` |
-| `agents.trusted_proxies` | `100.122.149.90` (nuc), `100.70.89.41` (isa): may send PROXY v2 headers |
+| `agents.trusted_proxies` | `100.70.89.41` (isa): may send PROXY v2 headers; the NUC's address went once nothing served `svc:buckle` from it |
 | `agents.tailscale.allowed_tags` | `["tag:buckle-agent"]`: any other node is refused |
 | `agents.tailscale.provisioning` | commented out (no OAuth client, so **Add an agent** can't mint keys) |
 | `agents.join.server_url` | `http://buckle.sphinx-map.ts.net:7700` |
@@ -76,7 +76,6 @@ Declared in `buckle.yaml`, one file each in `/etc/buckle/secrets/`.
 | Secret | Used by | Note |
 |---|---|---|
 | `K3S_TOKEN` | `k3s-server`, `k3s-agent` | Changing it breaks node joins |
-| `NUT_UPSTREAM_PASSWORD` | `nut-server` | The Synology's NUT password (DSM fixes it) |
 | `NUT_ADMIN_PASSWORD`, `NUT_MONITOR_PASSWORD` | `nut-server`, `nut-client` | Both ends change in one rollout |
 | `ARGOCD_AGE_KEY` | `argocd-seed` | age key for k8s-deployment's SOPS secrets |
 | `JITSI_JVB_PASSWORD`, `JITSI_FOCUS_PASSWORD` | `jitsi` | Must match the `jvb` and `focus` Prosody accounts |
@@ -86,12 +85,10 @@ Declared in `buckle.yaml`, one file each in `/etc/buckle/secrets/`.
 
 | | |
 |---|---|
-| Timer | `buckle-backup.timer`: daily 01:30 isa time (UTC), `RandomizedDelaySec=5m`, `Persistent=true` |
-| Script | `/usr/local/sbin/buckle-backup` (`modules/buckle-server/files/buckle-backup.sh`) |
-| Local | `/var/backups/buckle/buckle-nightly-YYYY-MM-DD.db`, 0600, deleted after 3 days; manual `buckle-pre-*.db` copies live here too |
-| NAS | `/mnt/nas/backups` = `nfs.sphinx-map.ts.net:/volume1/homelab/buckle`, NFS v4.1, mounted on demand by `mnt-nas-backups.mount`, deleted after 14 days |
-| Metric | `buckle_backup_last_success_timestamp_seconds`, `target` `local` or `nas`, in `/var/lib/prometheus/node-exporter/buckle_backup.prom` |
-| Not in it | `/etc/buckle` (config in git, secrets in the password manager) |
+| By | `modules/nas-backup`, `nas-backup.timer` at 02:00 Europe/Berlin ([Backups](backups.md)) |
+| Database | backup `buckle`: `/var/backups/buckle/buckle-nightly-YYYY-MM-DD.db` (3 days; manual `buckle-pre-*.db` copies live here too), NAS folder `buckle` (14 days) |
+| Secrets | backup `buckle-secrets`: tarball of `/etc/buckle/secrets`, same retention, NAS folder `buckle-secrets` |
+| Not in them | `/etc/buckle/*.yaml` and `server.env` (config in `bootstrap/`; the OIDC client secret also in the password manager) |
 
 ## Agents
 

@@ -49,8 +49,6 @@ metadata:
   links:
     - url: https://hass.sphinx-map.ts.net
       title: Home Assistant (tailnet)
-    - url: https://hass.elbschloss.xyz
-      title: hass.elbschloss.xyz
   tags: [smarthome]
 spec:
   type: service

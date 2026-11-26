@@ -49,11 +49,27 @@ In `apps/grafana-operator/cluster/specht-labs/grafanaalertrules-homelab.yaml` (g
 
 | uid | Title | Severity | Elbschloss side |
 |---|---|---|---|
-| `buckle-backup-stale` | `Buckle — database backup on the NAS is stale` | warning | the NFS path to the NAS (`svc:nfs`) |
-| `buckle-backup-missing` | `Buckle — no database backup on the NAS recorded` | warning | same |
+| `nas-backup-stale` | `NAS backup is stale` | warning | the NFS path to the NAS (`svc:nfs`) |
+| `nas-backup-missing` | `NAS backup never recorded` | warning | same |
 
-The backup itself belongs to the [Fleet](https://backstage.k8s.specht-labs.de/docs/default/system/fleet/)
-System. There's no alert on the UPS, on NUT or on Home Assistant's backups.
+The backups themselves belong to the [Fleet](https://backstage.k8s.specht-labs.de/docs/default/system/fleet/)
+System.
+
+In `apps/grafana-operator/cluster/specht-labs/grafanaalertrules-ups.yaml` (group `ups`, folder
+Infrastructure, every minute), on `ups-metrics` from isa
+([UPS and NUT](ups-and-nut.md#metrics)). Runbooks: [Respond to a UPS alert](../how-to/respond-to-a-ups-alert.md).
+
+| uid | Title | Severity | Fires when |
+|---|---|---|---|
+| `ups-on-battery` | `UPS — on battery` | critical | `ups_status{flag="OB"}` for 1m |
+| `ups-runtime-low` | `UPS — less than 10 minutes of battery left` | critical | on battery and `ups_battery_runtime_seconds` < 600 for 1m |
+| `ups-battery-low` | `UPS — battery low` | critical | `ups_status{flag="LB"}` |
+| `ups-forced-shutdown` | `UPS — forced shutdown (FSD) set` | critical | `ups_status{flag="FSD"}` |
+| `ups-metrics-stale` | `UPS — metrics stale` | warning | last successful read older than 300 s, for 5m |
+| `ups-metrics-missing` | `UPS — no metrics recorded` | warning | no `ups_metrics_last_success_timestamp_seconds` for 15m |
+| `ups-replace-battery` | `UPS — replace the battery` | warning | `ups_status{flag="RB"}` or `ups_test_failed`, for 1h |
+
+Nothing alerts on Home Assistant's backups.
 
 ## Dashboards
 

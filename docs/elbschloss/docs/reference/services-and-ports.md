@@ -41,15 +41,16 @@ Traffic that stays on `192.168.0.0/24` and needs no grant.
 | Address | What | Used by |
 |---|---|---|
 | 192.168.0.156:3493 | UPS Tower's NUT server (UPS `ups`, SSL) | isa's `dummy-ups` proxy and isa's upsmon; DSM's UPS client |
-| 192.168.0.118:3493 | upsd on isa (`LISTEN 0.0.0.0 3493`) | Home Assistant (UPS status over the LAN) |
+| 192.168.0.118:3493 | upsd on isa (`LISTEN 0.0.0.0 3493`) | Home Assistant (UPS status over the LAN); isa's own upsmon (primary) uses `localhost` |
 | 192.168.0.64:5000, :5001 | DSM (HTTP, HTTPS) | Home Assistant's Synology DSM integration (backups); which port isn't recorded |
 | 192.168.0.64:8096 | Jellyfin (host network); 1900 and 7359 for discovery | LAN clients |
 | 192.168.0.64:9100 | node-exporter | `svc:node-exporter` forwards here (localhost) |
 | 192.168.0.64:9116 | snmp-exporter (`/snmp`, module `synology`) | the collector on isa |
 | 192.168.0.64:8123 | cAdvisor | the collector on isa |
+| 192.168.0.64:5984 | CouchDB for Obsidian LiveSync (compose project `obsidian`); no Tailscale Service | Obsidian clients on the LAN; admins also on `nas-elbschloss:5984` |
 | 192.168.0.62:8123 | Home Assistant, plain HTTP | LAN clients |
 | isa :4317, :4318 | Alloy's OTLP receiver (gRPC, HTTP) | the labk3s cluster (see Observability) |
 | isa :12345 | Alloy's HTTP server (`--server.http.listen-addr=0.0.0.0:12345`) | health check `/-/ready` |
 
-The repo's `nas/media` compose project also puts Nginx Proxy Manager on 80, 81 and 443 of the
-NAS, but that container isn't deployed (see [Synology NAS](nas.md#compose-projects)).
+Nothing listens on 80 or 443 of the NAS's LAN address for a proxy any more: Nginx Proxy Manager
+is gone (see [Synology NAS](nas.md#compose-projects)).

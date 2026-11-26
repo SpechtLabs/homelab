@@ -8,12 +8,13 @@ safe test checks each link and the rendered config; it doesn't cut power.
 
 !!! danger "Don't run these"
     `upsmon -c fsd` on any host, `/etc/nut/upssched-cmd <anything>`, or setting `FSD` with
-    upsd's `admin` user. Each of them powers hosts off for real: on isa's upsd an `FSD` reaches
-    every client at once.
+    upsd's `admin` user. Each of them powers hosts off for real: on isa, the primary, an `FSD`
+    reaches every client at once and then shuts isa down too.
 
 1. Walk the chain from the UPS to a client, as in
-    [Check the UPS and the NUT chain](check-the-ups-and-the-nut-chain.md), steps 1 to 5. Every
-    link must answer `OL`, and `upsc -c ups@localhost` on isa must list one line per client.
+    [Check the UPS and the NUT chain](check-the-ups-and-the-nut-chain.md), steps 1 to 6. Every
+    link must answer `OL`, isa's upsmon must be logged in as the primary, and
+    `upsc -c ups@localhost` on isa must list one line per upsmon (16).
 
 2. Check an early host's rendered config:
 
@@ -44,13 +45,15 @@ safe test checks each link and the rendered config; it doesn't cut power.
     Only `AT FSD * EXECUTE delayed_shutdown`, and `FINALDELAY 180`. Same on timepi
     (`ssh cedi@timepi`).
 
-4. Check isa's own upsmon watches the UPS Tower, not itself:
+4. Check isa's upsmon is the primary of its own upsd, without a kill-power flag:
 
     ```sh
-    ssh cedi@isa "bash -c 'sudo grep -E \"^(MONITOR|FINALDELAY)\" /etc/nut/upsmon.conf | sed \"s/monuser .*/monuser .../\"'"
+    ssh cedi@isa "bash -c 'sudo grep -E \"^(MONITOR|HOSTSYNC|FINALDELAY|POWERDOWNFLAG)\" /etc/nut/upsmon.conf | sed \"s/admin .*primary/admin ... primary/\"; sudo upsmon -K; echo killpower=\$?'"
     ```
 
-    `MONITOR ups@192.168.0.156 1 monuser ...` and `FINALDELAY 180`.
+    `MONITOR ups@localhost 1 admin ... primary`, `HOSTSYNC 30`, `FINALDELAY 5`, no
+    `POWERDOWNFLAG` line, and `upsmon -K` complaining `No POWERDOWNFLAG value was configured`
+    with a non-zero `killpower=`.
 
 5. Check that the right hosts are in the right group: Buckle's fleet view should show
     `nut-client` on every Pi and the NUC, and `nut-late` only on jumphost and timepi. The groups
@@ -66,8 +69,9 @@ safe test checks each link and the rendered config; it doesn't cut power.
 
 ## Check it worked
 
-All six steps match. That proves every host would hear about a power cut and has the
-intended timers; it doesn't prove the UPS sets `LB` in time or that hosts come back afterwards.
+All six steps match. That proves every host would hear about a power cut, isa would set FSD,
+and the timers are the intended ones. It doesn't prove the UPS sets `LB` in time, or that hosts
+come back afterwards.
 
 ## A real test
 
@@ -77,9 +81,11 @@ intended timers; it doesn't prove the UPS sets `LB` in time or that hosts come b
     within 60 s, `ONLINE` cancels their timers and nothing should go down; leave a margin for
     the 2 s proxy poll and the 5 s client poll. Watch `journalctl -f` on an early host while you
     do it: upsmon logs the change to battery, and `upssched-cmd` logs
-    `UPS on battery for 60s - shutting down system` just before it powers off. Pick a time when a Ceph and labk3s restart wouldn't hurt.
+    `UPS on battery for 60s - shutting down system` just before it powers off. The alert
+    `UPS — on battery` fires after a minute. Pick a time when a Ceph and labk3s restart
+    wouldn't hurt.
 
 ## If it didn't
 
-The reasons for the order and the known gaps (no primary, no kill-power, `FSD` on late hosts)
-are in [How power-loss shutdown is ordered](../explanation/power-loss-shutdown.md).
+The reasons for the order, why FSD waits for low battery, and why there's no kill-power are in
+[How power-loss shutdown is ordered](../explanation/power-loss-shutdown.md).

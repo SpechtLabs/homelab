@@ -49,9 +49,10 @@ shows `HEALTH_OK` (or only the muted warnings).
 
 - The rollout paused on `ceph/cluster`: recovery took longer than `settle`. Wait for Ceph, then
   **Retry** ([Fix a paused rollout](fix-a-paused-rollout.md)).
-- The drain didn't move every pod: Buckle 2.22's Kubernetes drain evicts once and doesn't wait for
-  the pods (SierraSoftworks/buckle#908 is open). Check `kubectl get pods -A -o wide` for pods
-  still on the node before trusting the reboot to be clean.
+- The row failed in its drain: pods didn't leave the node within the 10-minute `deadline` (a
+  PodDisruptionBudget, a pod stuck terminating). `kubectl --context labk3s get pods -A -o wide
+  --field-selector spec.nodeName=<node>` shows what's left; nothing was applied, and Buckle hands
+  the node back. Drains wait for the pods since Buckle 2.22.1.
 - A node stays cordoned after a failed run: a row that fails after its apply leaves the node
   drained until a retry is healthy or the host is rolled back. Retry, or
   `kubectl --context labk3s uncordon <node>` once you've fixed it by hand.

@@ -1,0 +1,11 @@
+# {{ buckle_managed }}
+[Unit]
+Description=Nightly backups to the NAS (modules/nas-backup)
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/nas-backup run {{ vars.o11y_textfile_dir }}
+Nice=10
+IOSchedulingClass=idle

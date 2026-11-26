@@ -3,7 +3,7 @@
     "codename": "bookworm",
     "family": "debian",
     "id": "debian",
-    "kernel": "6.12.34+rpt-rpi-v8",
+    "kernel": "6.12.115+rpt-rpi-v8",
     "pretty_name": "Debian GNU/Linux 12 (bookworm)",
     "version": "12"
   },
@@ -11,7 +11,7 @@
     "arch": "aarch64",
     "cpus": 4,
     "mem": {
-      "total_mb": 7956
+      "total_mb": 7955
     },
     "model": "Raspberry Pi 5 Model B Rev 1.0",
     "raspberry_pi": {
@@ -32,24 +32,29 @@
   "tailscale": {
     "hostname": "storagepi-ceph1.sphinx-map.ts.net",
     "tags": [
-      "tag:homelab"
+      "tag:buckle-agent",
+      "tag:ceph"
+    ],
+    "ips": [
+      "100.105.212.35",
+      "fd7a:115c:a1e0::8101:d426"
     ],
     "online": true,
     "backend_state": "Running",
     "tailnet": "cedi.github"
   },
   "script": {
-    "rpi": {
-      "hat_product": "",
-      "hat_vendor": "",
-      "nvme": true,
-      "pps_gpio": false
-    },
     "ptp": {
       "hardware": true,
       "interface": "eth0",
       "lan": true,
       "phc": 0
+    },
+    "rpi": {
+      "hat_product": "",
+      "hat_vendor": "",
+      "nvme": true,
+      "pps_gpio": false
     }
   },
   "cloud": null

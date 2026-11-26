@@ -16,7 +16,8 @@ by themselves.
 1. Prepare the repo in a PR, but don't merge yet:
     - `bootstrap/server.yaml` and `bootstrap/server-breakglass.yaml`: add `<new>`'s tailnet IP to
       `agents.trusted_proxies` (keep the old one until the move is done).
-    - `buckle.yaml`: point the id-based roles at `<new>`: `buckle-server` (backup), and whichever of
+    - `buckle.yaml`: point the id-based roles at `<new>`: `buckle-server` (its backups of the
+      database and secrets follow the group, `vars/backups.yaml`), and whichever of
       `o11y-collector`, `tsidp`, `nut-server` move with it; the `core` phase's list.
     - The tailnet policy (via the
       [tailnet docs](https://backstage.k8s.specht-labs.de/docs/default/system/tailnet/)):
@@ -72,8 +73,9 @@ by themselves.
 
     A host that advertises the Service without serving every defined port gets no traffic, so run
     both commands.
-7. Merge the PR from step 1. The rollout installs the backup on `<new>` and removes it from
-   `<old>`, along with any other role that moved.
+7. Merge the PR from step 1. The rollout installs `nas-backup` on `<new>` and removes it from
+   `<old>`, along with any other role that moved. The first night's copies on `<new>` continue
+   the same NAS folders.
 8. Once every agent is back, drop `<old>`'s IP from `trusted_proxies` (by hand on `<new>`, and in
    the repo) and remove `tag:buckle-server` from `<old>`.
 

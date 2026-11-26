@@ -4,24 +4,32 @@ Use this when the Buckle server's database on isa is lost or broken (the server 
 an upgrade went wrong more than seven days ago), or when you rebuild the server on new hardware.
 
 What's in the database: hosts and their per-host state, facts, runs, rollouts, schedules' history,
-the audit log, sessions. What isn't: the config (`/etc/buckle/*.yaml`, in `bootstrap/`), the
-secrets (`/etc/buckle/secrets/`, in your password manager) and the revisions (rebuilt from git).
+the audit log, sessions, every host's token: as sensitive as the secrets, root-only wherever it
+lies. What isn't: the config (`/etc/buckle/*.yaml`, in `bootstrap/`), the secrets (their own
+backup, [Restore the Buckle secrets](restore-the-buckle-secrets.md)) and the revisions (rebuilt
+from git).
 Losing a night of database only loses history; agents keep enforcing their last applied revision
 while the server is down and report their state again when it's back.
 
 **Before you start:** SSH to isa as `cedi`. Pick the copy: `/var/backups/buckle/` on isa (last 3
-nights, plus any `buckle-pre-*.db` taken before an upgrade) or `/mnt/nas/backups/` (last 14
-nights).
+nights, plus any `buckle-pre-*.db` taken before an upgrade) or the NAS folder `buckle` (last 14
+nights). The nightly copies are made by `nas-backup` ([Backups](../reference/backups.md)).
 
 !!! warning "Unverified"
-    The procedure is the one `buckle-backup.sh` documents (stop, put the copy back as
+    The procedure is the one the old `buckle-backup.sh` documented (stop, put the copy back as
     `buckle.db`, start), plus setting the WAL files aside. Nobody has restored a backup in this
     homelab yet.
 
 1. List the copies:
 
     ```sh
-    ssh cedi@isa "bash -c 'sudo ls -lt /var/backups/buckle/ /mnt/nas/backups/ | head -20'"
+    ssh cedi@isa "bash -c 'sudo ls -lt /var/backups/buckle/'"
+    ```
+
+    For an older one, mount the NAS folder (and unmount it when you're done):
+
+    ```sh
+    ssh cedi@isa "bash -c 'sudo install -d -m 0700 /run/nas-backup/restore && sudo mount -t nfs -o nfsvers=4.1,soft nfs.sphinx-map.ts.net:/volume1/homelab/buckle /run/nas-backup/restore && sudo ls -lt /run/nas-backup/restore | head'"
     ```
 
 2. Stop the server and set the current database aside, with its WAL files (a leftover

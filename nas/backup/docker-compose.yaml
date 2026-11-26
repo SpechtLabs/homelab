@@ -1,0 +1,22 @@
+version: "3.9"
+
+# SierraSoftworks/github-backup: clones the repositories and stars its config
+# lists every hour into /volume1/backup/github-backup. The config carries a
+# GitHub token per entry, so it stays on the NAS
+# (/volume1/docker/backup/github-backup/config.yaml, not in git);
+# github-backup/config.example.yaml shows the shape.
+services:
+  github-backup:
+    image: ghcr.io/sierrasoftworks/github-backup:v3.3.5
+    command:
+      - --config
+      - /config.yaml
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+    container_name: github-backup
+    restart: unless-stopped
+    network_mode: host
+    user: root
+    volumes:
+      - /volume1/backup/github-backup:/backups:rw
+      - /volume1/docker/backup/github-backup/config.yaml:/config.yaml:ro

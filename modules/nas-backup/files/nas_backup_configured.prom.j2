@@ -1,0 +1,6 @@
+# {{ buckle_managed }}
+# HELP nas_backup_configured A backup this host is meant to run (modules/nas-backup); the missing-backup alert compares it with nas_backup_last_success_timestamp_seconds.
+# TYPE nas_backup_configured gauge
+{%- for b in vars.nas_backups if b.group in host.groups %}
+nas_backup_configured{backup="{{ b.name }}"} 1
+{%- endfor %}
