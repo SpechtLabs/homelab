@@ -289,18 +289,12 @@
 				],
 			},
 		},
-		// Backstage on specht-labs reads the labk3s ArgoCD API (read-only
-		// account) through its egress proxy; nothing else on either side.
+		// Backstage on specht-labs reads the labk3s Argo CD API (read-only
+		// account) through its egress proxy: the lab-argocd-api device until it's
+		// gone, svc:labk3s-argocd-api after (catalog: api:argocd-labk3s-api).
 		{
 			"src": ["tag:backstage"],
-			"dst": ["tag:lab-argocd"],
-			"ip":  ["tcp:443"],
-		},
-		// ...and through svc:labk3s-argocd-api, which replaces the lab-argocd-api
-		// device (the grant above goes with it).
-		{
-			"src": ["tag:backstage"],
-			"dst": ["svc:labk3s-argocd-api"],
+			"dst": ["tag:lab-argocd", "svc:labk3s-argocd-api"],
 			"ip":  ["tcp:443"],
 		},
 		// Allow tag:o11y-collector to scrape all prometheus endpoints
