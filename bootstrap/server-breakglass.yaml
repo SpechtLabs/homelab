@@ -12,7 +12,7 @@ data_dir: /var/lib/buckle-server
 
 source:
   git:
-    url: https://github.com/cedi/homelab.git
+    url: https://github.com/SpechtLabs/homelab.git
     branch: main
     poll: 30s
     # Public repository: no credentials. If it goes private, add a read-only

@@ -85,7 +85,7 @@ listen:
   tls: { mode: none }          # WireGuard already encrypts the transport
 source:
   git:
-    url: https://github.com/cedi/homelab.git
+    url: https://github.com/SpechtLabs/homelab.git
     branch: main
     poll: 30s
     credentials: ...           # deploy key / fine-grained PAT if private

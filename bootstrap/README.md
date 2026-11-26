@@ -59,7 +59,7 @@ sudo systemctl daemon-reload && sudo systemctl enable --now buckle-server
 journalctl -u buckle-server -f
 ```
 
-The repository has to exist on GitHub first (`cedi/homelab`), with a fine-grained, read-only
+The repository has to exist on GitHub first (`SpechtLabs/homelab`), with a fine-grained, read-only
 token in `GIT_TOKEN`.
 
 The UI and API are the Tailscale Service `svc:buckle`, at https://buckle.sphinx-map.ts.net.
