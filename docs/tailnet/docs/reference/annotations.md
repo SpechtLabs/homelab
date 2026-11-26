@@ -1,8 +1,8 @@
 # Catalog annotations
 
 The annotations Backstage's tailnet plugin reads
-([`graph.ts`](https://github.com/SpechtLabs/backstage/blob/main/packages/backend/src/plugins/tailscale/graph.ts),
-[`model.ts`](https://github.com/SpechtLabs/backstage/blob/main/packages/backend/src/plugins/tailscale/model.ts)).
+([`graph.ts`](https://github.com/SpechtLabs/backstage-plugin-tailscale/blob/main/plugins/tailscale-backend/src/graph.ts),
+[`model.ts`](https://github.com/SpechtLabs/backstage-plugin-tailscale/blob/main/plugins/tailscale-common/src/model.ts)).
 
 ## On an API
 

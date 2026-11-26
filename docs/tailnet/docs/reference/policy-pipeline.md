@@ -36,9 +36,17 @@ this directory.
 |---|---|
 | [`catalog/org.yaml`](https://github.com/SpechtLabs/backstage_resources/blob/main/catalog/org.yaml) | Users (`specht-labs.de/tailnet-login`) and Groups (`specht-labs.de/tailnet-group`) |
 
-## SpechtLabs/backstage: the plugin
+## The plugin: SpechtLabs/backstage-plugin-tailscale
 
-Under [`packages/backend/src/plugins/tailscale/`](https://github.com/SpechtLabs/backstage/tree/main/packages/backend/src/plugins/tailscale):
+Since 2026-11-27 the plugin is its own repository,
+[SpechtLabs/backstage-plugin-tailscale](https://github.com/SpechtLabs/backstage-plugin-tailscale),
+published to npm as `@spechtlabs/backstage-plugin-tailscale` (frontend),
+`-tailscale-backend`, `-tailscale-common` and
+`-catalog-backend-module-tailscale` (the catalog processor for kind
+Tailscale). SpechtLabs/backstage installs them from npm. Backend files, under
+[`plugins/tailscale-backend/src/`](https://github.com/SpechtLabs/backstage-plugin-tailscale/tree/main/plugins/tailscale-backend/src);
+the entity model and annotation names are in
+[`plugins/tailscale-common/src/model.ts`](https://github.com/SpechtLabs/backstage-plugin-tailscale/blob/main/plugins/tailscale-common/src/model.ts):
 
 | File | What |
 |---|---|
@@ -47,7 +55,7 @@ Under [`packages/backend/src/plugins/tailscale/`](https://github.com/SpechtLabs/
 | `compile.ts` | resolves groups, users and tags, merges catalog grants, checks ports and destinations, renders the file |
 | `publish.ts` | the pull request (or push) to GitHub |
 | `report.ts` | the pull request's title and body |
-| `cli.ts` | `yarn tailscale:diff` |
+| `cli.ts` | the `backstage-tailscale-diff` command; SpechtLabs/backstage runs it as `yarn tailscale:diff` |
 
 ## Timing
 
