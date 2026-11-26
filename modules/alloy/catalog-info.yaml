@@ -61,6 +61,7 @@ spec:
     - api:labk3s-kubernetes-api
     - api:jellyfin-web
     - api:home-assistant-api
+    - api:synology-dsm-web
   dependsOn:
     - resource:isa
     - component:nas-exporters

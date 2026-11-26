@@ -241,7 +241,7 @@
 		{
 			"src": ["tag:buckle-agent"],
 			"dst": ["svc:nut"],
-			"ip":  ["*"],
+			"ip":  ["tcp:3493"],
 		},
 		// Allow admins to access all tailscale web interfaces and edit everything
 		{
@@ -316,9 +316,14 @@
 		// The labk3s API at https://labk3s.<tailnet>:6443: kubectl for admins, the
 		// collector's probe. The Service has only tcp:6443.
 		{
-			"src": ["group:admins", "tag:o11y-collector"],
+			"src": ["group:admins"],
 			"dst": ["svc:labk3s"],
 			"ip":  ["*"],
+		},
+		{
+			"src": ["tag:o11y-collector"],
+			"dst": ["svc:labk3s"],
+			"ip":  ["tcp:6443"],
 		},
 		// Synology users reach DSM and Drive through svc:nas (https://nas.<tailnet>).
 		// This is all they get on the NAS. Jellyfin is
@@ -346,9 +351,14 @@
 		// for group:hass-users; the collector probes it for the availability SLO.
 		// The Service has only the web UI's ports, so "*" is all it offers.
 		{
-			"src": ["group:hass-users", "tag:o11y-collector"],
+			"src": ["group:hass-users"],
 			"dst": ["svc:hass"],
 			"ip":  ["*"],
+		},
+		{
+			"src": ["tag:o11y-collector"],
+			"dst": ["svc:hass"],
+			"ip":  ["tcp:443", "tcp:8123"],
 		},
 		// Synology users can stream from Jellyfin at https://stream.<tailnet>
 		{
@@ -368,10 +378,11 @@
 		},
 		// The Buckle server's nightly backup goes to the NAS over NFS v3, which
 		// can't go through a Service: portmapper, status, mountd, nfs, nlockmgr
-		// (rpcinfo -p on the NAS).
+		// (rpcinfo -p on the NAS). tag:nas is the NAS itself, the only device
+		// carrying it.
 		{
 			"src": ["tag:buckle-server"],
-			"dst": ["nas-elbschloss"],
+			"dst": ["tag:nas"],
 			"ip":  ["tcp:111", "tcp:662", "tcp:892", "tcp:2049", "tcp:4045"],
 		},
 		// Admins can manage tsidp and register OIDC clients. Their tokens carry

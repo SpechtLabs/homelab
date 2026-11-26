@@ -18,8 +18,12 @@ spec:
   owner: group:spechtlabs
   system: labk3s
   lifecycle: production
+  providesApis:
+    - api:labk3s-node-mesh
   consumesApis:
     - api:labk3s-kubernetes-api
+    - api:labk3s-supervisor
+    - api:labk3s-node-mesh
   dependsOn:
     - component:k3s-server
     - resource:clusterpi-worker1

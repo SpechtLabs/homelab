@@ -36,6 +36,7 @@ spec:
   lifecycle: production
   providesApis:
     - api:nas-nfs
+    - api:synology-dsm-web
   consumesApis:
     - api:tsidp-oidc
   dependsOn:
@@ -48,6 +49,12 @@ metadata:
   name: nas-nfs
   title: NAS NFS exports
   description: NFS v3 shares on the Synology.
+  annotations:
+    # On the device itself (tag:nas, which only the NAS carries): NFS v3's
+    # portmapper and mountd can't go through a Service. Backstage's
+    # tailnet-policy plugin renders grants from these (shadow mode).
+    specht-labs.de/tailnet-dst: tag:nas
+    specht-labs.de/tailnet-ports: tcp:111,tcp:662,tcp:892,tcp:2049,tcp:4045
 spec:
   type: nfs
   owner: group:spechtlabs
@@ -62,6 +69,26 @@ spec:
 
     /volume1/homelab/buckle   read/write for isa, no squash
                               (buckle-server's nightly database backup)
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: synology-dsm-web
+  title: DSM web UI
+  description: DSM's web UI and API through the Tailscale Service svc:nas.
+  annotations:
+    # Where tailnet consumers (the o11y collector's probe) reach it. People's
+    # access to svc:nas (DSM on 5001, Drive on 6690 too) stays hand-written.
+    specht-labs.de/tailnet-dst: svc:nas
+    specht-labs.de/tailnet-ports: tcp:443
+spec:
+  type: http
+  owner: group:spechtlabs
+  system: elbschloss
+  lifecycle: production
+  definition: |
+    https://nas.sphinx-map.ts.net (svc:nas, tcp:443 -> DSM on 5001). Sign-in
+    through tsidp (SSO). The o11y collector probes / for the DSM SLO.
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Component

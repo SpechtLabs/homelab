@@ -13,6 +13,8 @@ metadata:
     around disruptive runs.
   annotations:
     github.com/project-slug: cedi/homelab
+    # The tag its traffic comes from on the tailnet (clusterpi-leader's).
+    specht-labs.de/tailnet-src: tag:k3s-node
   links:
     - url: https://docs.k3s.io
       title: k3s docs
@@ -23,6 +25,10 @@ spec:
   lifecycle: production
   providesApis:
     - api:labk3s-kubernetes-api
+    - api:labk3s-supervisor
+    - api:labk3s-node-mesh
+  consumesApis:
+    - api:labk3s-node-mesh
   dependsOn:
     - resource:clusterpi-leader
     - resource:tailnet
@@ -74,3 +80,45 @@ spec:
     - component:k3s-agent
     - component:homelab-config
     - component:k8s-deployment
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: labk3s-supervisor
+  title: labk3s supervisor and API on the server's own address
+  description: >-
+    What the k3s agents dial once joined: the address Kubernetes advertises
+    for the API (the server's tailnet IPv4), not svc:labk3s.
+  annotations:
+    specht-labs.de/tailnet-dst: tag:k3s-server
+    specht-labs.de/tailnet-ports: tcp:6443
+spec:
+  type: kubernetes
+  owner: group:spechtlabs
+  system: labk3s
+  lifecycle: production
+  definition: |
+    https://<clusterpi-leader's tailnet IPv4>:6443, the endpoint of the
+    `kubernetes` Service (advertise-address). Agents join through
+    labk3s.sphinx-map.ts.net, then their load balancer uses this.
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: labk3s-node-mesh
+  title: labk3s node-to-node traffic
+  description: What the labk3s nodes speak among themselves over the tailnet.
+  annotations:
+    specht-labs.de/tailnet-dst: tag:k3s-node
+    specht-labs.de/tailnet-ports: udp:8472,tcp:10250,tcp:8681
+spec:
+  type: kubernetes-node
+  owner: group:spechtlabs
+  system: labk3s
+  lifecycle: production
+  definition: |
+    Between the labk3s nodes, on their tailnet addresses (node-ip,
+    flannel-iface tailscale0):
+      udp 8472   flannel VXLAN (pod network)
+      tcp 10250  kubelet API (exec, logs, metrics-server, Alloy's scrapes)
+      tcp 8681   ceph-csi-rbd nodeplugin metrics (hostNetwork)

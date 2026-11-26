@@ -12,6 +12,8 @@ metadata:
     workloads. Nightly database backup locally and on the NAS.
   annotations:
     github.com/project-slug: cedi/homelab
+    # The tag its traffic comes from on the tailnet (isa's, as the server).
+    specht-labs.de/tailnet-src: tag:buckle-server
   links:
     - url: https://buckle.sphinx-map.ts.net
       title: Buckle UI

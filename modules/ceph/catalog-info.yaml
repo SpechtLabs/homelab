@@ -13,6 +13,8 @@ metadata:
     and applies the orchestrator specs, pools, keys and S3 users.
   annotations:
     github.com/project-slug: cedi/homelab
+    # The tag its hosts' traffic comes from on the tailnet.
+    specht-labs.de/tailnet-src: tag:ceph
   links:
     - url: https://github.com/cedi/homelab/blob/main/docs/ceph.md
       title: Runbook (docs/ceph.md)
@@ -24,6 +26,10 @@ spec:
   providesApis:
     - api:ceph-rbd
     - api:ceph-s3
+    - api:ceph-cluster
+  # The hosts talk to each other: mons, OSDs, mgr and cephadm.
+  consumesApis:
+    - api:ceph-cluster
   dependsOn:
     - resource:storagepi-ceph1
     - resource:storagepi-ceph2
@@ -93,3 +99,27 @@ spec:
     Pools and their clients (Buckle creates both, vars/group-ceph.yaml):
       k3s   client.k3s, AES-128 key (the nodes' kernel rbd can't use
             aes256k); labk3s's ceph-csi-rbd, StorageClass ceph-rbd.
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: ceph-cluster
+  title: Ceph cluster traffic
+  description: What the Ceph hosts speak among themselves, over the tailnet.
+  annotations:
+    # Backstage's tailnet-policy plugin renders grants from these (shadow
+    # mode): the hosts reach each other on cephadm's sshd, the mons and the
+    # OSD/mgr range, which skips 7480 (RGW).
+    specht-labs.de/tailnet-dst: tag:ceph
+    specht-labs.de/tailnet-ports: tcp:2222,tcp:3300,tcp:6789,tcp:6800-7479,tcp:7481-7568
+spec:
+  type: ceph-cluster
+  owner: group:spechtlabs
+  system: ceph
+  lifecycle: production
+  definition: |
+    Between storagepi-ceph1..3, on their tailnet addresses (public_network
+    100.64.0.0/10):
+      2222        cephadm's sshd (root, cephadm's key only)
+      3300, 6789  mons (msgr v2, v1)
+      6800-7568   OSDs and mgr (ms_bind_port_max), except 7480 (RGW)

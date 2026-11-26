@@ -121,3 +121,24 @@ spec:
     tailscale.com/cap/tsidp:
       - users: [group:sre]
         resources: [argocd]
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: TailscaleGrant
+metadata:
+  name: webui-admins-smarthome
+  title: Admins edit the Home Assistant boxes' Tailscale web UI
+  description: >-
+    group:admins use the Tailscale web UI (port 5252) on both Home Assistant
+    boxes and may change every setting there.
+spec:
+  owner: group:spechtlabs
+  system: tailnet
+  targets:
+    - resource:hass
+    - resource:hass-schiltach
+  src: [group:admins]
+  dst: [tag:smarthome]
+  ip: ['5252']
+  app:
+    tailscale.com/cap/webui:
+      - canEdit: ['*']
