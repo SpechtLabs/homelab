@@ -195,7 +195,7 @@
 		{
 			"src": ["tag:k3s-node"],
 			"dst": ["svc:labk3s"],
-			"ip":  ["*"],
+			"ip":  ["tcp:6443"],
 		},
 		{
 			"src": ["tag:k3s-node"],
