@@ -1,15 +1,14 @@
 name: validate
 
+# Every check is a mise task (mise.toml): CI only sets up the environment and
+# calls it, so `mise run <task>` locally runs exactly what CI runs.
+
 on:
   pull_request:
   push:
     branches: [main]
 
 jobs:
-  # k3s must move one minor at a time (Kubernetes doesn't support skipping
-  # one), and Renovate opens a PR per minor and automerges them. Fail a PR
-  # that moves k3s_version more than one minor from main: the next minor's PR
-  # passes once the previous one merged and Renovate rebased it.
   k3s-one-minor:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -17,37 +16,30 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5
       - name: k3s_version moves at most one minor
-        run: |
-          minor() { sed -n 's/^k3s_version: v1\.\([0-9]*\)\..*/\1/p'; }
-          base=$(git show "origin/${{ github.base_ref }}:vars/versions.yaml" | minor)
-          head=$(minor < vars/versions.yaml)
-          echo "k3s minor: main $base, this PR $head"
-          if [ "$head" -gt $((base + 1)) ]; then
-            echo "::error::k3s_version jumps from 1.$base to 1.$head; upgrade one minor at a time"
-            exit 1
-          fi
+        run: mise run check-k3s-minor
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
 
   buckle:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5
-      # Every host in fixtures/facts gets a dry plan: selectors, templates and
-      # task specs are checked against that host's facts.
       - name: buckle validate
-        run: |
-          args=()
-          for f in fixtures/facts/*.json; do args+=(--facts "$f"); done
-          mise exec -- buckle validate --config . "${args[@]}"
-      # The Buckle server runs on the NUC, an x86-64-v2 CPU without AVX; 2.14.0
-      # was built for newer CPUs and crashed it with SIGILL. Run the same
-      # validate with the pinned linux-amd64 binary on an emulated Nehalem (the
-      # NUC's feature level), so Renovate never automerges a Buckle the server
-      # can't run.
+        run: mise run validate
+      - name: Install qemu-user (for the emulated x86-64-v2 CPU)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq qemu-user
       - name: buckle validate on the NUC's CPU (x86-64-v2, no AVX)
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq qemu-user
-          args=()
-          for f in fixtures/facts/*.json; do args+=(--facts "$f"); done
-          qemu-x86_64 -cpu Nehalem "$(mise which buckle)" validate --config . "${args[@]}"
+        run: mise run validate-x86-64-v2
+
+  # The Markdown and the TechDocs sites under docs/: markdownlint, links, and
+  # a strict mkdocs build of every site the way Backstage builds them.
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5
+      - name: mise run docs
+        run: mise run docs

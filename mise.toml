@@ -2,10 +2,52 @@
 "github:SierraSoftworks/buckle" = "2.22.2"
 "github:compute-blade-community/compute-blade-agent" = "0.11.5"
 yq = "4.54.3"
+# TechDocs: mkdocs with the plugin set Backstage's image builds with
+# (SpechtLabs/backstage packages/backend/Dockerfile), for `mise run docs`.
+# Mermaid blocks render only in Backstage (its TechDocs addon); locally they
+# stay code blocks.
+"pipx:mkdocs" = { version = "1.6.1", uvx_args = "--with mkdocs-techdocs-core==1.7.1 --with mkdocs-roadmap==1.4.2" }
+uv = "0.12.23"
+# Markdown checks (`mise run docs`): markdownlint-cli2 reads its globs and
+# rules from .markdownlint-cli2.yaml, markdown-link-check its config from
+# .markdown-link-check.json. Both are npm packages, run with this node.
+node = "24.22.3"
+markdownlint-cli2 = "0.24.2"
+"npm:markdown-link-check" = "3.15.0"
 
 [tasks.validate]
 description = "Validate the config and dry-plan every host in fixtures/facts"
 run = "buckle validate --config . $(printf -- '--facts %s ' fixtures/facts/*.json)"
+
+# The NUC (a Buckle agent) is an x86-64-v2 CPU without AVX; Buckle 2.14.0 was
+# built for newer CPUs and crashed there with SIGILL. Runs the pinned
+# linux-amd64 buckle under qemu's Nehalem model, so Renovate never automerges
+# a Buckle the NUC can't run. Needs qemu-x86_64 (qemu-user) and a linux-amd64
+# buckle from mise: CI (ubuntu-latest) has both; macOS has neither.
+[tasks.validate-x86-64-v2]
+description = "The same validate with the linux-amd64 buckle on an emulated Nehalem CPU (the NUC's level; needs qemu-user, Linux only)"
+run = "qemu-x86_64 -cpu Nehalem \"$(mise which buckle)\" validate --config . $(printf -- '--facts %s ' fixtures/facts/*.json)"
+
+# k3s must move one minor at a time (Kubernetes doesn't support skipping one),
+# and Renovate opens a PR per minor and automerges them. Fails when the
+# working tree's k3s_version is more than one minor ahead of BASE_REF's, so
+# the next minor's PR passes once the previous one merged and Renovate
+# rebased it.
+[tasks.check-k3s-minor]
+description = "Fail if vars/versions.yaml moves k3s_version more than one minor from BASE_REF (default origin/main)"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+base_ref=${BASE_REF:-origin/main}
+minor() { sed -n 's/^k3s_version: v1\.\([0-9]*\)\..*/\1/p'; }
+base=$(git show "$base_ref:vars/versions.yaml" | minor)
+head=$(minor < vars/versions.yaml)
+echo "k3s minor: $base_ref $base, working tree $head"
+if [ "$head" -gt $((base + 1)) ]; then
+  echo "::error::k3s_version jumps from 1.$base to 1.$head; upgrade one minor at a time"
+  exit 1
+fi
+'''
 
 [tasks.bladectl-config]
 description = "Find the blades via mDNS and fetch each one's bladectl client config (mTLS) into ~/.config/bladectl/config.yaml"
@@ -38,4 +80,41 @@ echo "wrote $dir/config.yaml: $(yq '.blades[].name' "$dir/config.yaml" | paste -
 # address that no longer reaches its blade.
 bladectl discover --save || true
 echo "try: bladectl -A get fan; bladectl -A events"
+'''
+
+# Every docs check CI runs (.github/workflows/validate.yml calls `mise run
+# docs`); run it before pushing.
+[tasks.docs]
+description = "Check the docs: Markdown lint, links, and a strict build of every TechDocs site"
+depends = ["docs-lint", "docs-links", "docs-build"]
+
+[tasks.docs-lint]
+description = "Lint the Markdown (globs and rules in .markdownlint-cli2.yaml)"
+run = "markdownlint-cli2"
+
+[tasks.docs-fmt]
+description = "Fix what markdownlint can fix"
+run = "markdownlint-cli2 --fix"
+
+[tasks.docs-links]
+description = "Check every link in the docs and READMEs: files and anchors in the repo, and external URLs (.markdown-link-check.json)"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+# Links to this repo's files on GitHub are checked against the working tree
+# (replacementPatterns), so a page may link a file the same change adds.
+git ls-files -z --cached --others --exclude-standard -- 'docs/**/*.md' '*.md' '**/README.md' \
+  | xargs -0 markdown-link-check --quiet --config .markdown-link-check.json
+'''
+
+[tasks.docs-build]
+description = "Build every TechDocs site under docs/ strictly, like Backstage builds them (mkdocs validation: links, anchors, nav)"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+out=$(mktemp -d); trap 'rm -rf "$out"' EXIT
+for cfg in docs/*/mkdocs.yml; do
+  echo "== ${cfg%/mkdocs.yml}"
+  mkdocs build --strict -q -f "$cfg" -d "$out/$(basename "$(dirname "$cfg")")"
+done
 '''

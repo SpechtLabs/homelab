@@ -1,0 +1,38 @@
+# markdownlint-cli2 (`mise run docs-lint`, CI through `mise run docs`): the
+# TechDocs sites under docs/ and the READMEs. The globs live here, so the
+# task, CI and an editor agree on what is linted.
+config:
+  default: true
+
+  # Long lines are fine: tables, URLs and commands don't wrap.
+  MD013: false
+  # Repeated headings are normal in reference pages (one "Ports" per host).
+  MD024: false
+  MD038: false
+  MD060: false
+
+  # MD033: inline HTML only where Markdown has no equivalent.
+  MD033:
+    allowed_elements:
+      - br
+      - details
+      - summary
+      - kbd
+
+  # Bold labels as pseudo-headings ("**Before you start:**") are deliberate.
+  MD036: false
+
+  # MD040: every fenced code block names its language.
+  MD040: true
+
+  # MD046: mkdocs-material's admonitions (`!!! note`) and tabs (`=== "x"`)
+  # indent their content, which looks like indented code to this rule.
+  MD046: false
+
+globs:
+  - "docs/**/*.md"
+  - "*.md"
+  - "**/README.md"
+
+ignores:
+  - "**/node_modules/**"
