@@ -5,10 +5,7 @@ needs: [base]
 tags: [k3s]
 # A change here restarts k3s under the node's pods: labk3s drains the node
 # first (maintenance in buckle.yaml).
-# TEMPORARY for the switch to the tailnet: no drain, so all nodes switch
-# within minutes instead of leaving a LAN/tailnet mix for half an hour
-# (flannel can't bridge the two). Restored by the next commit.
-# disrupts: node
+disrupts: node
 vars:
   # The Tailscale Service in front of the API: labk3s.<tailnet>:6443. Its
   # name goes into the serving certificate (tls-san).
