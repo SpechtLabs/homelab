@@ -37,7 +37,7 @@ handlers:
   # once it is mounted again.
   remount:
     command.run:
-      run: "systemctl daemon-reload && if mountpoint -q /mnt/nas/backups; then systemctl restart mnt-nas-backups.mount; fi"
+      run: "systemctl daemon-reload && if findmnt -n /mnt/nas/backups >/dev/null; then systemctl restart mnt-nas-backups.mount; fi"
 
 health:
   # Informational: a missed night mustn't hold a rollout. Grafana alerts when

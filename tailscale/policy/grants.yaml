@@ -1,8 +1,7 @@
 # Grants that the services' annotations can't express: the admins'
 # break-glass access to everything, exit nodes, and grants that carry
 # application capabilities (the tailscaled web UI, TKA, tsidp's claims), whose
-# values don't fit an annotation; and the collector's scrapes, whose
-# destination is every device rather than a service.
+# values don't fit an annotation.
 #
 # Everything else comes from the catalog (the policy's catalogGrants): an
 # API's specht-labs.de/tailnet-dst and -ports say where it is reached, every
@@ -94,24 +93,6 @@ spec:
     specht-labs.de/cap/tka:
       - role: cluster-admin
         period: 1h
----
-apiVersion: specht-labs.de/v1alpha1
-kind: Tailscale
-metadata:
-  name: grant-o11y-scrape
-  title: The collector scrapes every exporter
-  description: >-
-    node-exporter 9100, rpi-exporter 9243, snmp-exporter 9116, cadvisor 8123,
-    tailscale-exporter 5252, compute-blade-agent 9666.
-spec:
-  type: grant
-  target: tailscale:sphinx-map
-  owner: group:spechtlabs
-  system: tailnet
-  appliesTo: [component:o11y-collector]
-  src: [tag:o11y-collector]
-  dst: ['*']
-  ip: ['9100', '9243', '9116', '8123', '5252', '9666']
 ---
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale

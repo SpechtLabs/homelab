@@ -47,7 +47,7 @@
 		"tag:k8s":            ["tag:k8s-operator"], // Devices tagged with tag:k8s are services exposed by the k8s-operator
 		"tag:tka":            ["tag:k8s-operator", "group:admins"], // Devices tagged with tag:tka are tailscale-k8s-auth services exposed by tka
 		"tag:k3s":            ["tag:k3s-operator"], // Devices tagged with tag:k8s are services exposed by the k8s-operator
-		"tag:o11y-collector": ["group:admins"], // The o11y collector (isa): scrapes exporters, probes the SLO targets, pushes to svc:lgtm
+		"tag:o11y-collector": ["group:admins"], // The o11y collector (isa): scrapes the NAS, probes the SLO targets, pushes to svc:lgtm
 		"tag:o11y-agent":     ["group:admins"], // Telemetry senders without a Buckle agent (meet, labk3s's lab-lgtm-egress): push to svc:lgtm
 		"tag:jumphost":       ["group:admins"], // Devices tagged with tag:jumphost are allowed to initiate SSH connections via tailscale-ssh
 		"tag:backstage":      ["group:admins", "tag:k8s-operator"], // Backstage's egress proxies on specht-labs (its view onto the labk3s ArgoCD)
@@ -66,7 +66,7 @@
 		// Service hosts: a tag that only the one host allowed to serve a Service
 		// carries, for its autoApprovers. Owned by admins only, so neither k8s
 		// operator can hand it to a proxy.
-		"tag:nas":            ["group:admins"], // The Synology: hosts svc:nas and svc:stream
+		"tag:nas":            ["group:admins"], // The Synology: hosts svc:nas, svc:stream, svc:node-exporter and svc:nfs
 		"tag:nut-server":     ["group:admins"], // The NUT server (isa): hosts svc:nut
 		"tag:k3s-server":     ["group:admins"], // labk3s's k3s server (clusterpi-leader): hosts svc:labk3s
 	},
@@ -305,20 +305,10 @@
 			"dst": ["svc:labk3s-argocd-api"],
 			"ip":  ["tcp:443"],
 		},
-		// Allow tag:o11y-collector to scrape all prometheus endpoints
-		{
-			"src":    ["tag:o11y-collector"],
-			"dst": ["*"],
-			"ip": [
-				"9100", // node-exporter
-				"9243", // rpi-exporter
-				"9116", // snmp-exporter
-				"8123", // cadvisor
-				"5252", // tailscale-exporter
-				"9666", // compute-blade-agent
-			],
-		},
-		// ...and to probe the services the homelab's availability SLOs measure
+		// The collector scrapes no device: every host's own Alloy reads its
+		// exporters and tailscaled (100.100.100.100), and the NAS's node_exporter
+		// is svc:node-exporter (below). It probes the services the homelab's
+		// availability SLOs measure
 		// (vars/group-o11y-collector.yaml, o11y_probes), on the paths users take:
 		// their Tailscale Services (svc:labk3s below, svc:hass, svc:nas).
 		{
@@ -401,15 +391,6 @@
 			"src": ["tag:buckle-server"],
 			"dst": ["svc:nfs"],
 			"ip":  ["tcp:2049"],
-		},
-		// Until the mount moves to svc:nfs: NFS v3, which
-		// can't go through a Service: portmapper, status, mountd, nfs, nlockmgr
-		// (rpcinfo -p on the NAS). tag:nas is the NAS itself, the only device
-		// carrying it.
-		{
-			"src": ["tag:buckle-server"],
-			"dst": ["tag:nas"],
-			"ip":  ["tcp:111", "tcp:662", "tcp:892", "tcp:2049", "tcp:4045"],
 		},
 		// Admins can manage tsidp and register OIDC clients. Their tokens carry
 		// groups: ["buckle-admins"], which Buckle's admin_acl checks: who
@@ -580,15 +561,18 @@
 			"proto":  "tcp",
 			"accept": ["1.1.1.1:443"],
 		},
-		{
-			"src":    "tag:o11y-collector",
-			"proto":  "tcp",
-			"accept": ["tag:buckle-agent:9100"],
-		},
+		// The collector scrapes no device directly, and reaches the NAS and
+		// labk3s only through their Services.
 		{
 			"src":   "tag:o11y-collector",
 			"proto": "tcp",
-			"deny":  ["nas-elbschloss:443", "tag:k3s-server:6443"],
+			"deny":  ["tag:buckle-agent:9100", "tag:buckle-agent:5252", "tag:k3s-node:5252", "nas-elbschloss:9100", "nas-elbschloss:443", "tag:k3s-server:6443"],
+		},
+		// The Buckle server reaches the NAS's NFS only through svc:nfs.
+		{
+			"src":   "tag:buckle-server",
+			"proto": "tcp",
+			"deny":  ["nas-elbschloss:2049", "nas-elbschloss:111", "nas-elbschloss:892"],
 		},
 		{
 			"src":   "group:vpn",

@@ -17,7 +17,8 @@ A grant says *who* (an attribute) may reach *what* (a Service):
   Service maps its ports to whichever host serves it, so the host can move
   or be joined by a second one without touching a client or a grant.
 - **Each Service has one host tag as its only autoApprover**, owned by
-  admins only: `tag:nas` may serve `svc:nas` and `svc:stream`,
+  admins only: `tag:nas` may serve `svc:nas`, `svc:stream`,
+  `svc:node-exporter` and `svc:nfs`,
   `tag:nut-server` `svc:nut`, `tag:k3s-server` `svc:labk3s`,
   `tag:buckle-server` `svc:buckle`. `tag:specht-labs-ingress` is also
   owned by `tag:k8s-operator`, which mints its proxies' keys. Never approve a
@@ -29,6 +30,8 @@ A grant says *who* (an attribute) may reach *what* (a Service):
 | `svc:nut` | isa | 3493 | `tag:buckle-agent` |
 | `svc:nas` | nas-elbschloss | 443, 5001, 6690 | `group:synology-users`, the collector (443) |
 | `svc:stream` | nas-elbschloss | 443 | `group:synology-users`, the collector |
+| `svc:node-exporter` | nas-elbschloss | 9100 | the collector |
+| `svc:nfs` | nas-elbschloss (NFS v4.1) | 2049 | `tag:buckle-server` (its nightly backup) |
 | `svc:hass` | hass-elbschloss (HA add-on `services:`) | 443, 8123 | `group:hass-users`, the collector |
 | `svc:labk3s` | clusterpi-leader | 6443 | admins, the collector |
 | `svc:lgtm`, `svc:argocd`, `svc:backstage` | the specht-labs `tailnet-ingress` ProxyGroup | 80 / 443 | LGTM push and query / admins |
@@ -42,14 +45,11 @@ device:
   Ceph hosts, the labk3s nodes, the compute blades and the Home Assistant
   boxes; `group:sre` to the Ceph hosts, the compute blades and the labk3s
   nodes. Root on the Pi clusters directly, elsewhere in check mode.
-- Scraping exporters (`tag:o11y-collector` -> `*` on the exporter ports).
 - Exit nodes, `autogroup:self`, the tailscaled web UI on 5252.
 - tsidp and tka: they read capability grants matched on their own address,
   and tsidp needs Funnel, which Services don't support. tsidp (`idp`) stays a
   device; don't rename it, because the OIDC issuer and the email claims are
   derived from its name.
-- NFS v3 to the NAS (portmapper and mountd on dynamic ports): only the Buckle
-  server's backup, to `nas-elbschloss`.
 - Ceph: clients reach every OSD at its own address. `tag:ceph` hosts among
   themselves, `tag:ceph-client` (the labk3s nodes) to them, on the mon and OSD
   ports. The OSD range skips 7480, RGW's port.
@@ -74,7 +74,7 @@ device:
 it (`policy.yaml`), one entity per tag, SSH rule, node attribute and set of
 auto approvers, the tests grouped by concern, and the few grants the services
 can't say themselves (`grants.yaml`: break-glass, exit nodes, capability
-grants, the collector's scrapes). Groups and their members are Backstage
+grants). Groups and their members are Backstage
 Groups and Users (SpechtLabs/backstage `catalog/org.yaml`).
 
 Every other grant comes from the services' own annotations, on the API:
@@ -121,6 +121,13 @@ replaces it.
   in DSM's package): its Service addresses pass every port through to the
   device (`nas.<tailnet>:8096` reaches Jellyfin), so grants to `svc:nas` and
   `svc:stream` list their ports. Test again after updating the package.
+- Metrics come from each host's own Alloy, which reads its exporters and
+  tailscaled (`http://100.100.100.100/metrics`, reachable only from the host
+  itself) without a grant. The collector scrapes only what can't run Alloy,
+  through a Service (`svc:node-exporter` on the NAS).
+- A Service forwarding to `localhost` reaches the backend from `::1` where
+  `localhost` resolves to it (the NAS): name `127.0.0.1` when the backend
+  checks the client address, like DSM's NFS rules.
 - The k8s operator applies a proxy's tags only when it creates the proxy. To
   retag, change the annotation, then delete the k8s Service and let Argo CD
   re-create it: the operator removes the old device, and the new one gets the

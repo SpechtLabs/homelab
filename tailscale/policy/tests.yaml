@@ -191,7 +191,7 @@ apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
 metadata:
   name: test-o11y-collector
-  title: The collector scrapes, but reaches the NAS and labk3s only through their Services
+  title: The collector scrapes no device, and reaches the NAS and labk3s only through their Services
 spec:
   type: test
   target: tailscale:sphinx-map
@@ -199,12 +199,25 @@ spec:
   system: tailnet
   appliesTo: [component:o11y-collector]
   tests:
-    - src: tag:o11y-collector
-      proto: tcp
-      accept: ['tag:buckle-agent:9100']
-    - src: tag:o11y-collector
-      proto: tcp
-      deny: ['nas-elbschloss:443', 'tag:k3s-server:6443']
+    src: tag:o11y-collector
+    proto: tcp
+    deny: ['tag:buckle-agent:9100', 'tag:buckle-agent:5252', 'tag:k3s-node:5252', 'nas-elbschloss:9100', 'nas-elbschloss:443', 'tag:k3s-server:6443']
+---
+apiVersion: specht-labs.de/v1alpha1
+kind: Tailscale
+metadata:
+  name: test-buckle-nfs
+  title: The Buckle server reaches the NAS's NFS only through svc:nfs
+spec:
+  type: test
+  target: tailscale:sphinx-map
+  owner: group:spechtlabs
+  system: tailnet
+  appliesTo: [component:buckle-server]
+  tests:
+    src: tag:buckle-server
+    proto: tcp
+    deny: ['nas-elbschloss:2049', 'nas-elbschloss:111', 'nas-elbschloss:892']
 ---
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
