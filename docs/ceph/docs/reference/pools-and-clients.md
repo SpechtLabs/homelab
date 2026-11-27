@@ -27,7 +27,7 @@ Mon cipher settings (`ceph mon dump`): `auth_allowed_ciphers aes, aes256k`, `aut
 
 | Thing | Value |
 |---|---|
-| StorageClass | `ceph-rbd` (provisioner `rbd.csi.ceph.com`, not the default class) |
+| StorageClass | `ceph-rbd` (provisioner `rbd.csi.ceph.com`), labk3s's default class since 2026-11-27 |
 | Pool | `k3s` |
 | clusterID | `85412c6c-e39c-11f1-ba59-2ccf678b0944` |
 | Image features | `layering,exclusive-lock,object-map,fast-diff` |

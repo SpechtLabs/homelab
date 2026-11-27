@@ -25,7 +25,7 @@ Use this when you want something new on labk3s, or want to change a value, image
 3. Add a `catalog-info.yaml` next to the overlay (`system: labk3s`, `dependsOn: [resource:labk3s]`, name with a `-labk3s` suffix) so it shows up in Backstage; see any neighbour.
 4. Render, commit and push as above.
 
-For persistent volumes, set `storageClassName: ceph-rbd`. The cluster's default class is still `local-path`, which pins the data to one node's disk.
+Persistent volumes come from `ceph-rbd`, the cluster's default class, so a PVC needs no `storageClassName`. Name `local-path` only for data that may live on one node's disk.
 
 ## Check it worked
 

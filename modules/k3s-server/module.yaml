@@ -54,6 +54,24 @@ tasks:
     id: svc-k3s
     removal: leave
 
+  # ceph-rbd is the default StorageClass (k8s-deployment apps/ceph-csi-rbd).
+  # k3s's packaged local-storage manifest marks local-path as the default and
+  # is re-applied on every k3s start, so k3s skips it (a .skip file, k3s's own
+  # mechanism) and local-path stays, not default: TKA's tsnet state lives on
+  # it. The price: k3s no longer upgrades the local-path provisioner.
+  - file.copy:
+      src: local-storage.yaml.skip
+      dest: /var/lib/rancher/k3s/server/manifests/local-storage.yaml.skip
+      mode: "0644"
+    id: skip-local-storage
+  - command.run:
+      run: [/usr/local/bin/k3s, kubectl, annotate, storageclass, local-path, 'storageclass.kubernetes.io/is-default-class=false', --overwrite]
+      unless: >-
+        test "$(/usr/local/bin/k3s kubectl get storageclass local-path
+        -o jsonpath='{.metadata.annotations.storageclass\.kubernetes\.io/is-default-class}')" = false
+    id: local-path-not-default
+    removal: leave
+
   # Leftovers from k3s-ansible: the token moved into config.yaml, upgrades no
   # longer go through the install script.
   - file.absent: { path: /etc/systemd/system/k3s.service.env }

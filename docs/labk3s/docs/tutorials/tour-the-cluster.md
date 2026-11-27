@@ -56,7 +56,7 @@ kubectl --context labk3s get storageclass
 kubectl --context labk3s -n ceph-csi-rbd get pods -o wide
 ```
 
-`ceph-rbd` is the Ceph-backed class. `local-path` is still the default, so a PVC that names no class lands on a node's disk. The node plugin runs one pod per node in the host network, which is why its pod IPs are the nodes' tailnet addresses.
+`ceph-rbd` is the Ceph-backed class and the default, so a PVC that names no class lands on Ceph. `local-path` (a directory on one node's disk) is still there for TKA's state. The node plugin runs one pod per node in the host network, which is why its pod IPs are the nodes' tailnet addresses.
 
 ## 7. Find the alerts
 

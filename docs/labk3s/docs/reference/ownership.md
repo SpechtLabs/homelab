@@ -31,19 +31,14 @@ Chart versions as of 2026-11-26; they're pinned in each `kustomization.yaml` and
 
 ## k3s itself
 
-k3s ships CoreDNS, metrics-server and local-path-provisioner, with manifests under `/var/lib/rancher/k3s/server/manifests`; Traefik is off. The bundled StorageClass `local-path` is the cluster's **default**, so a PVC without `storageClassName` lands in a directory on one node's root filesystem. `ceph-rbd` must be named explicitly. As of 2026-11-27 the only PVCs are TKA's two `tsnet-state` volumes, both `local-path`.
+k3s ships CoreDNS, metrics-server and local-path-provisioner, with manifests under `/var/lib/rancher/k3s/server/manifests`; Traefik is off. Since 2026-11-27 `ceph-rbd` is the **default** StorageClass (its Helm values in k8s-deployment). k3s's `local-storage.yaml` would mark `local-path` default again on every start, so [modules/k3s-server](https://github.com/SpechtLabs/homelab/blob/main/modules/k3s-server/module.yaml) puts a `local-storage.yaml.skip` next to it (k3s then ignores that manifest) and unmarks `local-path`. The provisioner keeps running, but k3s no longer upgrades it. The only `local-path` PVCs are TKA's two `tsnet-state` volumes.
 
-## Nobody (yet)
+## Leftovers, removed
 
-No Application in `argo-apps/labk3s/` deploys these, and nothing else in either repo does. Contents as of 2026-11-27:
-
-| Namespace | What's in it | Cluster-wide leftovers |
-|---|---|---|
-| `capi-system` | Deployment `capi-controller-manager` (cluster-api v1.13.2), its webhook Service and cert (cert-manager `Certificate capi-serving-cert`); no `Cluster` objects anywhere | cluster-api, CAPH and kubeadm CRDs; validating and mutating webhooks for `capi`, `capi-kubeadm-bootstrap`, `capi-kubeadm-control-plane` and `caph`, whose `caph-system` and `capi-kubeadm-*-system` Services no longer exist (`failurePolicy: Fail`, scoped to those CRDs) |
-| `chaos-mesh` | Chaos Mesh v2.7.0: controller-manager (3), dashboard, DNS server, `chaos-daemon` DaemonSet on all nodes | Chaos Mesh CRDs and webhooks; a `NetworkChaos` `gossip/test1` (partition, 2024-11-03, stopped) |
-| `gossip` | DaemonSet `gossip-testing` (`ghcr.io/cedi/gossip-experiment:main`) on all five nodes, Service `gossip` | |
-| `observability` | nothing but `kube-root-ca.crt` | |
-| `opentelemetry-operator-system` | only the operator's webhook cert Secret | OpenTelemetry operator CRDs |
-| `tka-dev` | nothing but `kube-root-ca.crt` | |
-
-None has a PVC or a secret beyond webhook certificates. They're experiments from before the cluster was GitOps-managed; nothing on labk3s depends on them.
+On 2026-11-27 six namespaces that no Application deployed were deleted:
+`capi-system` (cluster-api with no clusters), `chaos-mesh` (Chaos Mesh v2.7.0
+and a stopped `NetworkChaos` from 2024), `gossip` (an experiment DaemonSet),
+`observability`, `opentelemetry-operator-system` and `tka-dev` (empty or a
+webhook cert). With them went their webhook configurations, ClusterRoles and
+bindings, and the cluster-api, Chaos Mesh and OpenTelemetry operator CRDs.
+None had a volume. Anything on labk3s now comes from Buckle or Argo CD.

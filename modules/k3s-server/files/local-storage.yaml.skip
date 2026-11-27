@@ -1,0 +1,3 @@
+# Managed by Buckle (modules/k3s-server). k3s skips a packaged manifest that
+# has a .skip file next to it: local-storage.yaml would set local-path back to
+# the default StorageClass on every k3s start; ceph-rbd is the default.
