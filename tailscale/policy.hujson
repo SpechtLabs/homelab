@@ -147,7 +147,7 @@
 			// Home Assistant serves svc:hass
 			// The add-on's `services:`: web UI on tcp:443 (HTTPS) and tcp:8123 (plain HTTP),
 			// served by hass-elbschloss.
-			"svc:hass": ["tag:hass-server", "tag:smarthome"],
+			"svc:hass": ["tag:hass-server"],
 			// The k3s server serves svc:labk3s
 			// The labk3s API (modules/k3s-server), tcp:6443 passed through to k3s.
 			"svc:labk3s": ["tag:k3s-server"],
