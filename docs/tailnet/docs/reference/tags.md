@@ -40,9 +40,8 @@ the exception, because their operator mints the proxies' keys.
 | `tag:labk3s-ingress` | admins, `tag:k3s-operator` | labk3s-ingress-0, -1 | `svc:labk3s-argocd-api`, `svc:lab-argocd` |
 
 `svc:hass` had `tag:smarthome` as its approver until 2026-11-27, which
-hass-schiltach carries too. `approve-hass` lists both tags while
-hass-elbschloss changes over; once it carries `tag:hass-server`,
-`tag:smarthome` comes out of the approver.
+hass-schiltach carries too. Since then only `tag:hass-server`, which only
+hass-elbschloss carries, approves it.
 
 ## Operator tags
 

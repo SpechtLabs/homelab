@@ -55,10 +55,9 @@ spec:
   system: tailnet
   appliesTo: [component:home-assistant]
   services:
-    # tag:smarthome only until hass-elbschloss carries tag:hass-server (admin
-    # console and the add-on's advertise_tags); then drop it, so hass-schiltach
-    # can't serve svc:hass.
-    svc:hass: [tag:hass-server, tag:smarthome]
+    # Only the box at home (tag:hass-server since 2026-11-27, also in the
+    # add-on's advertise_tags); hass-schiltach carries tag:smarthome only.
+    svc:hass: [tag:hass-server]
 ---
 apiVersion: specht-labs.de/v1alpha1
 kind: Tailscale
