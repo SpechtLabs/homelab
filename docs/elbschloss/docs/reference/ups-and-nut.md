@@ -153,6 +153,7 @@ From `ups-metrics` on isa, every 30 s, all with `ups="ups"` (plus `job="integrat
 | `ups_temperature_celsius` | `ups.temperature` |
 | `ups_test_failed`, `ups_test_last_timestamp_seconds` | `ups.test.result` (1 if it mentions fail, error or warn), `ups.test.date` |
 | `ups_clients` | lines of `upsc -c ups@localhost` |
+| `ups_upstream_up{upstream}` | `upsc ups@192.168.0.154 ups.status` from isa, straight to the UPS Tower: 0 means the proxy serves stale data |
 | `ups_primary_monitor_up` | `systemctl is-active nut-monitor` on isa: the primary upsmon runs (logged in is the Buckle check `primary`) |
 | `ups_metrics_up`, `ups_metrics_last_success_timestamp_seconds`, `ups_metrics_duration_seconds` | the read itself; a failed read keeps the last success's timestamp. It also reads `ups.status` from the UPS Tower directly: unreachable, or OL/OB differing from the proxy's, is a failed read |
 

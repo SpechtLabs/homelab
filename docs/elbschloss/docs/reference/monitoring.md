@@ -65,6 +65,7 @@ Infrastructure, every minute), on `ups-metrics` from isa
 | `ups-runtime-low` | `UPS — less than 10 minutes of battery left` | critical | on battery and `ups_battery_runtime_seconds` < 600 for 1m |
 | `ups-battery-low` | `UPS — battery low` | critical | `ups_status{flag="LB"}` |
 | `ups-forced-shutdown` | `UPS — forced shutdown (FSD) set` | critical | `ups_status{flag="FSD"}` |
+| `ups-upstream-unreachable` | `UPS — UPS Tower unreachable from isa` | critical | `ups_upstream_up` 0 for 3m: isa's proxy serves stale data |
 | `ups-metrics-stale` | `UPS — metrics stale` | warning | last successful read older than 300 s, for 5m |
 | `ups-metrics-missing` | `UPS — no metrics recorded` | warning | no `ups_metrics_last_success_timestamp_seconds` for 15m |
 | `ups-replace-battery` | `UPS — replace the battery` | warning | `ups_status{flag="RB"}` or `ups_test_failed`, for 1h |

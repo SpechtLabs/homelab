@@ -108,7 +108,20 @@ def upsc(args, timeout):
     return res.stdout
 
 
-def collect(out, ups, timeout, upstream=None):
+def read_upstream(ups, upstream, timeout):
+    """ups.status straight from the UPS Tower, or None if it can't be read."""
+    try:
+        status = upsc(["%s@%s" % (ups, upstream), "ups.status"], timeout).strip()
+    except Exception as e:  # unreachable, refused, timed out
+        print("ups: upstream %s: %s: %s" % (upstream, type(e).__name__, e), file=sys.stderr)
+        return None
+    if not set(status.split()) & {"OL", "OB"}:
+        print("ups: upstream %s: no OL/OB in ups.status %r" % (upstream, status), file=sys.stderr)
+        return None
+    return status
+
+
+def collect(out, ups, timeout, upstream=None, upstream_status=None):
     lbl = {"ups": ups}
     variables = {}
     for line in upsc(["%s@localhost" % ups], timeout).splitlines():
@@ -124,13 +137,11 @@ def collect(out, ups, timeout, upstream=None):
         # The proxy's numbers are only as fresh as its link to the UPS Tower.
         # OL/OB are compared (not CHRG etc.): the repeater polls every 2 s, and
         # a flip caught between the two reads fails one run, not the next.
-        status = upsc(["%s@%s" % (ups, upstream), "ups.status"], timeout).strip()
-        real = set(status.split()) & {"OL", "OB"}
-        if not real:
-            raise RuntimeError("upstream %s: no OL/OB in ups.status %r" % (upstream, status))
-        if real != flags & {"OL", "OB"}:
+        if upstream_status is None:
+            raise RuntimeError("upstream %s unreachable: the proxy's data can't be trusted" % upstream)
+        if set(upstream_status.split()) & {"OL", "OB"} != flags & {"OL", "OB"}:
             raise RuntimeError("proxy says %s, upstream %s says %s: dummy-ups is serving stale data"
-                               % (" ".join(sorted(flags)), upstream, status))
+                               % (" ".join(sorted(flags)), upstream, upstream_status))
     for flag in sorted(set(FLAGS) | flags):
         out.add("ups_status", 1 if flag in flags else 0, dict(lbl, flag=flag),
                 "1 while the UPS (or upsd, for FSD) reports this ups.status flag.")
@@ -175,8 +186,9 @@ def main():
     out = Out()
     start = time.monotonic()
     ok = 1
+    upstream_status = read_upstream(a.ups, a.upstream, a.timeout) if a.upstream else None
     try:
-        collect(out, a.ups, a.timeout, a.upstream)
+        collect(out, a.ups, a.timeout, a.upstream, upstream_status)
         last_success = time.time()
     except Exception as e:  # report it, and leave a file that says so
         print("ups: %s: %s" % (type(e).__name__, e), file=sys.stderr)
@@ -184,6 +196,10 @@ def main():
         ok = 0
         last_success = previous_success(path)
     out.add("ups_metrics_up", ok, lbl, "1 if the last read of the UPS through upsd succeeded.")
+    if a.upstream:
+        out.add("ups_upstream_up", 0 if upstream_status is None else 1, dict(lbl, upstream=a.upstream),
+                "1 if this host read ups.status from the UPS Tower directly. 0: the proxy (dummy-ups) has "
+                "lost it and serves its last values; no host would see a power loss.")
     out.add(LAST_SUCCESS, last_success, lbl, "When the UPS was last read successfully.")
     out.add("ups_metrics_duration_seconds", time.monotonic() - start, lbl, "How long reading the UPS took.")
     write_textfile(path, out)

@@ -59,6 +59,27 @@ see FSD and follows DSM's own UPS settings.
 Once the power is back, see [Respond to a power cut](respond-to-a-power-cut.md#once-power-is-back).
 FSD clears when upsd starts again with isa.
 
+## UPS — UPS Tower unreachable from isa {#ups-upstream-unreachable}
+
+isa can't read `ups.status` from the UPS Tower itself. isa's proxy (`dummy-ups`) then keeps
+serving the last values it had, so isa, every client and Grafana see a UPS that never changes:
+in a power cut no host shuts down, and the battery runs flat under all of them. This happened
+on 2026-11-28, when the UPS Tower's DHCP lease moved it from .156 to .154.
+
+1. Read the UPS Tower directly from isa:
+
+    ```sh
+    ssh cedi@isa "bash -c 'upsc ups@192.168.0.154 ups.status'"
+    ```
+
+2. `No route to host` or a timeout: find the UPS Tower's current address from the Mac with
+    `ping UPSTower.local`. If it moved, give it back its reserved address on the router, or set
+    `nut_upstream_host` in `modules/nut-server/module.yaml` (and DSM's UPS settings) to the new
+    one and push. No answer at all: the UPS Tower's network card or its link is down; open its
+    web UI or power-cycle the network card.
+3. The answer differs from `upsc ups@localhost ups.status`: restart the proxy with
+    `sudo systemctl restart nut-driver@ups` on isa.
+
 ## UPS — metrics stale {#ups-metrics-stale}
 
 isa hasn't read the UPS through its own upsd for over 5 minutes. If isa shut down in a power
