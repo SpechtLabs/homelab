@@ -129,7 +129,7 @@ node-exporter runs with `--collector.disable-defaults` plus `stat`, `time`, `cpu
 |---|---|---|
 | SSO through tsidp | Control Panel > Domain/LDAP > SSO Client | redirect URI `https://nas.sphinx-map.ts.net`, no trailing slash; tsidp client `synology` |
 | NFS permissions | Control Panel > Shared Folder > Edit > NFS Permissions | `127.0.0.1`, non-privileged ports allowed |
-| UPS | `/usr/syno/etc/ups/synoups.conf` | `ups_mode="slave"`, `upsslave_server="192.168.0.156"`: a network UPS client of the UPS Tower, not of isa |
+| UPS | `/usr/syno/etc/ups/synoups.conf` | `ups_mode="slave"`, `upsslave_server="192.168.0.154"`: a network UPS client of the UPS Tower, not of isa |
 
 The UPS file also has `ups_acl="192.168.0.72|192.168.0.62"` (the NUC and Home Assistant). That's
 an ACL for a NUT server, which the NAS doesn't run any more.

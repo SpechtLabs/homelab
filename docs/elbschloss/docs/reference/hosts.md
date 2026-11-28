@@ -14,7 +14,7 @@ and [catalog/home-assistant.yaml](https://github.com/SpechtLabs/homelab/blob/mai
 | nuc | Plain host; still runs Incus and Docker, unmanaged | GIGABYTE mini PC, Celeron; Ubuntu 24.10 (end of life) | 192.168.0.72 (static) | `nuc` | 100.122.149.90 | `tag:buckle-agent` | `ssh cedi@nuc` |
 | NAS | DSM, Drive, NFS, Jellyfin, exporters | Synology DS923+; DSM 7.4.1; Tailscale 1.98.4 (DSM package) | 192.168.0.64 | `nas-elbschloss` | 100.71.201.45 | `tag:nas`, `tag:tsidp-client` | `ssh -J cedi@nyx king@nas.local` (sudo works) |
 | hass | Home Assistant at home | not recorded in the repo | 192.168.0.62 | `hass-elbschloss` | 100.75.135.70 | `tag:smarthome`, `tag:o11y-agent` | see [Home Assistant](home-assistant.md) |
-| UPS Tower | The UPS; serves NUT itself (UPS name `ups`) | Ubiquiti `TOWER_1000VA_230V`, line-interactive | 192.168.0.156, `UPSTower.local` (keep the DHCP lease fixed) | not on the tailnet | | | its own web UI |
+| UPS Tower | The UPS; serves NUT itself (UPS name `ups`) | Ubiquiti `TOWER_1000VA_230V`, line-interactive | 192.168.0.154, `UPSTower.local` (keep the DHCP lease fixed) | not on the tailnet | | | its own web UI |
 | Router | Default gateway and DNS for the LAN (seen on isa) | not recorded in the repo | 192.168.0.1 | | | | |
 
 On isa and the NUC the login shell is fish; wrap remote commands in `bash -c '...'`. The NAS's

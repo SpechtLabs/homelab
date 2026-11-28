@@ -5,9 +5,12 @@ needs: [alloy]               # the textfile directory ups-metrics writes to
 tags: [power]
 vars:
   # The Ubiquiti UPS Tower (UPSTower.local) serves NUT itself, UPS name `ups`.
-  # Keep its DHCP lease fixed. The proxy only reads it, which needs no login.
+  # Keep its DHCP lease fixed: on 2026-11-28 it moved from .156 to .154 and
+  # dummy-ups went on serving its last values (OL) for the whole fleet, through
+  # a real outage. isa has no mDNS resolver, so this has to be the address.
+  # ups-metrics reads it directly too, so a lost UPS Tower shows as stale. The proxy only reads it, which needs no login.
   # (Not the Synology on .64: it has no NUT server enabled.)
-  nut_upstream_host: 192.168.0.156
+  nut_upstream_host: 192.168.0.154
   # upsd.users: `admin` is the primary's login (isa's own upsmon, the only one
   # allowed to set FSD), `monuser` the secondaries'.
   nut_admin_user: admin
@@ -95,6 +98,13 @@ health:
   - name: proxied-ups
     command:
       run: ['upsc', '{{ vars.nut_ups_name }}@localhost', 'ups.status']
+      expect: { exit: 0 }
+  # ...and the UPS Tower itself: dummy-ups keeps serving its last values when
+  # it loses the UPS Tower (it did, as OL, through an outage), so proxied-ups
+  # alone passes on a dead upstream.
+  - name: upstream-ups
+    command:
+      run: ['upsc', '{{ vars.nut_ups_name }}@{{ vars.nut_upstream_host }}', 'ups.status']
       expect: { exit: 0 }
   # isa's upsmon is logged in to its own upsd as the primary. Without it
   # nobody sets FSD: the secondaries still go on low battery after HOSTSYNC,

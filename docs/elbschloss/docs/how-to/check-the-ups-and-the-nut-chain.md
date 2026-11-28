@@ -20,15 +20,18 @@ or can't read the UPS through `svc:nut`. The steps below confirm on the hosts wh
     You should see `ups.status: OL`, `battery.charge: 100` and a `battery.runtime` in seconds
     (about 1160 at 22 % load). `OB` means on battery, `LB` battery low.
 
-2. If step 1 fails, ask the UPS Tower directly, from isa:
+2. Ask the UPS Tower directly, from isa, even if step 1 looked fine: when `dummy-ups` loses the
+    UPS Tower it keeps serving the last values it had, so step 1 can show `OL` during an outage.
 
     ```sh
-    ssh cedi@isa "bash -c 'upsc ups@192.168.0.156 ups.status'"
+    ssh cedi@isa "bash -c 'upsc ups@192.168.0.154 ups.status'"
     ```
 
-    `OL` here but not in step 1: the proxy on isa is the problem; go to step 3. No answer here:
-    the UPS or its network is the problem. Check that 192.168.0.156 still has its address (its
-    DHCP lease has to stay fixed) and open its web UI.
+    A different status here than in step 1: the proxy on isa is the problem; go to step 3. No
+    answer here: the UPS or its network is the problem. Check that the UPS Tower still has
+    192.168.0.154 (`ping UPSTower.local` from the Mac shows its current address; its DHCP lease
+    has to stay fixed) and open its web UI. A new address goes into `nut_upstream_host`
+    (modules/nut-server) and DSM's UPS settings.
 
 3. Check the services on isa:
 

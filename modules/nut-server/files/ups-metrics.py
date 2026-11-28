@@ -9,7 +9,10 @@ node_exporter picks it up. Read-only: upsc needs no login.
 
 A failed read writes ups_metrics_up 0 and keeps the last success's timestamp,
 so "stale" is something an alert can see; the other numbers disappear rather
-than freeze.
+than freeze. With --upstream it also reads ups.status from the UPS Tower
+directly: dummy-ups keeps serving its last values when it loses the UPS Tower
+(on 2026-11-28 it served OL through an outage), so an unreachable upstream, or
+one that disagrees with the proxy on OL/OB, counts as a failed read.
 """
 
 import argparse
@@ -105,7 +108,7 @@ def upsc(args, timeout):
     return res.stdout
 
 
-def collect(out, ups, timeout):
+def collect(out, ups, timeout, upstream=None):
     lbl = {"ups": ups}
     variables = {}
     for line in upsc(["%s@localhost" % ups], timeout).splitlines():
@@ -116,6 +119,18 @@ def collect(out, ups, timeout):
         raise RuntimeError("no ups.status from upsd")
 
     flags = set(variables["ups.status"].split())
+
+    if upstream:
+        # The proxy's numbers are only as fresh as its link to the UPS Tower.
+        # OL/OB are compared (not CHRG etc.): the repeater polls every 2 s, and
+        # a flip caught between the two reads fails one run, not the next.
+        status = upsc(["%s@%s" % (ups, upstream), "ups.status"], timeout).strip()
+        real = set(status.split()) & {"OL", "OB"}
+        if not real:
+            raise RuntimeError("upstream %s: no OL/OB in ups.status %r" % (upstream, status))
+        if real != flags & {"OL", "OB"}:
+            raise RuntimeError("proxy says %s, upstream %s says %s: dummy-ups is serving stale data"
+                               % (" ".join(sorted(flags)), upstream, status))
     for flag in sorted(set(FLAGS) | flags):
         out.add("ups_status", 1 if flag in flags else 0, dict(lbl, flag=flag),
                 "1 while the UPS (or upsd, for FSD) reports this ups.status flag.")
@@ -151,6 +166,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--dir", required=True, help="node_exporter textfile directory")
     ap.add_argument("--ups", default="ups", help="UPS name on the local upsd")
+    ap.add_argument("--upstream", help="the UPS Tower's address: also read it directly")
     ap.add_argument("--timeout", type=float, default=10.0)
     a = ap.parse_args()
 
@@ -160,7 +176,7 @@ def main():
     start = time.monotonic()
     ok = 1
     try:
-        collect(out, a.ups, a.timeout)
+        collect(out, a.ups, a.timeout, a.upstream)
         last_success = time.time()
     except Exception as e:  # report it, and leave a file that says so
         print("ups: %s: %s" % (type(e).__name__, e), file=sys.stderr)

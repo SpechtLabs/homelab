@@ -47,4 +47,4 @@ spec:
     Users: a monitor account for upsmon clients (secondary), an admin
     account; passwords NUT_MONITOR_PASSWORD / NUT_ADMIN_PASSWORD in the Buckle
     server's secret store.
-    Upstream: ups@192.168.0.156 (the UPS Tower), as a secondary.
+    Upstream: ups@192.168.0.154 (the UPS Tower), as a secondary.

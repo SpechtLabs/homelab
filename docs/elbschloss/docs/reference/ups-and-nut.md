@@ -11,9 +11,9 @@ from `upsc ups@localhost` on isa, 2026-11-26.
 | | |
 |---|---|
 | Model | Ubiquiti `TOWER_1000VA_230V`, line-interactive, 1000 VA / 600 W nominal |
-| Address | 192.168.0.156 (`UPSTower.local`), NUT on 3493 with SSL, UPS name `ups` |
+| Address | 192.168.0.154 (`UPSTower.local`), NUT on 3493 with SSL, UPS name `ups` |
 | Logins | accepts any; reading it needs none, and isa's proxy only reads |
-| Instant commands | `load.off`, `load.on`, `shutdown.reboot`, `test.battery.start` (`upscmd -l ups@192.168.0.156`); no `ups.delay.shutdown`, no `battery.charge.low` or `battery.runtime.low` |
+| Instant commands | `load.off`, `load.on`, `shutdown.reboot`, `test.battery.start` (`upscmd -l ups@192.168.0.154`); no `ups.delay.shutdown`, no `battery.charge.low` or `battery.runtime.low` |
 | Runtime | `battery.runtime` 1157 s (about 19 min) at `ups.load` 22 % with everything on it |
 | Self-test | weekly (`ups.test.interval` 604800); last 2026-11-25, `done and passed` |
 
@@ -21,7 +21,7 @@ from `upsc ups@localhost` on isa, 2026-11-26.
 
 ```mermaid
 flowchart LR
-  ups["UPS Tower<br/>192.168.0.156:3493 (ups)"]
+  ups["UPS Tower<br/>192.168.0.154:3493 (ups)"]
   subgraph isa
     drv["nut-driver@ups<br/>dummy-ups, repeater, 2 s poll"]
     upsd["upsd :3493 (0.0.0.0)"]
@@ -45,7 +45,7 @@ per logged-in upsmon: 16 with every Pi, the NUC and isa's primary up. Home Assis
 variables and doesn't log in, so it isn't counted and doesn't take part in the shutdown.
 
 The FSD flag lives in isa's upsd, not in the UPS: `upsc ups@localhost ups.status` shows it,
-`upsc ups@192.168.0.156` doesn't. The NAS watches the UPS Tower directly and never sees it.
+`upsc ups@192.168.0.154` doesn't. The NAS watches the UPS Tower directly and never sees it.
 
 ## Who shuts down when
 
@@ -83,7 +83,7 @@ The FSD flag lives in isa's upsd, not in the UPS: `upsc ups@localhost ups.status
 | Host | File | Template |
 |---|---|---|
 | isa | `/etc/nut/nut.conf` (`MODE=netserver`) | [nut-server/files/nut.conf.j2](https://github.com/SpechtLabs/homelab/blob/main/modules/nut-server/files/nut.conf.j2) |
-| isa | `/etc/nut/ups.conf` (`dummy-ups`, `port = ups@192.168.0.156`) | [ups.conf.j2](https://github.com/SpechtLabs/homelab/blob/main/modules/nut-server/files/ups.conf.j2) |
+| isa | `/etc/nut/ups.conf` (`dummy-ups`, `port = ups@192.168.0.154`) | [ups.conf.j2](https://github.com/SpechtLabs/homelab/blob/main/modules/nut-server/files/ups.conf.j2) |
 | isa | `/etc/nut/upsd.conf` | [upsd.conf.j2](https://github.com/SpechtLabs/homelab/blob/main/modules/nut-server/files/upsd.conf.j2) |
 | isa | `/etc/nut/upsd.users` | [upsd.users.j2](https://github.com/SpechtLabs/homelab/blob/main/modules/nut-server/files/upsd.users.j2) |
 | isa | `/etc/nut/upsmon.conf` | [nut-server/files/upsmon.conf.j2](https://github.com/SpechtLabs/homelab/blob/main/modules/nut-server/files/upsmon.conf.j2) |
@@ -117,7 +117,7 @@ it ([bootstrap/README.md](https://github.com/SpechtLabs/homelab/blob/main/bootst
 |---|---|---|
 | `nut_server_host` | `nut.{{ vars.tailnet }}` | vars/defaults.yaml |
 | `nut_ups_name` | `ups` | vars/defaults.yaml |
-| `nut_upstream_host` | `192.168.0.156` | nut-server module.yaml |
+| `nut_upstream_host` | `192.168.0.154` | nut-server module.yaml |
 | `nut_admin_user` / `nut_monitor_user` | `admin` / `monuser` | nut-server (`nut_monitor_user` also in nut-client) |
 | `nut_listen` | `0.0.0.0` | nut-server |
 | `nut_hostsync` | `30` | nut-server |
@@ -131,6 +131,7 @@ it ([bootstrap/README.md](https://github.com/SpechtLabs/homelab/blob/main/bootst
 |---|---|---|---|
 | nut-server | `upsd` | TCP connect to `127.0.0.1:3493` | yes |
 | nut-server | `proxied-ups` | `upsc ups@localhost ups.status` exits 0 | yes |
+| nut-server | `upstream-ups` | `upsc ups@192.168.0.154 ups.status` exits 0: `dummy-ups` keeps serving its last values when it loses the UPS Tower, so `proxied-ups` alone passes | yes |
 | nut-server | `primary` | `nut-monitor` active, and this boot's last upsd log line for `admin@` is `logged into UPS [ups]` | yes |
 | nut-server | `svc-nut` | `upsc ups@nut.sphinx-map.ts.net ups.status` exits 0 | no (a fresh host can beat the policy that approves it) |
 | nut-server | `metrics` | `ups.prom` younger than 3 min with `ups_metrics_up{ups="ups"} 1` | no |
@@ -153,7 +154,7 @@ From `ups-metrics` on isa, every 30 s, all with `ups="ups"` (plus `job="integrat
 | `ups_test_failed`, `ups_test_last_timestamp_seconds` | `ups.test.result` (1 if it mentions fail, error or warn), `ups.test.date` |
 | `ups_clients` | lines of `upsc -c ups@localhost` |
 | `ups_primary_monitor_up` | `systemctl is-active nut-monitor` on isa: the primary upsmon runs (logged in is the Buckle check `primary`) |
-| `ups_metrics_up`, `ups_metrics_last_success_timestamp_seconds`, `ups_metrics_duration_seconds` | the read itself; a failed read keeps the last success's timestamp |
+| `ups_metrics_up`, `ups_metrics_last_success_timestamp_seconds`, `ups_metrics_duration_seconds` | the read itself; a failed read keeps the last success's timestamp. It also reads `ups.status` from the UPS Tower directly: unreachable, or OL/OB differing from the proxy's, is a failed read |
 
 From `nut-client-metrics` on every NUT client, every 30 s, all with `ups="ups"` (plus
 `job="integrations/unix"`, `instance="<host>:9100"`). upsd sees every client as `127.0.0.1`

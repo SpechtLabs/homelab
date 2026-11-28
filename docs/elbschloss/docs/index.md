@@ -10,7 +10,7 @@ Assistant, and the two x86 boxes, isa and the NUC. The Backstage System is `elbs
 | Part | What it is | Configured in |
 |---|---|---|
 | Home LAN | `192.168.0.0/24`. Carries what mustn't wait for Tailscale: NTP and PTP from timepi, the UPS's NUT server | [catalog/hardware.yaml](https://github.com/SpechtLabs/homelab/blob/main/catalog/hardware.yaml) (`home-lan`) |
-| UPS Tower | Ubiquiti UPS Tower 1000 VA at `192.168.0.156`, runs its own NUT server | the UPS itself; [catalog/hardware.yaml](https://github.com/SpechtLabs/homelab/blob/main/catalog/hardware.yaml) (`ups`) |
+| UPS Tower | Ubiquiti UPS Tower 1000 VA at `192.168.0.154`, runs its own NUT server | the UPS itself; [catalog/hardware.yaml](https://github.com/SpechtLabs/homelab/blob/main/catalog/hardware.yaml) (`ups`) |
 | NUT | isa re-exports the UPS as `svc:nut` and is the primary that sets FSD on low battery; upsmon on every Pi and the NUC powers them off; UPS metrics and alerts | [modules/nut-server](https://github.com/SpechtLabs/homelab/tree/main/modules/nut-server), [modules/nut-client](https://github.com/SpechtLabs/homelab/tree/main/modules/nut-client) |
 | Synology NAS | DS923+ on DSM 7.4.1: DSM, Drive, NFS, Jellyfin, exporters, CouchDB for Obsidian, GitHub backup; reached as `svc:nas`, `svc:stream`, `svc:nfs`, `svc:node-exporter` | DSM by hand; compose projects in [nas/](https://github.com/SpechtLabs/homelab/tree/main/nas) |
 | Home Assistant | `hass-elbschloss`, reached as `svc:hass`; backs up to the NAS | Home Assistant itself; [catalog/home-assistant.yaml](https://github.com/SpechtLabs/homelab/blob/main/catalog/home-assistant.yaml) |

@@ -23,7 +23,7 @@ metadata:
   name: ups
   title: UPS Tower
   description: >-
-    Ubiquiti UPS Tower (UPSTower.local, 192.168.0.156). Serves NUT itself (UPS
+    Ubiquiti UPS Tower (UPSTower.local, 192.168.0.154). Serves NUT itself (UPS
     name `ups`); isa re-exports it to the fleet (nut-server).
   tags: [power]
 spec:

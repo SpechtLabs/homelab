@@ -5,7 +5,7 @@ After=nut-server.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/ups-metrics --dir {{ vars.o11y_textfile_dir }} --ups {{ vars.nut_ups_name }}
+ExecStart=/usr/local/sbin/ups-metrics --dir {{ vars.o11y_textfile_dir }} --ups {{ vars.nut_ups_name }} --upstream {{ vars.nut_upstream_host }}
 TimeoutStartSec=30s
 # Root only to write the textfile directory; upsc itself needs no login.
 ReadWritePaths={{ vars.o11y_textfile_dir }}

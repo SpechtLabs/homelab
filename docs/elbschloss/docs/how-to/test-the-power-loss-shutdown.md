@@ -65,7 +65,7 @@ safe test checks each link and the rendered config; it doesn't cut power.
     ssh -J cedi@nyx king@nas.local 'sudo grep -E "^(ups_mode|upsslave_server|upsslave_enabled)" /usr/syno/etc/ups/synoups.conf'
     ```
 
-    `ups_mode="slave"`, `upsslave_server="192.168.0.156"`, `upsslave_enabled="yes"`.
+    `ups_mode="slave"`, `upsslave_server="192.168.0.154"`, `upsslave_enabled="yes"`.
 
 ## Check it worked
 
