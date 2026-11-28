@@ -7,7 +7,7 @@ yq = "4.54.3"
 # Mermaid blocks render only in Backstage (its TechDocs addon); locally they
 # stay code blocks.
 "pipx:mkdocs" = { version = "1.6.1", uvx_args = "--with mkdocs-techdocs-core==1.7.1 --with mkdocs-roadmap==1.4.2" }
-uv = "0.12.23"
+uv = "0.13.10"
 # Markdown checks (`mise run docs`): markdownlint-cli2 reads its globs and
 # rules from .markdownlint-cli2.yaml, markdown-link-check its config from
 # .markdown-link-check.json. Both are npm packages, run with this node.
