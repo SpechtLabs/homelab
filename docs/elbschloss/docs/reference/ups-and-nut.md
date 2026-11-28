@@ -93,11 +93,13 @@ The FSD flag lives in isa's upsd, not in the UPS: `upsc ups@localhost ups.status
 | clients | `/etc/nut/upsmon.conf` | [nut-client/files/upsmon.conf.j2](https://github.com/SpechtLabs/homelab/blob/main/modules/nut-client/files/upsmon.conf.j2) |
 | clients | `/etc/nut/upssched.conf` | [upssched.conf.j2](https://github.com/SpechtLabs/homelab/blob/main/modules/nut-client/files/upssched.conf.j2) |
 | clients | `/etc/nut/upssched-cmd` | [upssched-cmd.j2](https://github.com/SpechtLabs/homelab/blob/main/modules/nut-client/files/upssched-cmd.j2) |
+| clients | `/usr/local/sbin/nut-client-metrics`, `nut-client-metrics.service`, `nut-client-metrics.timer` | [nut-client-metrics.py](https://github.com/SpechtLabs/homelab/blob/main/modules/nut-client/files/nut-client-metrics.py) |
+| clients | `/var/lib/prometheus/node-exporter/nut-client.prom` | written by `nut-client-metrics` |
 
 The NUT files are `root:nut`, mode 0640 (`upssched-cmd` 0750): read them with `sudo`.
 
 Units: `nut-server`, `nut-monitor`, `nut-driver@ups` and `ups-metrics.timer` on isa;
-`nut-monitor` on the clients.
+`nut-monitor` and `nut-client-metrics.timer` on the clients.
 
 ## Users and secrets
 
@@ -137,8 +139,9 @@ it ([bootstrap/README.md](https://github.com/SpechtLabs/homelab/blob/main/bootst
 
 ## Metrics
 
-From `ups-metrics` on isa, every 30 s, all with `ups="ups"` (plus `job="node_exporter"`,
-`instance="isa:9100"`). The alerts are in [Monitoring](monitoring.md#alerts).
+From `ups-metrics` on isa, every 30 s, all with `ups="ups"` (plus `job="integrations/unix"`,
+`instance="isa:9100"`). The alerts are in [Monitoring](monitoring.md#alerts), the dashboard is
+`UPS & NUT` (uid `ups-nut`, folder Infrastructure).
 
 | Metric | From |
 |---|---|
@@ -149,7 +152,21 @@ From `ups-metrics` on isa, every 30 s, all with `ups="ups"` (plus `job="node_exp
 | `ups_temperature_celsius` | `ups.temperature` |
 | `ups_test_failed`, `ups_test_last_timestamp_seconds` | `ups.test.result` (1 if it mentions fail, error or warn), `ups.test.date` |
 | `ups_clients` | lines of `upsc -c ups@localhost` |
+| `ups_primary_monitor_up` | `systemctl is-active nut-monitor` on isa: the primary upsmon runs (logged in is the Buckle check `primary`) |
 | `ups_metrics_up`, `ups_metrics_last_success_timestamp_seconds`, `ups_metrics_duration_seconds` | the read itself; a failed read keeps the last success's timestamp |
+
+From `nut-client-metrics` on every NUT client, every 30 s, all with `ups="ups"` (plus
+`job="integrations/unix"`, `instance="<host>:9100"`). upsd sees every client as `127.0.0.1`
+behind `svc:nut`, so these are what name a missing host.
+
+| Metric | From |
+|---|---|
+| `nut_client_monitor_up` | `systemctl is-active nut-monitor` |
+| `nut_client_ups_reachable`, `nut_client_ups_read_duration_seconds` | `upsc ups@nut.sphinx-map.ts.net ups.status` exits 0 with output; how long it took |
+| `nut_client_info{affinity, server}` | `nut_shutdown_affinity` and `nut_server_host` |
+| `nut_client_onbatt_grace_seconds` | `nut_onbatt_grace`, early hosts only |
+| `nut_client_finaldelay_seconds` | upsmon's `FINALDELAY` |
+| `nut_client_metrics_timestamp_seconds` | when the file was written |
 
 ## `ups.status` values you'll see
 

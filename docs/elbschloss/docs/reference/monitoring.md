@@ -78,5 +78,6 @@ Nothing alerts on Home Assistant's backups.
 | Applications | `Synology Dashboard` | the NAS (SNMP, node-exporter, cAdvisor) |
 | Applications | `Home Assistant — Diagnostics` | both Home Assistants |
 | Infrastructure | `Node Exporter for Prometheus Dashboard` | isa, the NUC |
+| Infrastructure | `UPS & NUT` (uid `ups-nut`) | the UPS, isa's NUT server and every NUT client: will each host shut down? The UPS alerts link to its panels |
 
 The SLOs show in Grafana's SLO app under the names above.

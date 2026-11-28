@@ -7,6 +7,10 @@ or before you trust the chain for a power cut.
 **Before you start:** SSH to isa (`ssh cedi@isa`) and to any Pi (`ssh pi@<host>`). Every
 command here only reads.
 
+The Grafana dashboard `UPS & NUT` (folder Infrastructure) shows most of this at a glance: the
+UPS's state, isa's primary upsmon and, in the Clients table, each host whose upsmon is stopped
+or can't read the UPS through `svc:nut`. The steps below confirm on the hosts what it shows.
+
 1. Read the UPS through isa's proxy:
 
     ```sh

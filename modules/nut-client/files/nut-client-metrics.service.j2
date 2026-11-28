@@ -1,0 +1,22 @@
+# {{ buckle_managed }}
+[Unit]
+Description=NUT client metrics (upsmon running, UPS reachable through {{ vars.nut_server_host }}) for node_exporter's textfile collector
+After=nut-monitor.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/nut-client-metrics --dir {{ vars.o11y_textfile_dir }} --ups {{ vars.nut_ups_name }} --server {{ vars.nut_server_host }} --affinity {{ vars.nut_shutdown_affinity }} --onbatt-grace {{ vars.nut_onbatt_grace }} --finaldelay {{ 5 if vars.nut_shutdown_affinity == "early" else 180 }}
+TimeoutStartSec=30s
+# Root only to write the textfile directory; upsc needs no login.
+ReadWritePaths={{ vars.o11y_textfile_dir }}
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryMax=64M
+Nice=10

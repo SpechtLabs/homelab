@@ -139,6 +139,13 @@ def collect(out, ups, timeout):
     out.add("ups_clients", len(clients), lbl,
             "upsmon clients logged in to upsd for this UPS (the primary on isa included).")
 
+    # isa's own upsmon, the primary that sets FSD. Running isn't the same as
+    # logged in (the Buckle check `primary` reads upsd's log for that), but
+    # it's the part that stops when someone stops it.
+    primary = subprocess.run(["systemctl", "is-active", "--quiet", "nut-monitor"], timeout=timeout).returncode == 0
+    out.add("ups_primary_monitor_up", 1 if primary else 0, lbl,
+            "1 while this host's upsmon, the primary that sets FSD, is running.")
+
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])

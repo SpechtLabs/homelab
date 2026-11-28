@@ -1,6 +1,7 @@
 name: nut-client
 description: upsmon on every Pi and the NUC, watching isa's UPS proxy (svc:nut) and shutting down early or late.
 when: 'host.groups contains "nut-client"'
+needs: [alloy]               # the textfile directory nut-client-metrics writes to
 tags: [power]
 vars:
   nut_monitor_user: monuser
@@ -26,8 +27,27 @@ tasks:
 
   - systemd.unit: { name: nut-monitor, enabled: true, active: true }
 
+  # ── Metrics ──
+  # Every 30 s: upsmon running, the UPS readable through svc:nut, and this
+  # host's shutdown affinity, for the UPS & NUT dashboard in k8s-deployment.
+  # isa only sees anonymous logins from 127.0.0.1, so this names the hosts.
+  - file.copy: { src: nut-client-metrics.py, dest: /usr/local/sbin/nut-client-metrics, mode: "0755" }
+    when: 'vars.o11y_textfile_dir != ""'
+  - file.template:
+      src: nut-client-metrics.service.j2
+      dest: /etc/systemd/system/nut-client-metrics.service
+      mode: "0644"
+    when: 'vars.o11y_textfile_dir != ""'
+    notify: [daemon-reload]
+  - file.copy: { src: nut-client-metrics.timer, dest: /etc/systemd/system/nut-client-metrics.timer, mode: "0644" }
+    when: 'vars.o11y_textfile_dir != ""'
+    notify: [daemon-reload]
+  - systemd.unit: { name: nut-client-metrics.timer, enabled: true, active: true, daemon_reload: true }
+    when: 'vars.o11y_textfile_dir != ""'
+
 handlers:
   restart: { systemd.restart: { name: nut-monitor } }
+  daemon-reload: { systemd.daemon_reload: {} }
 
 health:
   - name: monitor
